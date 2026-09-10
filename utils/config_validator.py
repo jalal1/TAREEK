@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Per-platform install hints for the external binaries the pipeline shells out
-# to. Tareek never installs these itself: they are compiled system packages,
+# to. TAREEK never installs these itself: they are compiled system packages,
 # the install differs per platform, and on Linux it needs root — so the run
 # stops with the right command for the user's machine instead.
 _INSTALL_HINTS = {
@@ -133,7 +133,7 @@ class ConfigValidator:
         system package wasted minutes of work before reporting itself. Checking
         here costs nothing and reports before anything is downloaded or built.
 
-        Tareek does not install these: they are compiled system packages whose
+        TAREEK does not install these: they are compiled system packages whose
         install differs per platform and needs root on Linux.
         """
         required = []

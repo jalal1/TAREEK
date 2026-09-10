@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for the Tareek test suite.
+"""Shared pytest fixtures for the TAREEK test suite.
 
 Fixture tiers:
   - Always-available (no external deps): repo_root, real_config_path,

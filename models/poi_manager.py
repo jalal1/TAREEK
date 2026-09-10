@@ -17,13 +17,13 @@ logger = setup_logger(__name__)
 
 # Overpass servers reject the default Python-urllib UA with HTTP 406. Wrap the
 # bare urlopen call inside overpy with a Request that carries a real UA.
-_OVERPASS_UA = "TAREEK/1.0 (research; https://github.com/jalal1/Tareek)"
+_OVERPASS_UA = "TAREEK/1.0 (research; https://github.com/jalal1/TAREEK)"
 
 
 def _overpy_urlopen_with_ua(url, data=None, *args, **kwargs):
     req = Request(url, data=data, headers={
         "User-Agent": _OVERPASS_UA,
-        "Referer": "https://github.com/jalal1/Tareek",
+        "Referer": "https://github.com/jalal1/TAREEK",
     })
     return _stdlib_urlopen(req, *args, **kwargs)
 

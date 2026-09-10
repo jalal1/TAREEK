@@ -1,4 +1,4 @@
-# Tareek
+# TAREEK
 
 An agent-based travel demand model that generates synthetic populations and activity plans for [MATSim](https://matsim.org/) traffic simulations. Given a set of US counties, it builds a complete simulation from census data, survey trips, transit feeds, and road networks.
 
@@ -15,8 +15,8 @@ For architecture details, extending the system, and contributor guidance, see th
 ### 2. Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Tareek.git
-cd Tareek
+git clone https://github.com/YOUR_USERNAME/TAREEK.git
+cd TAREEK
 
 python -m venv .venv
 
@@ -88,7 +88,7 @@ python run_experiment.py --config config/config.json
 ## Project Structure
 
 ```
-Tareek/
+TAREEK/
   run_experiment.py          # Main entry point
   config/
     USA/                     # Example configs for different cities
@@ -109,7 +109,7 @@ Tareek/
 
 ## License
 
-Copyright (C) 2026 Tareek Contributors
+Copyright (C) 2026 TAREEK Contributors
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the [GNU General Public License](LICENSE) as published by

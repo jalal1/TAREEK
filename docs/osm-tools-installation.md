@@ -1,6 +1,6 @@
 # OSM Tools Installation
 
-`osmium-tool` is required to run Tareek. The pipeline downloads a state-level PBF file from Geofabrik and uses osmium to extract the area of interest and convert it to the format pt2matsim expects. Without osmium the network generation step will fail.
+`osmium-tool` is required to run TAREEK. The pipeline downloads a state-level PBF file from Geofabrik and uses osmium to extract the area of interest and convert it to the format pt2matsim expects. Without osmium the network generation step will fail.
 
 `osmconvert` is optional — it's only used as a lighter alternative when converting Overpass XML to PBF format and is not needed in the default flow.
 

@@ -1,6 +1,6 @@
-# Tareek Technical Report
+# TAREEK Technical Report
 
-This document describes the architecture, design decisions, and internals of Tareek for contributors who want to understand, extend, or fork the system. For instructions on running the system, see the [README](README.md).
+This document describes the architecture, design decisions, and internals of TAREEK for contributors who want to understand, extend, or fork the system. For instructions on running the system, see the [README](README.md).
 
 For the full academic treatment including formal equations, experimental results, and comparisons with related systems, see:
 
@@ -28,7 +28,7 @@ For the full academic treatment including formal equations, experimental results
 
 ## 1. System Overview
 
-Tareek is an open-source, configuration-driven system that automates the full pipeline from region specification to validated agent-based traffic simulation. Given a set of FIPS county codes in a JSON configuration file, the system:
+TAREEK is an open-source, configuration-driven system that automates the full pipeline from region specification to validated agent-based traffic simulation. Given a set of FIPS county codes in a JSON configuration file, the system:
 
 1. **Ingests data** from Census LODES (employment), decennial Census (population), GTFS feeds (transit), OpenStreetMap (roads and POIs), FHWA/TMAS (traffic counts), and household travel surveys (NHTS and/or regional surveys) into a DuckDB database.
 2. **Generates a road network** by converting OSM data to a MATSim network via pt2matsim, optionally creating a multimodal network with transit schedules.
@@ -471,6 +471,6 @@ Enable custom counts in the configuration:
 
 ## License
 
-Copyright (C) 2026 Tareek Contributors
+Copyright (C) 2026 TAREEK Contributors
 
 This program is free software; you can redistribute it and/or modify it under the terms of the [GNU General Public License](LICENSE) as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.

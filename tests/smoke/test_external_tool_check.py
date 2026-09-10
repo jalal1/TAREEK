@@ -5,7 +5,7 @@ check they surfaced only when the pipeline reached them — osmium after a
 ~280 MB Geofabrik download, java after plan generation — so a missing package
 wasted minutes before reporting itself.
 
-Tareek does not install them (compiled packages, per-platform installs, root
+TAREEK does not install them (compiled packages, per-platform installs, root
 needed on Linux); it fails fast with the right command for the platform.
 """
 
