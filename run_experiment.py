@@ -1365,6 +1365,15 @@ class ExperimentRunner:
             # Store plans file size
             self.plans_file_size_mb = round(file_size_mb, 2)
 
+            # The plans are on disk now, so the in-memory objects are dead
+            # weight. At full population all_plans is ~3.3M objects holding
+            # tens of GB; dropping the reference here (rather than letting it
+            # fall out of scope at the end of the method) lets the collector
+            # reclaim it before the caller moves on to the simulation.
+            all_plans = None
+            work_plans = None
+            all_nonwork_plans = None
+
             # Track plan generation end time
             self.runtime['plans_end'] = datetime.now()
 
@@ -1377,6 +1386,52 @@ class ExperimentRunner:
         except Exception as e:
             logger.error(f"Plan generation failed: {e}")
             raise RuntimeError(f"Plan generation failed: {e}")
+
+    def _release_memory_before_simulation(self) -> None:
+        """Hand freed plan-generation memory back to the OS before MATSim starts.
+
+        Plan generation peaks at tens of GB at full population (~45 GB for
+        3.3M plans). Those objects are dead by the time the plans are on disk,
+        but CPython keeps the freed arenas, so the driver's RSS stays high
+        while it merely waits for the JVM. The JVM is launched with -Xms equal
+        to -Xmx, yet that reservation is virtual: the kernel only commits pages
+        as they are touched, so the driver's retained RSS and the growing heap
+        compete for the same physical RAM. On a 245 GB host a 216 GB heap plus
+        a 45 GB idle driver is what the OOM killer reaps -- and SIGKILL leaves
+        no stack trace, so it reads as an unexplained failure.
+
+        gc.collect() drops the cycles; malloc_trim() releases the arenas glibc
+        is still holding. Best-effort: any failure here is logged and ignored,
+        since it is an optimisation and never a correctness requirement.
+        """
+        import gc
+
+        def _rss_gb() -> Optional[float]:
+            try:
+                import psutil
+                return psutil.Process().memory_info().rss / (1024 ** 3)
+            except Exception:
+                return None
+
+        before = _rss_gb()
+        gc.collect()
+
+        # glibc only returns arenas to the OS when asked; without this the
+        # pages stay in the process even though Python has freed them.
+        try:
+            import ctypes
+            ctypes.CDLL("libc.so.6").malloc_trim(0)
+        except Exception as e:
+            logger.debug(f"malloc_trim unavailable ({e}); skipping arena release")
+
+        after = _rss_gb()
+        if before is not None and after is not None:
+            logger.info(
+                f"Released plan-generation memory before MATSim: "
+                f"{before:.1f} GB -> {after:.1f} GB RSS (freed {before - after:.1f} GB)"
+            )
+        else:
+            logger.info("Released plan-generation memory before MATSim starts")
 
     def run_simulation(self, skip_simulation: bool = False) -> Dict:
         """
@@ -1403,6 +1458,8 @@ class ExperimentRunner:
         try:
             # Track MATSim start time
             self.runtime['matsim_start'] = datetime.now()
+
+            self._release_memory_before_simulation()
 
             # Initialize orchestrator with the config we loaded
             self.orchestrator = MATSimOrchestrator(config_dict=self.config)
