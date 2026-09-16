@@ -49,13 +49,6 @@ data/db/db/
 data/_*
 *.tmp
 
-# Private working notes. These carry peer-review correspondence, reviewer
-# scores and unpublished measurements, none of which belong in a public repo.
-# The .drawio figures are held back until they are finished; the intent is to
-# publish rendered PDFs rather than the editable sources.
+
 REVIEW_ACTION_ITEMS.txt
-docs/od_matrix/
-docs/freight_night/
-docs/freight
-docs/action_items.md
-docs/model_defects.md
+private_docs/
