@@ -46,10 +46,35 @@
     </module>
     <module name="qsim">
         <param name="flowCapacityFactor" value="0.1" />
-        <!-- <param name="startTime" value="00:00:00" /> -->
-        <!-- <param name="endTime" value="10:00:00" /> -->
+        <param name="startTime" value="00:00:00" />
+        <!-- When the mobsim stops, whether or not every vehicle has arrived.
+             Unset, QSim runs until the network empties, which never happens if
+             any vehicles deadlock: a full-population Twin Cities run spun to
+             sim hour 14520 with 18435 vehicles frozen since hour 126. The
+             MATSim Open Berlin and Dresden scenarios both cap at 36:00:00 -
+             a 24h day plus 12h for late trips to complete. -->
+        <param name="endTime" value="36:00:00" />
         <param name="storageCapacityFactor" value="0.12" />
         <param name="numberOfThreads" value="1" />
+        <!-- Seconds the frontmost vehicle on a link may fail to move before it
+             is pushed onto the next link despite that link's storage
+             constraint. It is the gridlock escape valve, so a HIGHER value
+             means vehicles wait LONGER before being freed. MATSim's default is
+             10.0; Berlin and Dresden use 30.0. Mersini & Ziemke (2026) propose
+             stuckTime = 30s / sample_share, which reduces to 30.0 at a 100%
+             sample. Leave removeStuckVehicles at its default false: true
+             deletes the vehicle and aborts the plan, discarding demand rather
+             than simulating it. -->
+        <param name="stuckTime" value="30.0" />
+        <!-- kinematicWaves propagates congestion backwards the way real queues
+             dissolve; the default queue model lets jams build that never
+             clear. -->
+        <param name="trafficDynamics" value="kinematicWaves" />
+        <!-- PassingQ lets a vehicle whose exit is free overtake within a link.
+             Under the FIFO default one blocked vehicle holds up everything
+             behind it even when those vehicles turn elsewhere, which is how a
+             jam freezes permanently instead of draining. -->
+        <param name="linkDynamics" value="PassingQ" />
         <!-- <param name="simStarttimeInterpretation" value="onlyUseStarttime" /> -->
         <!-- <param name="timeStepSize" value="00:00:05" /> -->
 
