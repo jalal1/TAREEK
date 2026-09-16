@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 class NetworkGenerator:
     """Generate MATSim network.xml from OpenStreetMap data using MATSim-native tools"""
 
+    DEFAULT_HEAP_RAM_FRACTION = 0.70
+
     def __init__(self, config: Dict):
         """
         Initialize network generator
@@ -43,26 +45,34 @@ class NetworkGenerator:
         # value is clamped to physical RAM so an over-large request can never
         # make the JVM fail to launch on a small machine.
         requested_gb = self.matsim_config.get('network_heap_size_gb', 8)
-        self.network_heap_size_gb = self._clamp_heap_to_ram(requested_gb)
+        self.network_heap_size_gb = self._clamp_heap_to_ram(
+            requested_gb, self.matsim_config.get('heap_ram_fraction')
+        )
         self.downloader = OSMDownloader()
 
     @staticmethod
-    def _clamp_heap_to_ram(requested_gb: int) -> int:
-        """Cap the requested -Xmx (GB) at ~70% of physical RAM.
+    def _clamp_heap_to_ram(requested_gb: int, ram_fraction: float = None) -> int:
+        """Cap the requested -Xmx (GB) at a fraction of physical RAM.
 
         -Xmx is a reservation ceiling; requesting more than the machine has
         makes the JVM fail to start ("Could not reserve enough space for object
         heap"). Clamping keeps a high config value safe on a small machine while
         leaving headroom for the OS, Python, and OSM file buffers. Never goes
         below 2g. Falls back to the requested value if RAM can't be determined.
+
+        The fraction is overridable via matsim.heap_ram_fraction for dedicated
+        hosts. Mirrors MATSimRunner._clamp_heap_to_ram.
         """
+        if ram_fraction is None:
+            ram_fraction = NetworkGenerator.DEFAULT_HEAP_RAM_FRACTION
+        ram_fraction = min(max(float(ram_fraction), 0.10), 0.90)
         try:
             import psutil
             total_gb = psutil.virtual_memory().total / (1024 ** 3)
-            safe_cap = max(2, int(total_gb * 0.70))
+            safe_cap = max(2, int(total_gb * ram_fraction))
             if requested_gb > safe_cap:
                 logger.warning(
-                    f"network_heap_size_gb={requested_gb}g exceeds 70% of "
+                    f"network_heap_size_gb={requested_gb}g exceeds {ram_fraction:.0%} of "
                     f"physical RAM ({total_gb:.1f}g); clamping to {safe_cap}g."
                 )
                 return safe_cap

@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 class MATSimRunner:
     """Run MATSim simulations"""
 
+    DEFAULT_HEAP_RAM_FRACTION = 0.70
+
     def __init__(self, config: Dict):
         """
         Initialize MATSim runner
@@ -29,8 +31,8 @@ class MATSimRunner:
         self.os_type = platform.system()
 
     @staticmethod
-    def _clamp_heap_to_ram(requested_gb: int) -> int:
-        """Cap the requested -Xmx (GB) at ~70% of physical RAM.
+    def _clamp_heap_to_ram(requested_gb: int, ram_fraction: float = None) -> int:
+        """Cap the requested -Xmx (GB) at a fraction of physical RAM.
 
         The simulation is launched with -Xms equal to -Xmx, so the JVM reserves
         the whole heap at startup and fails outright ("Could not reserve enough
@@ -39,14 +41,22 @@ class MATSimRunner:
         smaller one while leaving headroom for the OS and Python. Never goes
         below 2g. Falls back to the requested value if RAM can't be determined.
         Mirrors NetworkGenerator._clamp_heap_to_ram.
+
+        The default 70% suits a shared machine. On a dedicated host running one
+        simulation, matsim.heap_ram_fraction can raise it -- at full population
+        the heap is the binding constraint and the spare RAM is otherwise idle.
+        Values above ~0.90 risk the OS OOM-killing the JVM, which dies silently.
         """
+        if ram_fraction is None:
+            ram_fraction = MATSimRunner.DEFAULT_HEAP_RAM_FRACTION
+        ram_fraction = min(max(float(ram_fraction), 0.10), 0.90)
         try:
             import psutil
             total_gb = psutil.virtual_memory().total / (1024 ** 3)
-            safe_cap = max(2, int(total_gb * 0.70))
+            safe_cap = max(2, int(total_gb * ram_fraction))
             if requested_gb > safe_cap:
                 logger.warning(
-                    f"heap_size_gb={requested_gb}g exceeds 70% of physical RAM "
+                    f"heap_size_gb={requested_gb}g exceeds {ram_fraction:.0%} of physical RAM "
                     f"({total_gb:.1f}g); clamping to {safe_cap}g."
                 )
                 return safe_cap
@@ -130,7 +140,10 @@ class MATSimRunner:
             Command as list of strings
         """
         classpath = self.build_classpath()
-        heap_size = self._clamp_heap_to_ram(self.matsim_config.get('heap_size_gb', 32))
+        heap_size = self._clamp_heap_to_ram(
+            self.matsim_config.get('heap_size_gb', 32),
+            self.matsim_config.get('heap_ram_fraction'),
+        )
 
         # Build command with JVM performance optimizations
         # Note: These are JVM flags, not MATSim arguments
