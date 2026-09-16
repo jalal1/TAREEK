@@ -1452,9 +1452,13 @@ class NetworkGenerator:
 
         1. **Stop-link presence** – each stop's ``linkRefId`` must appear in
            the route's ``<link refId="..."/>`` sequence.
-        2. *(Disabled)* – Stop-link order check was removed because pt2matsim
-           often maps two nearby stops to the same link; the cursor-based
-           scan incorrectly flagged these as mismatches.
+        2. **Stop-link order** – the stops must be servable in the order the
+           route drives its links. A stop whose link lies behind the position
+           already consumed can never be served, and MATSim's qsim aborts the
+           whole mobsim with "Transit vehicle is not yet at last stop!".
+           Consecutive stops mapped to the *same* link are exempt: pt2matsim
+           does this routinely for nearby stops and the vehicle serves both on
+           one visit.
         3. **Link connectivity** – every pair of consecutive links in the route
            must be connected in the network (the ``to`` node of link *i* must
            equal the ``from`` node of link *i+1*).
@@ -1599,40 +1603,63 @@ class NetworkGenerator:
                             broken = True
                             break
 
-                # --- Check 2: DISABLED ----------------------------------------
-                #     pt2matsim often maps two nearby stops to the same
-                #     network link.  The cursor-based scan below treats that
-                #     as a mismatch ("already passed"), but MATSim handles
-                #     it fine at runtime — the vehicle visits the link once
-                #     and serves both stops.  Check 3 (link connectivity)
-                #     already catches genuinely broken route sequences.
-                #     In Washington DC this check removed 1,310 valid routes
-                #     (95% of all removals) across 126 transit lines.
-                # if not broken and profile is not None:
-                #     cursor = 0  # current position in route_link_ids
-                #     for stop in profile.findall('stop'):
-                #         stop_ref = stop.get('refId')
-                #         if not stop_ref:
-                #             continue
-                #         link_ref = stop_link.get(stop_ref)
-                #         if not link_ref:
-                #             continue
-                #         # Find link_ref at position >= cursor
-                #         found = False
-                #         for j in range(cursor, len(route_link_ids)):
-                #             if route_link_ids[j] == link_ref:
-                #                 cursor = j + 1
-                #                 found = True
-                #                 break
-                #         if not found:
-                #             logger.warning(
-                #                 f"  Route {line_id}/{route_id}: stop "
-                #                 f"{stop_ref} on link {link_ref} — link "
-                #                 f"order mismatch (already passed in route "
-                #                 f"sequence) — removing"
-                #             )
-                #             broken = True
-                #             break
+                # --- Check 2: stops must be servable in route order ----------
+                #     MATSim's AbstractTransitDriverAgent advances ``nextStop``
+                #     only in depart(), which is reached from handleTransitStop
+                #     when the vehicle is on that stop's link. If a stop's link
+                #     lies *behind* the position already consumed by an earlier
+                #     stop, the vehicle drives past it, never serves it, and
+                #     runs off the end of the link list with nextStop != null.
+                #     chooseNextLinkId() then calls assertAllStopsServed(),
+                #     which throws "Transit vehicle is not yet at last stop!"
+                #     and kills the whole mobsim. Verified against the bytecode
+                #     of matsim_25.jar, not inferred.
+                #
+                #     This check was previously disabled wholesale because a
+                #     naive cursor scan also flagged the common, harmless case
+                #     where pt2matsim maps consecutive stops to the SAME link:
+                #     the vehicle visits that link once and serves both stops.
+                #     In Washington DC that cost 1,310 valid routes, 95% of all
+                #     removals. The fix is not to drop the check but to exempt
+                #     that one case: a stop whose link equals the previous
+                #     stop's link is served on the same visit, so the cursor
+                #     must not advance and the route is fine.
+                #
+                #     Measured on the 15-county Twin Cities schedule: 3,134
+                #     routes, 1,477 with same-link consecutive stops (kept),
+                #     10 genuinely out of order (removed). Hermes tolerates
+                #     these silently, which is why they only surface on qsim.
+                if not broken and profile is not None:
+                    cursor = 0           # next unconsumed position in route_link_ids
+                    prev_link_ref = None  # link of the previous stop, for the same-link case
+                    for stop in profile.findall('stop'):
+                        stop_ref = stop.get('refId')
+                        if not stop_ref:
+                            continue
+                        link_ref = stop_link.get(stop_ref)
+                        if not link_ref:
+                            continue
+                        if link_ref == prev_link_ref:
+                            # Same link as the previous stop: served on the same
+                            # visit, so do not consume another position.
+                            continue
+                        found = -1
+                        for j in range(cursor, len(route_link_ids)):
+                            if route_link_ids[j] == link_ref:
+                                found = j
+                                break
+                        if found < 0:
+                            logger.warning(
+                                f"  Route {line_id}/{route_id}: stop "
+                                f"{stop_ref} on link {link_ref} cannot be "
+                                f"served in route order (link does not occur "
+                                f"at or after position {cursor} of "
+                                f"{len(route_link_ids)}) — removing"
+                            )
+                            broken = True
+                            break
+                        cursor = found + 1
+                        prev_link_ref = link_ref
 
                 # --- Check 3: consecutive links are connected ----------------
                 if not broken and len(route_link_ids) >= 2:
