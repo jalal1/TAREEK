@@ -78,6 +78,27 @@ class ConfigManager:
         tree = ET.parse(template_path)
         return tree
 
+    @staticmethod
+    def _require_module(tree: ET.ElementTree, module_name: str, param_key: str):
+        """Fail when a configurable_params key names a module the template lacks.
+
+        Parameters may be created on demand (MATSim defaults anything absent),
+        but a module that does not exist is almost always a typo in the key --
+        "_qsim.stuckTime_help" splitting into the module "_qsim" is exactly the
+        case this catches. Failing here costs nothing; failing later costs a
+        run.
+        """
+        root = tree.getroot()
+        if any(m.get('name') == module_name for m in root.findall('module')):
+            return
+        known = sorted(m.get('name') for m in root.findall('module') if m.get('name'))
+        raise KeyError(
+            f"configurable_params key '{param_key}' names module "
+            f"'{module_name}', which is not in the base template. "
+            f"Known modules: {', '.join(known)}. Fix the key, or add the "
+            f"module to matsim/configs/{{mode}}/config.xml."
+        )
+
     def _set_or_add_parameter(
         self,
         tree: ET.ElementTree,
@@ -790,12 +811,20 @@ class ConfigManager:
                 self.update_scoring_param(tree, parts[1], str(value))
             else:
                 module, param = param_key.split('.', 1)
-                self.update_parameter(tree, module, param, str(value))
+                # Create the param when the module exists but does not list it.
+                # MATSim applies its own default for anything the config omits,
+                # so a base template should not have to enumerate every
+                # parameter a region might want to set -- listing them all
+                # would bake one experiment's values into the shared template.
+                # An unknown MODULE is still a hard error: that is what catches
+                # a typo, which is the case update_parameter was guarding.
+                self._require_module(tree, module, param_key)
+                self._set_or_add_parameter(tree, module, param, str(value))
                 logger.info(f"Applied configurable param: {module}.{param} = {value}")
                 # Capacity factors must be kept in sync between qsim and hermes
                 # because mobsim=hermes reads its own module, not qsim.
                 if module == 'qsim' and param in ('flowCapacityFactor', 'storageCapacityFactor'):
-                    self.update_parameter(tree, 'hermes', param, str(value))
+                    self._set_or_add_parameter(tree, 'hermes', param, str(value))
                     logger.info(f"Mirrored qsim.{param} -> hermes.{param} = {value}")
 
         # Apply custom parameters if provided (these override configurable_params)
@@ -822,9 +851,10 @@ class ConfigManager:
                     self.update_scoring_param(tree, parts[1], str(value))
                 else:
                     module, param = module_param.split('.', 1)
-                    self.update_parameter(tree, module, param, str(value))
+                    self._require_module(tree, module, module_param)
+                    self._set_or_add_parameter(tree, module, param, str(value))
                     if module == 'qsim' and param in ('flowCapacityFactor', 'storageCapacityFactor'):
-                        self.update_parameter(tree, 'hermes', param, str(value))
+                        self._set_or_add_parameter(tree, 'hermes', param, str(value))
                         logger.info(f"Mirrored qsim.{param} -> hermes.{param} = {value}")
 
         # Ensure file paths are relative (network.xml, plans.xml are in same dir as config)
