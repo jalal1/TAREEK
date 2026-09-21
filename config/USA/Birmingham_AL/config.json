@@ -111,10 +111,10 @@
   },
   "plan_generation": {
     "target_plans": "all",
-    "scaling_factor": 0.105,
+    "scaling_factor": 0.25,
     "work_scaling_multiplier": 1,
     "random_seed": 42,
-    "skip_if_exists": true,
+    "skip_if_exists": false,
     "supported_chain_types": [
       "home_work_home"
     ],
@@ -122,7 +122,7 @@
     "max_chain_retries": 10,
     "num_processes": 30,
     "default_mode": "car",
-    "cache_demand": true
+    "cache_demand": false
   },
   "od_matrix": {
     "source": "auto",
@@ -249,19 +249,20 @@
     },
     "configurable_params": {
       "coordinateSystem": "auto",
-      "lastIteration": 10,
+      "lastIteration": 50,
       "outputDirectory": "output",
+      "controller.mobsim": "qsim",
+      "_controller.mobsim_help": "qsim | hermes. hermes is faster but is a simplified queue model that ignores trafficDynamics, linkDynamics and full stuckTime semantics. Use qsim for any congestion- or mode-choice-sensitive experiment.",
       "global.numberOfThreads": 30,
       "qsim.numberOfThreads": 30,
-      "qsim.flowCapacityFactor": 0.105,
-      "qsim.storageCapacityFactor": 0.105,
+      "qsim.flowCapacityFactor": 0.25,
+      "qsim.storageCapacityFactor": 0.3,
+      "qsim.stuckTime": 10.0,
+      "_qsim.stuckTime_help": "Seconds the frontmost vehicle on a link may fail to move before it is pushed onto the next link. Gridlock escape valve: HIGHER = waits LONGER. 10.0 is MATSim's own default. Mersini & Ziemke (2026) instead give stuckTime = 30s / sample_share, which is 120.0 at this 25% sample; the basic template uses 30.0 (Berlin/Dresden, 100% sample). Currently set to the MATSim default for an A/B against the 120.0 arm (bham_stage1b_25pct_qsim_pt). Only qsim honours this; hermes ignores it.",
       "linkStats.averageLinkStatsOverIterations": 5,
       "scoring.waitingPt": -3.0,
       "_estimator_scoring.waitingPt": "Cold start (no prior experiment). Seeding waitingPt=-3.0 util/hr for transit density 0.43% (near-zero transit (under 1%)).",
-      "scoring.modeParams.walk.constant": -2.344,
-      "_estimator_scoring.modeParams.walk.constant": "Realised sim walk share at iter 50 = 5.01% vs. ACS target 1.35%. Deltawalk.constant = clip(0.5*ln(0.0135/0.0501), +/-1.0) = -0.657. New value: -1.687 -> -2.344.",
-      "scoring.modeParams.pt.constant": 1.109,
-      "_estimator_scoring.modeParams.pt.constant": "Realised sim PT share at iter 50 = 0.13% vs. ACS target 0.43%. Deltapt.constant = clip(0.5*ln(0.0043/0.0013), +/-1.0) = +0.601. New value: +0.508 -> +1.109."
+      "_qsim.storageCapacityFactor_help": "Deliberately ABOVE flowCapacityFactor (1.2x, matching the basic template's own 0.1/0.12 ratio). Storage must be scaled superlinearly at reduced samples (Nagel & Floetteroed 2012): scaling it down linearly leaves short links holding too few vehicles to form a realistic queue, producing artificial gridlock. flowCapacityFactor must stay equal to scaling_factor because countsScaleFactor is derived as 1/flowCapacityFactor."
     },
     "write_intermediate_output": false
   },
@@ -374,7 +375,6 @@
   "freight": {
     "_help": "Boundary truck trips (E-I, I-E, E-E). See docs/freight/design.md",
     "enabled": false,
-
     "demand_source": "hpms_cordon",
     "_demand_source_help": "hpms_cordon | car_share | absolute",
     "truck_share": null,
@@ -400,7 +400,6 @@
       "_min_truck_aadt_help": "skip segments below this truck AADT server-side; they cannot inform a truck weight and they dominate the payload",
       "timeout_seconds": 120
     },
-
     "class_shares": {
       "external_to_internal": 0.35,
       "internal_to_external": 0.35,
@@ -425,13 +424,11 @@
       "beta": 0.02,
       "_beta_help": "1/KM, not the QRFM 1/minute - see design.md section 2"
     },
-
     "departure_distribution": {
       "_help": "24 hourly weights each; normalised on load, need not sum to 1",
       "business_day": null,
       "through": null
     },
-
     "mode": "car",
     "subpopulation": "freight",
     "require_events": true,
