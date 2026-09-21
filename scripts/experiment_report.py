@@ -245,15 +245,13 @@ FIGURE_SECTIONS: List[Tuple[str, str, List[Tuple[str, str]]]] = [
        "stations are wrong in either direction. The blue line can, so where "
        "red stays high while blue sits near zero, the errors are offsetting "
        "rather than absent.")]),
-    ("Peak Hours",
-     "Peaks stress the network hardest and expose capacity problems that "
-     "daily averages hide.",
-     [("heatmap_8am_highways.png",
-       "Simulated highway load at 08:00, coloured by volume."),
-      ("heatmap_5pm_highways.png",
-       "Simulated highway load at 17:00, on the same colour scale, so the two "
-       "peaks can be compared directly.")]),
 ]
+# There is no "Peak Hours" section. It held the 8 AM and 5 PM congestion maps
+# back when those were the only two drawn; now every hour has one in its own
+# tab under Hour by Hour, so a separate section would just repeat two of them
+# and imply those hours matter more than the rest. On bham_stage1b the busiest
+# hour was 18 and the evening never cleared, which is exactly what fixing on
+# two hours concealed.
 
 
 # The three per-hour views, rendered as one tab per hour. Same moment, three
@@ -269,16 +267,32 @@ HOUR_FIGURES: List[Tuple[str, str, str]] = [
      "the 2x / 0.5x bands. Points above the line over-simulate. This is the "
      "view that shows whether errors are proportional or concentrated at one "
      "end of the volume range."),
+    ("heatmap_h{hh}_highways.png", "Highway congestion",
+     "Highway links coloured by simulated speed as a fraction of freespeed, "
+     "so red is slow rather than busy. Read it against the two figures above: "
+     "a corridor that is both congested here and under-simulated there is a "
+     "capacity problem, while under-simulation on a free-flowing corridor is "
+     "a demand or routing problem. Grey links carried no traffic this hour."),
 ]
 
-# Congestion heatmaps are deliberately NOT here. They exist only for 8 AM and
-# 5 PM — the most expensive figure to draw and the least variable hour to hour
-# — so including them would make two tabs different from the other 22. They
-# keep their own "Peak Hours" section above, where two figures side by side is
-# the point rather than an inconsistency.
+# Congestion heatmaps now appear here, one per hour tab, rather than in a
+# separate peak-hours section. Hours 8 and 17 keep their historical filenames
+# (heatmap_8am_highways.png / heatmap_5pm_highways.png), so _hour_figure_name
+# maps those two hours onto the legacy names.
+
+
+# The congestion heatmap for 8 AM and 5 PM is written under the filename it
+# has always had, so older reports and any saved links keep working. Every
+# other hour uses the heatmap_h{HH}_highways.png pattern.
+_LEGACY_HEATMAP_NAMES = {
+    8: "heatmap_8am_highways.png",
+    17: "heatmap_5pm_highways.png",
+}
 
 
 def _hour_figure_name(pattern: str, hour: int) -> str:
+    if pattern == "heatmap_h{hh}_highways.png" and hour in _LEGACY_HEATMAP_NAMES:
+        return _LEGACY_HEATMAP_NAMES[hour]
     return pattern.format(hh=f"{hour:02d}")
 
 
@@ -359,9 +373,10 @@ def build_hour_tabs(eval_dir: Path, embed_dir: Optional[Path]) -> Tuple[List[str
         # An HTML comment carries the hour for anyone grepping the Markdown.
         L.append(f'<div class="hour-panel" id="panel-{h:02d}">')
         L.append(f'<h3>{h:02d}:00</h3>')
-        # Column count follows what this hour actually has, so an hour without
-        # a congestion heatmap does not leave a hole in the grid.
-        L.append(f'<div class="fig-grid cols-{len(present)}">')
+        # Two figures on the first row, congestion full-width on the second.
+        # The column count lives in .hour-figs rather than a cols-N class so
+        # the nth-child(3) rule below stays true whatever HOUR_FIGURES holds.
+        L.append('<div class="fig-grid hour-figs">')
         for pattern, label, caption in present:
             name = _hour_figure_name(pattern, h)
             used.add(name)
@@ -1281,6 +1296,18 @@ hr { border: none; border-top: 1px solid #e3e6ea; margin: 22px 0 12px; }
 .hour-tabs > input[type="radio"] {
   position: absolute; opacity: 0; pointer-events: none;
 }
+/* The body is capped at 980px because prose past roughly 90 characters a line
+   is hard to read. Figures have no such limit, and the hour panels are mostly
+   figure: two count maps side by side plus a full-width network map. So this
+   one section breaks out of the cap on screen, up to 1600px, while the text
+   around it stays at the reading measure.
+   The negative margins pull the section out symmetrically; 50vw each side
+   would reach the viewport edge, so the width cap does the limiting and
+   max() keeps the pull from ever going positive on a narrow window. */
+.hour-tabs {
+  position: relative; left: 50%; transform: translateX(-50%);
+  width: min(1600px, calc(100vw - 36px));
+}
 .hour-labels {
   display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0 14px;
   border-bottom: 2px solid #e3e6ea; padding-bottom: 8px;
@@ -1293,6 +1320,12 @@ hr { border: none; border-top: 1px solid #e3e6ea; margin: 22px 0 12px; }
 .hour-labels label:hover { background: #eceef1; color: #2b3138; }
 .hour-panel { display: none; }
 .hour-panel h3 { margin: 0 0 4px; font-size: 11pt; }
+/* All three figures on one row. This only works because .hour-tabs breaks out
+   of the body's 980px reading cap to 1600px — at 980 each figure would be
+   about 320px, too small for a network map. At 1600 each gets roughly 520px,
+   which is wider than all three were in the original layout. */
+.hour-figs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hour-figs > figure img { width: 100%; height: auto; display: block; }
 .fig-grid.cols-1 { grid-template-columns: minmax(0, 620px); }
 .fig-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
 .fig-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
@@ -1352,6 +1385,24 @@ __HOUR_TAB_RULES__
 @media print {
   .hour-labels { display: none; }
   .hour-panel { display: block !important; page-break-inside: avoid; }
+  /* Undo the screen-only break-out: on A4 the page box is the limit, and a
+     1600px section centred with a viewport translate would run off it. */
+  .hour-tabs {
+    position: static; left: auto; transform: none; width: auto;
+  }
+}
+
+/* Three across needs the full break-out width. Step down rather than jumping
+   straight to one column: below ~1250px the third figure would be too narrow
+   to read, and below 700px even two are. */
+@media (max-width: 1250px) {
+  .hour-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* With two columns the third figure is alone on row two, so give it the
+     full width rather than leaving a gap beside it. */
+  .hour-figs > figure:nth-child(3) { grid-column: 1 / -1; justify-self: center; }
+}
+@media (max-width: 700px) {
+  .hour-figs { grid-template-columns: minmax(0, 1fr); }
 }
 """
 

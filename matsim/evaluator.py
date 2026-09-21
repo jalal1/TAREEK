@@ -2567,14 +2567,23 @@ class SimulationEvaluator:
         if generate_spatial_maps:
             logger.info("Generating heatmap-only map...")
             self.plot_heatmap_only(linkstats)
-            # Congestion heatmaps stay on the two classic peaks rather than
-            # following report_hours. They are the most expensive figure in the
-            # evaluation (~12 s each, dominated by the per-hour Gaussian
-            # smoothing) and the least informative hour to hour — congestion
-            # changes slowly, so 24 of them cost ~5 minutes to show much the
-            # same picture. 8 AM and 5 PM bracket the day's two peaks.
-            logger.info("Generating peak hour highway heatmaps (8 AM, 5 PM)...")
-            self.plot_peak_hour_highway_heatmaps(linkstats)
+            # Congestion heatmaps follow report_hours like the other two
+            # per-hour views, so each hour tab carries the same three figures.
+            #
+            # They used to be drawn only for 8 AM and 5 PM on the grounds that
+            # congestion "changes slowly". Measured on bham_stage1b, it does
+            # not: congested highway links range from 29 at hour 0 to 11,403 at
+            # hour 18, and the evening never clears — hours 19-23 sit at a mean
+            # speed ratio of 0.883, worse than the 8 AM peak at 0.912. Fixing
+            # on two hours hid both the true peak (18, not 17) and the fact
+            # that the network stays congested all night.
+            #
+            # They remain the most expensive figure (~12 s each, dominated by
+            # the Gaussian smoothing), so a full 24 adds ~5 min to evaluation.
+            # Narrow evaluation.report_hours to trade coverage for time.
+            logger.info(f"Generating highway congestion heatmaps for "
+                        f"{len(hours)} hour(s)...")
+            self.plot_peak_hour_highway_heatmaps(linkstats, hours=hours)
 
         # Log-log observed-vs-simulated scatter, one per hour. Third of the
         # three per-hour views, alongside the count-error map and the
