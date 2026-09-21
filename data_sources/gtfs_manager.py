@@ -41,6 +41,48 @@ from utils.duckdb_manager import DBManager
 logger = logging.getLogger(__name__)
 
 
+def resolve_gtfs_file(feed_path: Path, name: str) -> Optional[Path]:
+    """Locate a GTFS table inside an extracted feed directory.
+
+    The spec says a feed is a flat zip of ``*.txt`` files, but real feeds
+    deviate in two ways that both silently produce an empty feed:
+
+    1. **Nested directory.** Some zips contain a single top-level folder, so
+       extraction leaves the tables one level down. Birmingham MAX (mdb-3434)
+       extracts to ``<feed>/google_transit_Working.zip/routes.csv`` — a
+       *directory* whose name ends in ``.zip``.
+    2. **``.csv`` extension.** The same feed ships ``routes.csv`` rather than
+       ``routes.txt``. The content is identical CSV either way.
+
+    Returns the first match for ``<name>.txt`` then ``<name>.csv``, checking the
+    feed root before descending one level into subdirectories. Returns None when
+    the table genuinely is not present, which callers still treat as missing.
+
+    Args:
+        feed_path: Directory the feed zip was extracted into.
+        name: Table name without extension, e.g. ``routes``.
+    """
+    stem = name[:-4] if name.endswith('.txt') else name
+    candidates = [f"{stem}.txt", f"{stem}.csv"]
+
+    for fname in candidates:
+        p = feed_path / fname
+        if p.is_file():
+            return p
+
+    # One level down, for zips that carry a single wrapping folder.
+    try:
+        subdirs = sorted(d for d in feed_path.iterdir() if d.is_dir())
+    except OSError:
+        return None
+    for sub in subdirs:
+        for fname in candidates:
+            p = sub / fname
+            if p.is_file():
+                return p
+    return None
+
+
 @dataclass
 class BBox:
     """Bounding box with min/max lat/lon."""
@@ -636,9 +678,30 @@ class GTFSManager:
         return (max_id or 0) + 1
 
     def _feed_exists_in_db(self, feed_id: str) -> bool:
-        """Check if a feed is already loaded in the database."""
+        """Check whether a feed is already loaded *with usable data*.
+
+        A feed row on its own is not enough. When a feed fails to parse — the
+        Birmingham MAX case, where the tables sat in a nested folder under
+        ``.csv`` names — the row is still written with zero routes and zero
+        stops. Treating that as "already loaded" caches the failure
+        permanently: every later run skips the feed and silently produces no
+        transit, even once the parsing bug is fixed.
+
+        A feed with no stops cannot contribute transit, so it is not loaded.
+        Re-parsing is cheap next to a run that quietly has no pt at all.
+        """
         results = self.db_manager.query_all(GTFSFeed, filters={'feed_id': feed_id})
-        return len(results) > 0
+        if not results:
+            return False
+
+        stops = self.db_manager.query_all(GTFSStop, filters={'feed_id': feed_id})
+        if not stops:
+            logger.warning(
+                f"Feed {feed_id} is in the database with 0 stops — a previous "
+                f"load failed. Re-parsing instead of reusing the empty record."
+            )
+            return False
+        return True
 
     def load_feed_to_db(self, feed_path: Path, feed: FeedInfo) -> bool:
         """
@@ -725,8 +788,8 @@ class GTFSManager:
 
     def _read_feed_version(self, feed_path: Path) -> Optional[str]:
         """Read feed version from feed_info.txt if it exists."""
-        fi_path = feed_path / 'feed_info.txt'
-        if not fi_path.exists():
+        fi_path = resolve_gtfs_file(feed_path, 'feed_info')
+        if fi_path is None or not fi_path.exists():
             return None
         try:
             df = pd.read_csv(fi_path, dtype=str)
@@ -738,8 +801,8 @@ class GTFSManager:
 
     def _load_agency_names(self, feed_path: Path) -> Dict[str, str]:
         """Load agency_id -> agency_name mapping from agency.txt."""
-        agency_path = feed_path / 'agency.txt'
-        if not agency_path.exists():
+        agency_path = resolve_gtfs_file(feed_path, 'agency')
+        if agency_path is None or not agency_path.exists():
             return {}
         try:
             df = pd.read_csv(agency_path, dtype=str)
@@ -760,8 +823,8 @@ class GTFSManager:
         Returns:
             Mapping of (feed route_id) -> (database pk) for foreign key lookups
         """
-        routes_path = feed_path / 'routes.txt'
-        if not routes_path.exists():
+        routes_path = resolve_gtfs_file(feed_path, 'routes')
+        if routes_path is None or not routes_path.exists():
             logger.warning(f"No routes.txt in {feed_path}")
             return {}
 
@@ -807,8 +870,8 @@ class GTFSManager:
         Returns:
             Mapping of (feed stop_id) -> (database pk)
         """
-        stops_path = feed_path / 'stops.txt'
-        if not stops_path.exists():
+        stops_path = resolve_gtfs_file(feed_path, 'stops')
+        if stops_path is None or not stops_path.exists():
             logger.warning(f"No stops.txt in {feed_path}")
             return {}
 
@@ -863,8 +926,8 @@ class GTFSManager:
         Returns:
             Mapping of (feed trip_id) -> (database pk)
         """
-        trips_path = feed_path / 'trips.txt'
-        if not trips_path.exists():
+        trips_path = resolve_gtfs_file(feed_path, 'trips')
+        if trips_path is None or not trips_path.exists():
             logger.warning(f"No trips.txt in {feed_path}")
             return {}
 
@@ -918,8 +981,8 @@ class GTFSManager:
         Returns:
             Number of stop_time records loaded
         """
-        st_path = feed_path / 'stop_times.txt'
-        if not st_path.exists():
+        st_path = resolve_gtfs_file(feed_path, 'stop_times')
+        if st_path is None or not st_path.exists():
             logger.warning(f"No stop_times.txt in {feed_path}")
             return 0
 
@@ -1006,8 +1069,8 @@ class GTFSManager:
     def _load_routes_atomic(self, session, feed_path: Path, feed_id: str,
                             agency_names: Dict[str, str]) -> Dict[str, int]:
         """Load routes.txt within an existing session. Returns route_id -> pk map."""
-        routes_path = feed_path / 'routes.txt'
-        if not routes_path.exists():
+        routes_path = resolve_gtfs_file(feed_path, 'routes')
+        if routes_path is None or not routes_path.exists():
             logger.warning(f"No routes.txt in {feed_path}")
             return {}
 
@@ -1047,8 +1110,8 @@ class GTFSManager:
 
     def _load_stops_atomic(self, session, feed_path: Path, feed_id: str) -> Dict[str, int]:
         """Load stops.txt within an existing session. Returns stop_id -> pk map."""
-        stops_path = feed_path / 'stops.txt'
-        if not stops_path.exists():
+        stops_path = resolve_gtfs_file(feed_path, 'stops')
+        if stops_path is None or not stops_path.exists():
             logger.warning(f"No stops.txt in {feed_path}")
             return {}
 
@@ -1096,8 +1159,8 @@ class GTFSManager:
     def _load_trips_atomic(self, session, feed_path: Path, feed_id: str,
                            route_pk_map: Dict[str, int]) -> Dict[str, int]:
         """Load trips.txt within an existing session. Returns trip_id -> pk map."""
-        trips_path = feed_path / 'trips.txt'
-        if not trips_path.exists():
+        trips_path = resolve_gtfs_file(feed_path, 'trips')
+        if trips_path is None or not trips_path.exists():
             logger.warning(f"No trips.txt in {feed_path}")
             return {}
 
@@ -1142,8 +1205,8 @@ class GTFSManager:
                                 trip_pk_map: Dict[str, int],
                                 stop_pk_map: Dict[str, int]) -> int:
         """Load stop_times.txt within an existing session. Returns count loaded."""
-        st_path = feed_path / 'stop_times.txt'
-        if not st_path.exists():
+        st_path = resolve_gtfs_file(feed_path, 'stop_times')
+        if st_path is None or not st_path.exists():
             logger.warning(f"No stop_times.txt in {feed_path}")
             return 0
 

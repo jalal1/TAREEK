@@ -17,6 +17,8 @@ from typing import Dict, List, Optional, Tuple
 import logging
 from matsim.osm_downloader import OSMDownloader
 
+from data_sources.gtfs_manager import resolve_gtfs_file
+
 logger = logging.getLogger(__name__)
 
 
@@ -297,7 +299,7 @@ class NetworkGenerator:
                      f"({min_lon:.4f}, {min_lat:.4f}, {max_lon:.4f}, {max_lat:.4f})")
 
         # --- Step 1: Filter stops.txt ---
-        stops_file = feed_dir / 'stops.txt'
+        stops_file = resolve_gtfs_file(feed_dir, 'stops')
         if not stops_file.exists():
             logger.warning(f"    No stops.txt in feed {feed_id}, skipping filter")
             return None
@@ -334,8 +336,8 @@ class NetworkGenerator:
 
         # --- Step 2: Filter stop_times.txt → collect retained trip_ids ---
         retained_trip_ids = set()
-        stop_times_file = feed_dir / 'stop_times.txt'
-        if stop_times_file.exists():
+        stop_times_file = resolve_gtfs_file(feed_dir, 'stop_times')
+        if stop_times_file and stop_times_file.exists():
             with open(stop_times_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 st_rows = list(reader)
@@ -354,8 +356,8 @@ class NetworkGenerator:
 
         # --- Step 3: Filter trips.txt → collect retained route_ids ---
         retained_route_ids = set()
-        trips_file = feed_dir / 'trips.txt'
-        if trips_file.exists():
+        trips_file = resolve_gtfs_file(feed_dir, 'trips')
+        if trips_file and trips_file.exists():
             with open(trips_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 trip_rows = list(reader)
@@ -376,9 +378,9 @@ class NetworkGenerator:
             original_trip_count = 0
 
         # --- Step 4: Filter routes.txt ---
-        routes_file = feed_dir / 'routes.txt'
+        routes_file = resolve_gtfs_file(feed_dir, 'routes')
         original_route_count = 0
-        if routes_file.exists():
+        if routes_file and routes_file.exists():
             with open(routes_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 route_rows = list(reader)
@@ -393,10 +395,26 @@ class NetworkGenerator:
                 writer.writerows(filtered_routes)
 
         # --- Step 5: Copy all other GTFS files unchanged ---
+        # Two things matter here. The source tables may live one level down (a
+        # zip with a single wrapping folder) and may be named .csv rather than
+        # .txt — see data_sources.gtfs_manager.resolve_gtfs_file. pt2matsim
+        # accepts neither: it requires flat .txt files and aborts with
+        # "File agency.txt not found!". So copy from wherever the tables really
+        # are, and normalise every .csv to .txt on the way out.
         filtered_files = {'stops.txt', 'stop_times.txt', 'trips.txt', 'routes.txt'}
-        for src_file in feed_dir.iterdir():
-            if src_file.is_file() and src_file.name not in filtered_files and not src_file.name.startswith('.'):
-                shutil.copy2(src_file, filtered_dir / src_file.name)
+        # The directory the tables actually live in, which may be a subfolder.
+        probe = resolve_gtfs_file(feed_dir, 'agency') or resolve_gtfs_file(feed_dir, 'calendar')
+        source_dir = probe.parent if probe else feed_dir
+        for src_file in source_dir.iterdir():
+            if not src_file.is_file() or src_file.name.startswith('.'):
+                continue
+            # Normalise .csv -> .txt so pt2matsim recognises the table.
+            out_name = src_file.name
+            if out_name.endswith('.csv'):
+                out_name = out_name[:-4] + '.txt'
+            if out_name in filtered_files:
+                continue  # already written by the filter steps above
+            shutil.copy2(src_file, filtered_dir / out_name)
 
         # --- Log results ---
         stop_reduction = (1 - len(filtered_stops) / original_stop_count) * 100 if original_stop_count else 0
@@ -487,7 +505,7 @@ class NetworkGenerator:
         # --- Cascade to trips.txt ---
         trips_file = feed_dir / 'trips.txt'
         kept_trip_ids = set()
-        if trips_file.exists():
+        if trips_file and trips_file.exists():
             with open(trips_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 trip_rows = list(reader)
@@ -510,7 +528,7 @@ class NetworkGenerator:
         # --- Cascade to stop_times.txt ---
         stop_times_file = feed_dir / 'stop_times.txt'
         kept_stop_ids = set()
-        if stop_times_file.exists():
+        if stop_times_file and stop_times_file.exists():
             with open(stop_times_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 st_rows = list(reader)
@@ -529,7 +547,7 @@ class NetworkGenerator:
 
         # --- Cascade to stops.txt ---
         stops_file = feed_dir / 'stops.txt'
-        if stops_file.exists() and kept_stop_ids:
+        if stops_file and stops_file.exists() and kept_stop_ids:
             with open(stops_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
                 stop_rows = list(reader)
@@ -2077,6 +2095,29 @@ class NetworkGenerator:
             )
         except RuntimeError as e:
             if "No GTFS feeds were successfully converted" in str(e):
+                # A requested transit network that silently becomes road-only
+                # produces a run with zero pt legs in plans.xml and a modestats
+                # file with no pt column at all — an outcome indistinguishable
+                # from "nobody chose transit". Birmingham ran 10 iterations and
+                # exited 0 that way before anyone noticed. Fail by default.
+                allow_fallback = self.matsim_config.get(
+                    'allow_road_only_transit_fallback', False)
+                if not allow_fallback:
+                    raise RuntimeError(
+                        "Transit network was requested (matsim.transit_network=true) "
+                        "but no GTFS feed produced usable stops in the region. The "
+                        "run would silently simulate a city with no transit: every "
+                        "plan would be car or walk and pt would be absent from "
+                        "modestats entirely.\n"
+                        "Check the feed actually loaded — 'Loaded feed <id>: 0 routes, "
+                        "0 stops' in the log means it did not. Causes seen so far: the "
+                        "zip extracts into a nested folder, or ships .csv tables "
+                        "instead of .txt (both handled by "
+                        "data_sources.gtfs_manager.resolve_gtfs_file).\n"
+                        "To deliberately run road-only, set "
+                        "matsim.allow_road_only_transit_fallback=true.\n"
+                        f"Underlying error: {e}"
+                    ) from e
                 logger.warning("=" * 60)
                 logger.warning("NO GTFS FEEDS WITH STOPS IN REGION")
                 logger.warning("=" * 60)
@@ -2086,7 +2127,11 @@ class NetworkGenerator:
                     "transit agency is missing from or deprecated in the Mobility "
                     "Database catalog."
                 )
-                logger.warning("Falling back to road-only network.")
+                logger.warning(
+                    "Falling back to road-only network because "
+                    "matsim.allow_road_only_transit_fallback=true. This run will "
+                    "have NO transit: pt will be absent from modestats."
+                )
                 logger.warning("=" * 60)
                 # Fall back: use the multimodal network as road-only
                 import shutil
