@@ -46,35 +46,43 @@
     </module>
     <module name="qsim">
         <param name="flowCapacityFactor" value="0.1" />
-        <param name="startTime" value="00:00:00" />
-        <!-- When the mobsim stops, whether or not every vehicle has arrived.
-             Unset, QSim runs until the network empties, which never happens if
-             any vehicles deadlock: a full-population Twin Cities run spun to
-             sim hour 14520 with 18435 vehicles frozen since hour 126. The
-             MATSim Open Berlin and Dresden scenarios both cap at 36:00:00 -
-             a 24h day plus 12h for late trips to complete. -->
-        <param name="endTime" value="36:00:00" />
         <param name="storageCapacityFactor" value="0.12" />
         <param name="numberOfThreads" value="1" />
-        <!-- Seconds the frontmost vehicle on a link may fail to move before it
-             is pushed onto the next link despite that link's storage
-             constraint. It is the gridlock escape valve, so a HIGHER value
-             means vehicles wait LONGER before being freed. MATSim's default is
-             10.0; Berlin and Dresden use 30.0. Mersini & Ziemke (2026) propose
-             stuckTime = 30s / sample_share, which reduces to 30.0 at a 100%
-             sample. Leave removeStuckVehicles at its default false: true
-             deletes the vehicle and aborts the plan, discarding demand rather
+        <!-- The five parameters below are listed at MATSim's own defaults so a
+             region config can override them through matsim.configurable_params:
+             update_parameter raises KeyError on a target that is not already in
+             the template, so a commented-out parameter cannot be set at all.
+             Keep the values here as the MATSim defaults and tune per region in
+             the JSON, rather than turning this shared template into one
+             experiment's settings.
+
+             startTime / endTime  "undefined" is how MATSim writes an unset
+                                  OptionalTime. Unset, QSim runs until the
+                                  network empties, which can be never if any
+                                  vehicles deadlock. Berlin v6.4 and Dresden
+                                  v1.1 both cap endTime at 36:00:00.
+             stuckTime            Seconds the frontmost vehicle on a link may
+                                  fail to move before being pushed onto the
+                                  next link despite its storage constraint.
+                                  The gridlock escape valve, so HIGHER waits
+                                  LONGER. Mersini & Ziemke (2026) give
+                                  stuckTime = 30s / sample_share.
+             trafficDynamics      queue | kinematicWaves. kinematicWaves
+                                  propagates congestion backwards the way real
+                                  queues dissolve.
+             linkDynamics         FIFO | PassingQ. Under FIFO one blocked
+                                  vehicle holds up everything behind it even
+                                  when those vehicles turn elsewhere.
+
+             Note removeStuckVehicles is deliberately absent: MATSim's own
+             comment says "false is probably the better choice", and true
+             deletes the vehicle and aborts its plan, discarding demand rather
              than simulating it. -->
-        <param name="stuckTime" value="30.0" />
-        <!-- kinematicWaves propagates congestion backwards the way real queues
-             dissolve; the default queue model lets jams build that never
-             clear. -->
-        <param name="trafficDynamics" value="kinematicWaves" />
-        <!-- PassingQ lets a vehicle whose exit is free overtake within a link.
-             Under the FIFO default one blocked vehicle holds up everything
-             behind it even when those vehicles turn elsewhere, which is how a
-             jam freezes permanently instead of draining. -->
-        <param name="linkDynamics" value="PassingQ" />
+        <param name="startTime" value="undefined" />
+        <param name="endTime" value="undefined" />
+        <param name="stuckTime" value="10.0" />
+        <param name="trafficDynamics" value="queue" />
+        <param name="linkDynamics" value="FIFO" />
         <!-- <param name="simStarttimeInterpretation" value="onlyUseStarttime" /> -->
         <!-- <param name="timeStepSize" value="00:00:05" /> -->
 
