@@ -47,7 +47,7 @@
     }
   },
   "modes": {
-    "_comment": "Transportation modes. Each key is a mode name. Set 'enabled': false to disable a mode without removing its config. Modes are flat \u2014 bus and rail are separate entries, not sub-modes of 'pt'",
+    "_comment": "Transportation modes. Each key is a mode name. Set 'enabled': false to disable a mode without removing its config. Modes are flat â€” bus and rail are separate entries, not sub-modes of 'pt'",
     "_enabled_help": "Set to false to disable this mode. Disabled modes are excluded from mode choice, availability checking, GTFS setup, and MATSim transit config. Default is true if omitted",
     "_matsim_mode_help": "The mode string written to MATSim plans.xml legs. Multiple modes can map to the same MATSim mode (e.g., bus and rail both map to 'pt')",
     "_availability_help": "How to determine if a mode is available for a given OD pair. String 'universal' = always available. Object with 'type' key: 'gtfs' = available if GTFS stops exist near both origin and destination, 'distance' = available if OD distance is within max, 'zone_list' = available if both locations are in specified zones",
@@ -136,7 +136,7 @@
     "fallback_mode": "car",
     "_fallback_mode_help": "Mode to use when no other mode is available for an OD pair (e.g., rural area with no transit and distance too far for walk/bike)",
     "chain_consistency": true,
-    "_chain_consistency_help": "If true, all legs in an activity chain use the same mode (e.g., home\u2192work\u2192home both by car). Mode is sampled once using modes available for ALL legs",
+    "_chain_consistency_help": "If true, all legs in an activity chain use the same mode (e.g., homeâ†’workâ†’home both by car). Mode is sampled once using modes available for ALL legs",
     "min_samples_per_purpose": 30,
     "_min_samples_per_purpose_help": "Minimum survey trips needed per trip purpose to compute purpose-specific mode shares. Below this threshold, falls back to overall 'all' rates",
     "max_chain_mode_retries": 5,
@@ -144,7 +144,7 @@
   },
   "plan_generation": {
     "target_plans": "all",
-    "scaling_factor": 0.01,
+    "scaling_factor": 0.25,
     "work_scaling_multiplier": 1.0,
     "random_seed": 42,
     "skip_if_exists": true,
@@ -298,10 +298,14 @@
       "coordinateSystem": "auto",
       "lastIteration": 5,
       "outputDirectory": "output",
+      "controller.mobsim": "hermes",
+      "_controller.mobsim_help": "qsim | hermes. hermes is faster but is a simplified queue model that ignores trafficDynamics, linkDynamics and full stuckTime semantics. Use qsim for any congestion- or mode-choice-sensitive experiment.",
       "global.numberOfThreads": 12,
       "qsim.numberOfThreads": 6,
-      "qsim.flowCapacityFactor": 0.15,
-      "qsim.storageCapacityFactor": 0.2,
+      "qsim.flowCapacityFactor": 0.25,
+      "qsim.storageCapacityFactor": 0.3,
+      "qsim.stuckTime": 120.0,
+      "_qsim.stuckTime_help": "Seconds the frontmost vehicle on a link may fail to move before it is pushed onto the next link. Gridlock escape valve: HIGHER = waits LONGER. Mersini & Ziemke (2026): stuckTime = 30s / sample_share (30.0 at 100%). Only qsim honours this; hermes ignores it.",
       "linkStats.averageLinkStatsOverIterations": 5
     },
     "write_intermediate_output": false
