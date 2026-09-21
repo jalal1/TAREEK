@@ -810,6 +810,11 @@ class ConfigManager:
                 # mode_share_estimator attach as reason strings.
                 if module_param.startswith('_estimator_') or module_param.startswith('_info'):
                     continue
+                # Same annotation guard as the configurable_params loop above.
+                # Without it a documentation key such as "_qsim.stuckTime_help"
+                # splits into the bogus module "_qsim" and aborts the run.
+                if module_param.startswith('_') or module_param.endswith('_help'):
+                    continue
                 parts = module_param.split('.')
                 if parts[0] == 'scoring' and len(parts) >= 4 and parts[1] == 'modeParams':
                     self.update_mode_param(tree, parts[2], '.'.join(parts[3:]), str(value))
