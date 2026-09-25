@@ -26,6 +26,10 @@ from models.mode_types import ModeType
 logger = logging.getLogger(__name__)
 
 
+class TransitStopsMissingError(RuntimeError):
+    """An enabled GTFS-based transit mode has no stops indexed."""
+
+
 class GTFSAvailabilityManager:
     """
     Manages spatial indices of transit stops for availability checking.
@@ -151,6 +155,39 @@ class GTFSAvailabilityManager:
     def has_mode(self, mode_type: ModeType) -> bool:
         """Check if we have an index for the given mode."""
         return mode_type in self._indices
+
+    def require_stops(self, modes_config: Dict) -> None:
+        """
+        Raise if an enabled GTFS-based mode has no stops indexed.
+
+        Without stops, ModeAvailabilityManager makes the mode universally
+        available, so pt is assigned to trips far from any stop and MATSim's
+        router walks them the whole way (Birmingham stage2c: 35,079 walk-only
+        pt trips, up to 39 h). Call this only when the transit network is on.
+
+        Raises:
+            TransitStopsMissingError: naming the modes with no stops
+        """
+        empty = []
+        for mode_name, mode_cfg in modes_config.items():
+            if not isinstance(mode_cfg, dict) or not mode_cfg.get('enabled', True):
+                continue
+            avail = mode_cfg.get('availability', 'universal')
+            if not isinstance(avail, dict) or avail.get('type') != 'gtfs':
+                continue
+            try:
+                mode_type = ModeType(mode_name.lower())
+            except ValueError:
+                continue
+            if not self.has_mode(mode_type):
+                empty.append(mode_name)
+
+        if empty:
+            raise TransitStopsMissingError(
+                f"No GTFS stops indexed for transit mode(s) {empty}, but the transit "
+                f"network is enabled. Mode choice would make them available everywhere. "
+                f"Check the GTFS setup messages above for a failed feed load."
+            )
 
     def get_stats(self) -> Dict[str, int]:
         """Get statistics about loaded indices."""

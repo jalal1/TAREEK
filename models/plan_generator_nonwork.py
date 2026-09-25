@@ -38,7 +38,7 @@ from models.od_matrix_nonwork import create_nonwork_od_matrix, generate_samples_
 from models.models import initialize_tables
 from models.mode_choice import ModeChoiceModel, Leg
 from models.mode_availability import Location
-from models.gtfs_availability import GTFSAvailabilityManager
+from models.gtfs_availability import GTFSAvailabilityManager, TransitStopsMissingError
 from utils.logger import setup_logger
 from utils.poi_spatial_index import POISpatialIndex
 from utils.poi_weighting import POIWeighting
@@ -1089,8 +1089,12 @@ class NonWorkPlanGenerator:
             stats = avail_manager.get_stats()
             logger.info(f"  GTFS availability ready: {stats['modes_indexed']} modes, "
                        f"{stats['total_stops']} stops indexed")
+            if self.config.get('matsim', {}).get('transit_network', False):
+                avail_manager.require_stops(modes_config)
             return avail_manager
 
+        except TransitStopsMissingError:
+            raise
         except Exception as e:
             logger.error(f"GTFS initialization failed: {e}")
             logger.warning("Transit availability will fall back to universal (always available)")

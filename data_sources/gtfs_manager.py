@@ -730,6 +730,14 @@ class GTFSManager:
             self._feed_was_already_loaded = True
             return True
 
+        # A failed earlier load leaves a feed row with no stops behind, which
+        # _feed_exists_in_db reports as not loaded. Remove it first: otherwise
+        # the insert below fails on the feed_id primary key and the feed stays
+        # empty in every later run.
+        if self.db_manager.query_all(GTFSFeed, filters={'feed_id': feed_id}):
+            logger.info(f"Removing the empty record of feed {feed_id} before re-loading")
+            self._delete_feed_data(feed_id)
+
         logger.info(f"Loading feed {feed_id} into database...")
 
         try:
@@ -1420,15 +1428,17 @@ class GTFSManager:
     # ── Full Pipeline ────────────────────────────────────────────────────
 
     def has_feeds_loaded(self) -> bool:
-        """Check if any GTFS feeds are already loaded in the database.
+        """Check if any GTFS stops are already loaded in the database.
 
         Used to skip redundant setup() calls when feeds were already
         loaded earlier in the pipeline (e.g., by run_experiment.setup_network).
+        Counts stops, not feed rows: a failed load leaves a feed row with no
+        stops, and that must not count as loaded.
         """
         from sqlalchemy import text
         try:
             with self.db_manager.Session() as session:
-                count = session.execute(text("SELECT COUNT(*) FROM gtfs_feeds")).scalar()
+                count = session.execute(text("SELECT COUNT(*) FROM gtfs_stops")).scalar()
                 return count > 0
         except Exception:
             return False
