@@ -738,6 +738,22 @@ def build_summary(
     total_chain_attempts = sum(get_stat(s, 'chain_attempts') for s in all_stats)
     total_poi_retries = sum(get_stat(s, 'poi_retries') for s in all_stats)
     total_time_retries = sum(get_stat(s, 'time_retries') for s in all_stats)
+    # 24-hour budget pressure, summed across purposes. The per-purpose means
+    # are re-derived from totals rather than averaged, so a purpose that
+    # trimmed two schedules does not weigh as much as one that trimmed ten.
+    total_schedules_built = sum(get_stat(s, 'schedules_built') for s in all_stats)
+    total_schedules_trimmed = sum(get_stat(s, 'schedules_trimmed') for s in all_stats)
+    total_schedules_dropped = sum(
+        get_stat(s, 'schedules_over_budget_dropped') for s in all_stats)
+    total_trim_excess = sum(
+        get_stat(s, 'trim_excess_minutes_mean') * get_stat(s, 'schedules_trimmed')
+        for s in all_stats)
+    total_trim_applied = sum(
+        get_stat(s, 'trim_minutes_applied_mean') * get_stat(s, 'schedules_trimmed')
+        for s in all_stats)
+    # A max across purposes, never a sum.
+    max_trim_excess = max(
+        [get_stat(s, 'trim_excess_minutes_max') for s in all_stats] or [0])
     total_failed = sum(get_stat(s, 'failed_plans') for s in all_stats)
     total_generated = sum(get_plan_count(s) for s in all_stats)
     total_requested = total_generated + total_failed
@@ -799,6 +815,22 @@ def build_summary(
         'chain_attempts': total_chain_attempts,
         'poi_retries': total_poi_retries,
         'time_retries': total_time_retries,
+        'schedules_built': total_schedules_built,
+        'schedules_trimmed': total_schedules_trimmed,
+        'schedules_trimmed_pct': round(
+            total_schedules_trimmed / total_schedules_built * 100, 2
+        ) if total_schedules_built else 0.0,
+        'schedules_over_budget_dropped': total_schedules_dropped,
+        'schedules_over_budget_dropped_pct': round(
+            total_schedules_dropped / total_schedules_built * 100, 2
+        ) if total_schedules_built else 0.0,
+        'trim_excess_minutes_mean': round(
+            total_trim_excess / total_schedules_trimmed, 1
+        ) if total_schedules_trimmed else 0.0,
+        'trim_excess_minutes_max': round(max_trim_excess, 1),
+        'trim_minutes_applied_mean': round(
+            total_trim_applied / total_schedules_trimmed, 1
+        ) if total_schedules_trimmed else 0.0,
     })
 
     summary = {
@@ -851,6 +883,25 @@ def build_summary(
             'chain_attempts': 'Total chain sampling attempts (retries + successes)',
             'poi_retries': 'Total retries due to POI selection failures (no suitable POI found nearby)',
             'time_retries': 'Total retries due to time constraint violations (activities overlapping or out of bounds)',
+            'schedules_built': 'Schedule ATTEMPTS whose activity durations were all sampled '
+                               'successfully, and the denominator for the trim rates below. '
+                               'Counts attempts, not plans: _assign_times retries up to '
+                               'time_models.max_time_retries, so a plan that was dropped and '
+                               'resampled contributes more than once',
+            'schedules_trimmed': 'Schedules that overran 24h and had activity durations compressed to fit',
+            'schedules_trimmed_pct': 'schedules_trimmed as a percentage of schedules_built. '
+                                     'A high rate means the 24-hour budget, not the survey, is '
+                                     'setting activity durations',
+            'schedules_over_budget_dropped': 'Schedules discarded because the overrun exceeded the '
+                                             'total trimmable activity time (excess >= sum of durations)',
+            'schedules_over_budget_dropped_pct': 'schedules_over_budget_dropped as a percentage of '
+                                                 'schedules_built. These are lost late-day plans, so a '
+                                                 'high rate biases demand away from evening and night',
+            'trim_excess_minutes_mean': 'Mean minutes a trimmed schedule overran 24h by',
+            'trim_excess_minutes_max': 'Largest single overrun in minutes (max across purposes, not a sum)',
+            'trim_minutes_applied_mean': 'Mean minutes actually removed per trimmed schedule. Falls '
+                                         'below trim_excess_minutes_mean when activities hit their '
+                                         'min_minutes floors or post-trim jitter adds time back',
         },
 
         'parameters': {

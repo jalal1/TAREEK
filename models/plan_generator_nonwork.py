@@ -344,7 +344,13 @@ class _WorkerNonWorkPlanGenerator:
             'chain_retries_has_work': 0,
             'chain_attempts': 0,
             'poi_retries': 0,
-            'time_retries': 0
+            'time_retries': 0,
+            'schedules_built': 0,
+            'schedules_trimmed': 0,
+            'schedules_over_budget_dropped': 0,
+            'trim_excess_minutes_total': 0.0,
+            'trim_excess_minutes_max': 0.0,
+            'trim_minutes_applied_total': 0.0,
         }
 
     def _rebuild_gtfs_indices(self, gtfs_stop_data: Optional[Dict]) -> Optional[GTFSAvailabilityManager]:
@@ -798,17 +804,29 @@ class _WorkerNonWorkPlanGenerator:
 
                 total_time_used = home_morning_duration + middle_activities_duration + estimated_travel_time + min_evening_home
 
+                self.stats['schedules_built'] += 1
+
                 # If exceeds 24 hours, trim activities using priority-based approach
                 if total_time_used > 1440:
                     excess = total_time_used - 1440
 
                     if excess >= middle_activities_duration:
+                        self.stats['schedules_over_budget_dropped'] += 1
                         raise ValueError("Insufficient time budget for activities")
 
                     intermediate_types = [act.type for act in activities[1:-1]]
+                    before_trim = sum(activity_durations)
                     activity_durations = self._trim_activity_durations(
                         intermediate_types, activity_durations, excess
                     )
+
+                    # See the work generator for what these mean.
+                    self.stats['schedules_trimmed'] += 1
+                    self.stats['trim_excess_minutes_total'] += excess
+                    self.stats['trim_excess_minutes_max'] = max(
+                        self.stats['trim_excess_minutes_max'], excess)
+                    self.stats['trim_minutes_applied_total'] += max(
+                        0.0, before_trim - sum(activity_durations))
 
                 # Assign durations to activities
                 for i, act in enumerate(activities[1:-1], start=0):
@@ -930,7 +948,13 @@ class NonWorkPlanGenerator:
             'chain_retries_has_work': 0,
             'chain_attempts': 0,
             'poi_retries': 0,
-            'time_retries': 0
+            'time_retries': 0,
+            'schedules_built': 0,
+            'schedules_trimmed': 0,
+            'schedules_over_budget_dropped': 0,
+            'trim_excess_minutes_total': 0.0,
+            'trim_excess_minutes_max': 0.0,
+            'trim_minutes_applied_total': 0.0,
         }
 
         logger.info("NonWorkPlanGenerator initialization complete")
@@ -1621,6 +1645,26 @@ class NonWorkPlanGenerator:
             logger.info(f"    Contains Work: {self.stats['chain_retries_has_work']:,}")
         logger.info(f"  POI retries: {self.stats['poi_retries']:,}")
         logger.info(f"  Time retries: {self.stats['time_retries']:,}")
+
+        # 24-hour budget pressure — see the work generator for the rationale.
+        built = self.stats['schedules_built']
+        trimmed = self.stats['schedules_trimmed']
+        dropped = self.stats['schedules_over_budget_dropped']
+        logger.info(f"  Schedules built: {built:,}")
+        if built > 0:
+            logger.info(
+                f"    Trimmed to fit 24h: {trimmed:,} ({trimmed / built * 100:.2f}%)")
+            logger.info(
+                f"    Dropped, over budget: {dropped:,} ({dropped / built * 100:.2f}%)")
+        if trimmed > 0:
+            logger.info(
+                f"    Excess per trimmed schedule: "
+                f"mean {self.stats['trim_excess_minutes_total'] / trimmed:.1f} min, "
+                f"max {self.stats['trim_excess_minutes_max']:.1f} min")
+            logger.info(
+                f"    Minutes actually removed: "
+                f"{self.stats['trim_minutes_applied_total']:,.0f} total, "
+                f"mean {self.stats['trim_minutes_applied_total'] / trimmed:.1f} min")
         logger.info("=" * 60)
 
         # Log mode choice statistics
@@ -1645,6 +1689,16 @@ class NonWorkPlanGenerator:
             'chain_attempts': self.stats['chain_attempts'],
             'poi_retries': self.stats['poi_retries'],
             'time_retries': self.stats['time_retries'],
+            'schedules_built': built,
+            'schedules_trimmed': trimmed,
+            'schedules_trimmed_pct': round(trimmed / built * 100, 2) if built else 0.0,
+            'schedules_over_budget_dropped': dropped,
+            'schedules_over_budget_dropped_pct': round(dropped / built * 100, 2) if built else 0.0,
+            'trim_excess_minutes_mean': round(
+                self.stats['trim_excess_minutes_total'] / trimmed, 1) if trimmed else 0.0,
+            'trim_excess_minutes_max': round(self.stats['trim_excess_minutes_max'], 1),
+            'trim_minutes_applied_mean': round(
+                self.stats['trim_minutes_applied_total'] / trimmed, 1) if trimmed else 0.0,
             'unscaled_trips': int(self.unscaled_total_trips),  # Total trips before scaling
             'mode_choice': self.mode_choice.get_stats_summary(),  # Mode choice statistics
         }
@@ -1719,8 +1773,16 @@ class NonWorkPlanGenerator:
         for key in ('total_plans', 'failed_plans', 'chain_retries',
                      'chain_retries_too_short', 'chain_retries_bad_structure',
                      'chain_retries_missing_purpose', 'chain_retries_has_work',
-                     'chain_attempts', 'poi_retries', 'time_retries'):
+                     'chain_attempts', 'poi_retries', 'time_retries',
+                     'schedules_built', 'schedules_trimmed',
+                     'schedules_over_budget_dropped',
+                     'trim_excess_minutes_total', 'trim_minutes_applied_total'):
             self.stats[key] += worker_stats.get(key, 0)
+
+        # A max, not a sum — summing per-worker maxima would be meaningless.
+        self.stats['trim_excess_minutes_max'] = max(
+            self.stats['trim_excess_minutes_max'],
+            worker_stats.get('trim_excess_minutes_max', 0.0))
 
     def _aggregate_mode_choice_stats(self, worker_mode_stats: Optional[Dict]) -> None:
         """
@@ -2219,19 +2281,33 @@ class NonWorkPlanGenerator:
 
                 total_time_used = home_morning_duration + middle_activities_duration + estimated_travel_time + min_evening_home
 
+                self.stats['schedules_built'] += 1
+
                 # If exceeds 24 hours, trim activities using priority-based approach
                 if total_time_used > 1440:
                     excess = total_time_used - 1440
 
                     if excess >= middle_activities_duration:
+                        self.stats['schedules_over_budget_dropped'] += 1
                         logger.debug(f"Insufficient time budget: home_morning={home_morning_duration:.1f}, "
                                    f"travel={estimated_travel_time:.1f}, evening_home={min_evening_home:.1f}")
                         raise ValueError("Insufficient time budget for activities")
 
                     intermediate_types = [act.type for act in activities[1:-1]]
+                    before_trim = sum(activity_durations)
                     activity_durations = self._trim_activity_durations(
                         intermediate_types, activity_durations, excess
                     )
+
+                    # See the work generator for what these mean: excess is the
+                    # overrun, minutes_applied is what trimming could actually
+                    # remove before hitting min_minutes floors.
+                    self.stats['schedules_trimmed'] += 1
+                    self.stats['trim_excess_minutes_total'] += excess
+                    self.stats['trim_excess_minutes_max'] = max(
+                        self.stats['trim_excess_minutes_max'], excess)
+                    self.stats['trim_minutes_applied_total'] += max(
+                        0.0, before_trim - sum(activity_durations))
 
                     logger.debug(f"Trimmed activity durations (priority-based) to fit 24-hour constraint")
                     logger.debug(f"  Time budget: home_morning={home_morning_duration:.1f}min, "
