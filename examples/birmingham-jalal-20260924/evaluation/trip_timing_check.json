@@ -1,0 +1,13 @@
+{
+  "source": "it0_plans",
+  "persons": 223499,
+  "planned_trips": 665745,
+  "planned_activities": 889244,
+  "legs_without_time": 0,
+  "schedule_checked": 442246,
+  "schedule_off": 0,
+  "schedule_max_diff_s": 10.0,
+  "tolerance_s": 60,
+  "it0_activities_executed": 857987,
+  "last_iteration": 10
+}

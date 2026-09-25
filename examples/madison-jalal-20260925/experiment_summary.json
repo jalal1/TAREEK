@@ -1,0 +1,432 @@
+{
+  "experiment_id": "madison_cold_10iter",
+  "created_at": "2026-09-25T01:21:54.159234",
+  "population": {
+    "_comment": "Population counts from census home location data (home_locs_dict). Summed from all census blocks within configured counties.",
+    "total_population": 0,
+    "total_population_comment": "Sum of total_employees + total_non_employees across all home blocks",
+    "total_employees": 0,
+    "total_employees_comment": "Sum of n_employees field from each home block (workers who commute)",
+    "total_non_employees": 0,
+    "total_non_employees_comment": "Sum of non_employees field from each home block (non-workers: retirees, students, etc.)"
+  },
+  "unscaled_trips": {
+    "_comment": "Total trips BEFORE applying scaling_factor. Represents full population trip demand.",
+    "work": 0,
+    "work_comment": "Unscaled work trips = total_employees (one work trip per employee)",
+    "nonwork": 0,
+    "nonwork_comment": "Sum of unscaled trips across all enabled nonwork purposes. Each purpose: non_employees * trip_rate from survey data"
+  },
+  "plans": {
+    "work": 0,
+    "shopping": 0,
+    "school": 0,
+    "social": 0,
+    "dining": 0,
+    "other": 0,
+    "total": 0,
+    "success_rate": 100.0,
+    "chain_retries": 0,
+    "chain_retries_too_short": 0,
+    "chain_retries_bad_structure": 0,
+    "chain_retries_missing_purpose": 0,
+    "chain_retries_missing_work": 0,
+    "chain_retries_has_work": 0,
+    "chain_retries_too_many_work": 0,
+    "chain_attempts": 0,
+    "poi_retries": 0,
+    "time_retries": 0,
+    "schedules_built": 0,
+    "schedules_trimmed": 0,
+    "schedules_trimmed_pct": 0.0,
+    "schedules_over_budget_dropped": 0,
+    "schedules_over_budget_dropped_pct": 0.0,
+    "trim_excess_minutes_mean": 0.0,
+    "trim_excess_minutes_max": 0,
+    "trim_minutes_applied_mean": 0.0
+  },
+  "plans_comment": {
+    "_comment": "Plan counts AFTER applying scaling_factor. plans = unscaled_trips * scaling_factor",
+    "work": "Number of work plans generated (employees * scaling_factor)",
+    "shopping": "Number of shopping plans (non_employees * shopping_trip_rate * scaling_factor)",
+    "school": "Number of school plans (non_employees * school_trip_rate * scaling_factor)",
+    "socialrecreation": "Number of social/recreation plans (non_employees * rate * scaling_factor)",
+    "dining": "Number of dining plans (non_employees * dining_trip_rate * scaling_factor)",
+    "other": "Number of other purpose plans (non_employees * other_trip_rate * scaling_factor)",
+    "freight": "Number of boundary freight (truck) plans, when freight.enabled. NOT included in total, which covers the passenger streams only",
+    "total": "Sum of all plan counts across all purposes (work + all nonwork)",
+    "success_rate": "Percentage of successfully generated plans: (total / (total + failed)) * 100",
+    "chain_retries": "Total retries due to invalid activity chains (sum of all reasons below)",
+    "chain_retries_too_short": "Retries due to chain having fewer than 3 activities",
+    "chain_retries_bad_structure": "Retries due to chain not starting/ending with Home",
+    "chain_retries_missing_purpose": "Retries due to chain missing target nonwork purpose",
+    "chain_retries_missing_work": "Retries due to chain missing Work activity (work plans)",
+    "chain_retries_has_work": "Retries due to chain containing Work (nonwork plans)",
+    "chain_retries_too_many_work": "Retries due to chain exceeding max Work activities",
+    "chain_attempts": "Total chain sampling attempts (retries + successes)",
+    "poi_retries": "Total retries due to POI selection failures (no suitable POI found nearby)",
+    "time_retries": "Total retries due to time constraint violations (activities overlapping or out of bounds)",
+    "schedules_built": "Schedule ATTEMPTS whose activity durations were all sampled successfully, and the denominator for the trim rates below. Counts attempts, not plans: _assign_times retries up to time_models.max_time_retries, so a plan that was dropped and resampled contributes more than once",
+    "schedules_trimmed": "Schedules that overran 24h and had activity durations compressed to fit",
+    "schedules_trimmed_pct": "schedules_trimmed as a percentage of schedules_built. A high rate means the 24-hour budget, not the survey, is setting activity durations",
+    "schedules_over_budget_dropped": "Schedules discarded because the overrun exceeded the total trimmable activity time (excess >= sum of durations)",
+    "schedules_over_budget_dropped_pct": "schedules_over_budget_dropped as a percentage of schedules_built. These are lost late-day plans, so a high rate biases demand away from evening and night",
+    "trim_excess_minutes_mean": "Mean minutes a trimmed schedule overran 24h by",
+    "trim_excess_minutes_max": "Largest single overrun in minutes (max across purposes, not a sum)",
+    "trim_minutes_applied_mean": "Mean minutes actually removed per trimmed schedule. Falls below trim_excess_minutes_mean when activities hit their min_minutes floors or post-trim jitter adds time back"
+  },
+  "parameters": {
+    "_comment": "Key simulation parameters from config file",
+    "scaling_factor": 0.25,
+    "scaling_factor_comment": "Fraction of full population to simulate. E.g., 0.1 means 10% sample. From config.plan_generation.scaling_factor",
+    "iterations": 10,
+    "iterations_comment": "Number of MATSim iterations for route/plan optimization. From config.matsim.configurable_params.lastIteration",
+    "flow_capacity_factor": 0.25,
+    "flow_capacity_factor_comment": "MATSim QSim flow capacity scaling. Should roughly match scaling_factor. Controls how many vehicles can pass a link per time unit.",
+    "storage_capacity_factor": 0.3,
+    "storage_capacity_factor_comment": "MATSim QSim storage capacity scaling. Should be >= flow_capacity_factor. Controls how many vehicles can be on a link simultaneously.",
+    "modes": {
+      "bus": {
+        "config_rate": 0.08,
+        "blend_weight": 0.5
+      },
+      "rail": {
+        "config_rate": 0.01,
+        "blend_weight": 0.5
+      }
+    },
+    "modes_comment": "Snapshot of config.modes.{bus,rail}.{config_rate,blend_weight} used for this run. Demand estimator reads this together with mode_choice.mode_distribution to back-calculate empirical chain_reduction for the next run."
+  },
+  "mode_choice": {
+    "_comment": "Mode-choice outputs aggregated across all purposes (trip-weighted). Used by the demand estimator to derive empirical chain_reduction.",
+    "total_mode_choices": 0,
+    "mode_distribution": {},
+    "mode_distribution_comment": "Share of legs assigned to each mode across all generated plans, weighted by purpose volume."
+  },
+  "data_quality": {
+    "_comment": "Metrics about input data quality and coverage",
+    "home_blocks": 0,
+    "home_blocks_comment": "Number of census blocks in home_locs_dict (filtered by configured counties)",
+    "home_blocks_with_coords": 0,
+    "home_blocks_with_coords_comment": "Census blocks that have valid lat/lon coordinates (should equal home_blocks)",
+    "total_pois": 0,
+    "total_pois_comment": "Total POIs loaded from database and filtered to county bounding box + 5km buffer",
+    "poi_activity_types": 0,
+    "poi_activity_types_comment": "Number of distinct activity types in POI data (e.g., Shopping, School, Dining)"
+  },
+  "network": {
+    "_comment": "Road network statistics from network.xml",
+    "num_nodes": 36066,
+    "num_nodes_comment": "Number of network nodes (intersections). Parsed from <nodes> element in network.xml",
+    "num_links": 81752,
+    "num_links_comment": "Number of network links (road segments). Parsed from <links> element in network.xml",
+    "file_size_mb": 41.5,
+    "file_size_mb_comment": "Size of network.xml file in megabytes"
+  },
+  "plans_file_size_mb": 0,
+  "plans_file_size_mb_comment": "Size of plans.xml file in megabytes. Larger files = more agents simulated.",
+  "runtime": {
+    "_comment": "Execution time measurements in minutes",
+    "total_min": 43.63,
+    "total_min_comment": "Total experiment runtime from start to finish (includes all steps)",
+    "plans_min": null,
+    "plans_min_comment": "Time spent generating activity plans (work + all nonwork purposes)",
+    "matsim_min": 40.27,
+    "matsim_min_comment": "Time spent running MATSim simulation (all iterations)",
+    "eval_min": 3.17,
+    "eval_min_comment": "Time spent on evaluation (comparing sim output to ground truth)"
+  },
+  "paths": {
+    "_comment": "Relative paths to experiment outputs (from experiment directory)",
+    "network": "network.xml",
+    "plans": "plans.xml",
+    "output": "output/",
+    "output_comment": "MATSim simulation output directory (contains ITERS/, linkstats, etc.)",
+    "evaluation": "evaluation/",
+    "evaluation_comment": "Evaluation results directory (comparison CSVs, plots, maps)"
+  },
+  "simulation_status": "completed",
+  "simulation_status_comment": "Final status: completed, failed, or skipped",
+  "generated_plans_modes": {
+    "_comment": "Generated-leg counts by mode, parsed from plans.xml. These are the demand-side shares produced by ModeChoiceModel BEFORE MATSim replanning. For realised post-simulation shares see matsim_output (output_legs_count, transit.pt_legs_total).",
+    "counts": {
+      "car": 394862,
+      "walk": 29408,
+      "pt": 8979
+    },
+    "counts_comment": "Number of legs per mode summed across all generated plans",
+    "shares_pct": {
+      "car": 91.14,
+      "walk": 6.79,
+      "pt": 2.07
+    },
+    "shares_pct_comment": "Mode shares as percentages of total legs. Sums to ~100.",
+    "total_legs": 433249,
+    "total_legs_comment": "Total legs across all generated plans (all purposes)"
+  },
+  "matsim_output": {
+    "_comment": "Statistics extracted from MATSim output files (scorestats.csv, traveldistancestats.csv, legHistogram.txt, etc.)",
+    "output_persons_count": 149070,
+    "output_persons_count_comment": "Number of persons (agents) in final output. From output_persons.csv.gz.",
+    "output_executed_plans_count": 149070,
+    "output_executed_plans_count_comment": "Number of executed plans (selected=\"yes\") in final iteration. This equals the number of persons - one executed plan per person.",
+    "output_total_plans_count": 592138,
+    "output_total_plans_count_comment": "Total plans in output_plans.xml.gz including non-selected alternatives. MATSim keeps multiple plans per person for learning/replanning.",
+    "output_trips_count": 433041,
+    "output_trips_count_comment": "Total trips completed in simulation. From output_trips.csv.gz.",
+    "output_legs_count": 448061,
+    "output_legs_count_comment": "Total legs (mode segments) in simulation. From output_legs.csv.gz.",
+    "score_final_executed": 97.95,
+    "score_final_executed_comment": "Average executed plan score in final iteration. Higher = better agent utility.",
+    "score_final_best": 98.47,
+    "score_final_best_comment": "Average best plan score per agent in final iteration.",
+    "score_improvement": 46.52,
+    "score_improvement_comment": "Score improvement from iteration 0 to final iteration. Positive = agents found better routes.",
+    "avg_leg_distance_km": 13.76,
+    "avg_leg_distance_km_comment": "Average distance per leg (single mode segment) in kilometers.",
+    "avg_trip_distance_km": 14.24,
+    "avg_trip_distance_km_comment": "Average distance per trip (origin to destination) in kilometers.",
+    "avg_leg_duration_min": 18.53,
+    "avg_leg_duration_min_comment": "Average travel time per leg in minutes. From legdurations.txt.",
+    "total_person_km": 6167442,
+    "total_person_km_comment": "Total person-kilometers traveled by all agents. From pkm_modestats.csv.",
+    "total_person_hours_traveling": 136406,
+    "total_person_hours_traveling_comment": "Total person-hours spent traveling. From ph_modestats.csv. (Excludes wait time; sum of *_travel columns only.)",
+    "peak_departures_per_5min": 36420,
+    "peak_departures_per_5min_comment": "Maximum departures in any 5-minute interval. Indicates peak demand.",
+    "peak_hour": "16:10:00",
+    "peak_hour_comment": "Time of day with highest departure rate (HH:MM:SS format).",
+    "max_en_route": 153600,
+    "max_en_route_comment": "Maximum number of agents traveling simultaneously. Indicates network load.",
+    "total_stuck_agents": 122,
+    "total_stuck_agents_comment": "Count of stuckAndAbort events from the final-iteration events file (authoritative). Each event = one agent giving up on a leg. Counted on the simulated sample (multiply by 1/scaling_factor for population-equivalent). Should be near 0 for good simulations.",
+    "final_iteration": 10,
+    "final_iteration_comment": "Last completed iteration number. Should match config iterations setting.",
+    "transit": {
+      "submodes": {
+        "bus": {
+          "routes": 662,
+          "departures": 1678,
+          "vehicles": 1678,
+          "legs": 7510
+        }
+      },
+      "total_routes": 662,
+      "total_departures": 1678,
+      "total_vehicles": 1678,
+      "pt_legs_total": 7510
+    },
+    "transit_comment": "Public-transit sub-mode breakdown. Per-submode counts of routes and departures (from transitSchedule.xml), vehicles (from transitVehicles.xml), and realised pt legs (from output_legs.csv.gz, grouped by vehicle_id suffix). MATSim collapses all transit to mode=\"pt\" in plans/legs, so the suffix is the only signal that distinguishes bus / rail / tram / subway / etc. submodes_with_supply_but_no_demand flags the canonical \"routes dropped during pt2matsim mapping\" regression \u2014 e.g. tram vehicles defined but zero tram legs."
+  },
+  "evaluation": {
+    "_comment": "Comparison of simulated traffic volumes vs ground truth traffic counts. Fields are ordered by how much they should influence a calibration decision: overall level first, then how the error splits across stations, then across the day, then the GEH pass rates, and only then the remaining station-hour metrics.",
+    "aggregate_sim_obs_ratio": 1.0094,
+    "aggregate_sim_obs_ratio_comment": "Total simulated / total observed across every station-hour. The single headline number: >1 means the model puts MORE traffic on the network than the sensors saw, <1 means less. Read it together with stations_over_simulated below \u2014 a ratio near 1.0 can also be over- and under-simulating stations cancelling each other out.",
+    "total_observed_volume": 223001.0,
+    "total_simulated_volume": 225108.0,
+    "interquartile_mean_ratio": 0.9975,
+    "interquartile_mean_ratio_comment": "Interquartile mean of per-station sim/obs total-volume ratios. Drops bottom & top 25% of stations and averages the middle 50%. Robust to boundary stations; 1.0 = perfect, <0.7 = under-simulation. Used as the primary signal for demand_estimator scaling-factor decisions.",
+    "stations_over_simulated": 2,
+    "stations_within_10pct": 5,
+    "stations_under_simulated": 1,
+    "stations_split_comment": "Count of stations whose daily total is >1.1x observed (over), within 0.9-1.1x (ok), and <0.9x (under). This is what tells \"the whole model is too high\" apart from \"a few corridors are wrong\". Adding demand when most stations already over-simulate makes the fit worse, not better.",
+    "station_ratio_cv": 0.3143,
+    "station_ratio_cv_comment": "Coefficient of variation (std/mean) of the per-station sim/obs ratios \u2014 the concentrated-vs-uniform test. Below ~0.35 every station is off by a similar factor, so a single global lever (scaling_factor) can correct the region. Above it the error sits on particular corridors and a global multiplier would drag the already-correct stations off target. demand_estimator refuses to change scaling_factor when this is high or absent.",
+    "ratio_night": 0.256,
+    "ratio_morning": 1.2084,
+    "ratio_midday": 0.8669,
+    "ratio_evening": 1.2067,
+    "time_block_comment": "Sim/obs ratio within each block: night 0-3, morning 4-9, midday 10-17, evening 18-23. A model can match the daily total while being badly wrong hour by hour. If midday is near 1.0 while the peaks are high and night is near zero, the problem is WHEN trips depart, not how many there are \u2014 a departure-time question, not a scaling_factor one.",
+    "hourly_ratio_spread": 1.9894,
+    "hourly_ratio_spread_comment": "Max minus min of the 24 hourly sim/obs ratios. Near 0 means the daily profile has the right shape and only its level is off; large means the shape itself is wrong.",
+    "worst_hour": 23,
+    "worst_hour_ratio": 2.0015,
+    "station_daily_geh_lt5_pct": 12.5,
+    "station_daily_geh_comment": "Percent of stations whose 24-hour TOTAL scores GEH < 5. Each station is tested against the threshold on its own, so this is a count of passing stations rather than an average. No mean or median GEH is reported at any level: GEH grows with volume, so averaging it across stations of different size measures station size as much as model error, and the result is not the GEH of any real count. Individual per-station GEH values are in the device reports and spatial_overview.png.",
+    "num_devices": 4,
+    "num_devices_comment": "Number of ground truth traffic count devices successfully matched to network links",
+    "num_comparisons": 192,
+    "num_comparisons_comment": "Total hourly comparison points (num_devices * hours with valid data)",
+    "geh_lt_5_pct": 42.19,
+    "geh_lt_5_pct_comment": "Percentage of hourly link counts with GEH < 5 \u2014 the industry-standard form of the convention, which is defined for one count over one period. Target >=85%.",
+    "correlation": 0.959,
+    "correlation_comment": "Pearson correlation coefficient between simulated and observed volumes, on station-hours. Aggregating to daily totals typically reads 0.04-0.05 higher, so state which one is being quoted.",
+    "mae": 259.24,
+    "mae_comment": "Mean Absolute Error in vehicles/hour. Average |simulated - observed| across all comparisons.",
+    "rmse": 434.36,
+    "rmse_comment": "Root Mean Square Error in vehicles/hour. Penalizes large errors more than MAE. RMSE = sqrt(mean((simulated - observed)^2))",
+    "mean_pct_error": 10.44,
+    "mean_pct_error_comment": "Mean percentage error: mean((simulated - observed) / observed * 100). Negative = underestimating traffic, Positive = overestimating traffic. Sensitive to boundary stations with through-traffic from outside the modeled area; prefer interquartile_mean_ratio for calibration decisions.",
+    "median_station_ratio": 1.008,
+    "median_station_ratio_comment": "Median of per-station sim/obs ratios. Companion to interquartile_mean_ratio.",
+    "pct_stations_below_10pct": 0.0,
+    "pct_stations_below_10pct_comment": "Percent of count stations whose simulated total is below 10% of observed. High values indicate boundary stations capturing through-traffic from outside the modeled region (cannot be fixed by raising demand).",
+    "num_stations_below_10pct": 0,
+    "station_ratio_p10": 0.7704,
+    "station_ratio_p90": 1.4533,
+    "station_ratio_p10_p90_comment": "10th and 90th percentile of per-station sim/obs ratios \u2014 the raw spread behind station_ratio_cv.",
+    "num_stations_with_ratio": 8,
+    "peak_hour_correlation": 0.98,
+    "peak_hour_correlation_comment": "Correlation restricted to peak hours (6-9, 15-18).",
+    "geh_valid_count": 192,
+    "zero_observed_count": 0,
+    "num_directional_counts": 8,
+    "num_directional_counts_comment": "Count locations INCLUDING direction (one physical sensor reports each travel direction separately), so this is typically 2x num_devices.",
+    "station_daily_geh_lt10_pct": 37.5,
+    "stations_over_simulated_pct": 25.0,
+    "station_ratios": [
+      {
+        "device_id": "FHA_55_130604_5",
+        "ratio": 0.7704,
+        "observed": 24756.0,
+        "simulated": 19071.6
+      },
+      {
+        "device_id": "FHA_55_130215_1",
+        "ratio": 0.9121,
+        "observed": 13819.0,
+        "simulated": 12604.4
+      },
+      {
+        "device_id": "FHA_55_130215_5",
+        "ratio": 0.9364,
+        "observed": 11794.0,
+        "simulated": 11044.4
+      },
+      {
+        "device_id": "FHA_55_130604_1",
+        "ratio": 0.9564,
+        "observed": 24160.0,
+        "simulated": 23107.6
+      },
+      {
+        "device_id": "FHA_55_130011_7",
+        "ratio": 1.008,
+        "observed": 70854.0,
+        "simulated": 71421.2
+      },
+      {
+        "device_id": "FHA_55_130011_3",
+        "ratio": 1.089,
+        "observed": 72227.0,
+        "simulated": 78655.2
+      },
+      {
+        "device_id": "FHA_55_131576_5",
+        "ratio": 1.4533,
+        "observed": 2549.0,
+        "simulated": 3704.4
+      },
+      {
+        "device_id": "FHA_55_131576_1",
+        "ratio": 1.935,
+        "observed": 2842.0,
+        "simulated": 5499.2
+      }
+    ],
+    "observed_night": 3836.0,
+    "simulated_night": 982.0,
+    "observed_morning": 59939.0,
+    "simulated_morning": 72431.6,
+    "observed_midday": 119034.0,
+    "simulated_midday": 103192.8,
+    "observed_evening": 40192.0,
+    "simulated_evening": 48501.6,
+    "mean_error": 10.973958333333334,
+    "pct_error_valid_count": 192,
+    "experiment_name": "madison_cold_10iter",
+    "total_devices_all_regions": 8,
+    "devices_in_network_area": 8,
+    "network_links": 81752,
+    "flow_capacity_factor": 0.25,
+    "storage_capacity_factor": 0.3,
+    "population_scaling_factor": 0.25,
+    "volume_scaling_applied": true,
+    "volume_scaling_multiplier": 4.0
+  },
+  "demand_validation": {
+    "_comment": "Generated demand vs the household travel survey(s). This validates DEMAND (how many trips, by what mode, how far, when); the evaluation section validates ASSIGNMENT of that demand onto the network. Count stations cannot measure demand: they sit on a few major links and mix demand with routing and capacity effects.",
+    "primary_survey": "nhts",
+    "primary_survey_comment": "The survey the verdict is drawn from. A metro-specific (local) household travel survey wins when one is loaded; otherwise the national NHTS is used. Where both exist, differences between them are a property of the metro, not a model error.",
+    "has_local_survey": false,
+    "surveys": {
+      "nhts": {
+        "label": "nhts 2022",
+        "is_local": false,
+        "survey_trips": 30462,
+        "trips_per_person_survey": 2.817,
+        "trips_per_person_simulated": 2.905,
+        "trips_per_person_ratio": 1.031,
+        "survey_days_per_person": 1.0,
+        "mode_share": {
+          "car": {
+            "survey_pct": 87.36,
+            "simulated_pct": 91.61,
+            "diff_pp": 4.25
+          },
+          "walk": {
+            "survey_pct": 6.82,
+            "simulated_pct": 7.12,
+            "diff_pp": 0.3
+          },
+          "pt": {
+            "survey_pct": 4.43,
+            "simulated_pct": 1.27,
+            "diff_pp": -3.17
+          },
+          "bike": {
+            "survey_pct": 0.99,
+            "simulated_pct": 0.0,
+            "diff_pp": -0.99
+          },
+          "other": {
+            "survey_pct": 0.4,
+            "simulated_pct": 0.0,
+            "diff_pp": -0.4
+          }
+        },
+        "survey_mean_km": 13.7,
+        "survey_median_km": 6.93,
+        "survey_p25_km": 2.83,
+        "survey_p75_km": 16.5,
+        "simulated_mean_km": 14.24,
+        "simulated_median_km": 5.83,
+        "simulated_p25_km": 1.8,
+        "simulated_p75_km": 23.67,
+        "mean_km_ratio": 1.039,
+        "median_km_ratio": 0.841,
+        "departure_blocks": [
+          {
+            "block": "night",
+            "hours": "0-3",
+            "survey_pct": 0.46,
+            "simulated_pct": 0.42,
+            "diff_pp": -0.04
+          },
+          {
+            "block": "morning",
+            "hours": "4-9",
+            "survey_pct": 24.45,
+            "simulated_pct": 26.49,
+            "diff_pp": 2.04
+          },
+          {
+            "block": "midday",
+            "hours": "10-17",
+            "survey_pct": 58.47,
+            "simulated_pct": 48.59,
+            "diff_pp": -9.88
+          },
+          {
+            "block": "evening",
+            "hours": "18-23",
+            "survey_pct": 16.61,
+            "simulated_pct": 24.49,
+            "diff_pp": 7.88
+          }
+        ]
+      }
+    },
+    "surveys_comment": "One block per loaded survey, keyed by source type. trips_per_person_ratio is the headline trip-generation check (simulated / survey); a ratio well below 1.0 means demand is short of trips, which no assignment change can fix. mode_share is on MATSim's vocabulary \u2014 every transit sub-mode is \"pt\" on BOTH sides because MATSim writes only \"pt\". Trip lengths are km; compare median before mean, since a high mean with a matching median means the long tail is too heavy rather than every trip being too long. departure_blocks should be read against the evaluation section's ratio_* fields: departures matching the survey while hourly counts do not points at routing or capacity."
+  }
+}

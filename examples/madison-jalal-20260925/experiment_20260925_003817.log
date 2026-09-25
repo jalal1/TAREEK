@@ -1,0 +1,324 @@
+2026-09-25 00:38:15 - data_sources.base_survey_trip - INFO - Logging to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/logs/plan_generation_20260925_003815.log
+2026-09-25 00:38:16 - __main__ - INFO - ============================================================
+2026-09-25 00:38:16 - __main__ - INFO - STEP 1: VALIDATING CONFIGURATION
+2026-09-25 00:38:16 - __main__ - INFO - ============================================================
+2026-09-25 00:38:16 - utils.config_validator - INFO - Loaded config from: config/USA/Madison_WI/config_10iter_reuse.json
+2026-09-25 00:38:16 - utils.config_validator - INFO - Validating configuration...
+2026-09-25 00:38:16 - utils.config_validator - INFO - Network config: Using 1 counties
+2026-09-25 00:38:16 - utils.config_validator - INFO - MATSim config: mode=basic, run_simulation=True
+2026-09-25 00:38:16 - utils.config_validator - INFO - Plan generation config: target_plans=all, scaling_factor=0.25
+2026-09-25 00:38:16 - utils.config_validator - INFO - Data directory validated: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/data
+2026-09-25 00:38:16 - utils.config_validator - INFO - Counts config: enabled=True, custom=False
+2026-09-25 00:38:16 - utils.config_validator - INFO - External tools found: java
+2026-09-25 00:38:16 - utils.config_validator - INFO - Configuration validation passed
+2026-09-25 00:38:16 - __main__ - INFO - Configuration file: config/USA/Madison_WI/config_10iter_reuse.json
+2026-09-25 00:38:16 - __main__ - INFO - Experiment ID: madison_cold_10iter
+2026-09-25 00:38:16 - __main__ - INFO - 
+2026-09-25 00:38:16 - __main__ - INFO - ============================================================
+2026-09-25 00:38:16 - __main__ - INFO - DETECTING COORDINATE SYSTEM
+2026-09-25 00:38:16 - __main__ - INFO - ============================================================
+2026-09-25 00:38:17 - __main__ - INFO -   Counties: Dane
+2026-09-25 00:38:17 - __main__ - INFO -   Average centroid: (43.0675, -89.4179)
+2026-09-25 00:38:17 - __main__ - INFO -   Detected UTM EPSG: EPSG:26916
+2026-09-25 00:38:17 - __main__ - INFO -   All downstream components will use EPSG:26916
+2026-09-25 00:38:17 - __main__ - INFO - 
+2026-09-25 00:38:17 - __main__ - INFO - ============================================================
+2026-09-25 00:38:17 - __main__ - INFO - STEP 2: SETTING UP EXPERIMENT DIRECTORY
+2026-09-25 00:38:17 - __main__ - INFO - ============================================================
+2026-09-25 00:38:17 - utils.logger - INFO - Logging reconfigured from /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/logs/plan_generation_20260925_003815.log to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/experiment_20260925_003817.log
+2026-09-25 00:38:17 - utils.logger - INFO - Removed temporary log file: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/logs/plan_generation_20260925_003815.log
+2026-09-25 00:38:17 - __main__ - INFO - Reusing existing experiment directory: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter
+2026-09-25 00:38:17 - __main__ - INFO - All experiment logs will be saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/experiment_20260925_003817.log
+2026-09-25 00:38:17 - __main__ - INFO - 
+2026-09-25 00:38:17 - __main__ - INFO - ============================================================
+2026-09-25 00:38:17 - __main__ - INFO - STEP 2b: GENERATING MATSIM config.xml
+2026-09-25 00:38:17 - __main__ - INFO - ============================================================
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Generating MATSim config for mode: basic
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Using config template: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/configs/basic/config.xml
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Auto-set writeLinkStatsInterval = 10 (matches lastIteration)
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Auto-set write*Interval = 10 (bulky per-iteration output written only at the final iteration; set matsim.write_intermediate_output=true to write every iteration)
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Auto-set counts.countsScaleFactor = 4.0 (1/0.25 flowCapacityFactor)
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Auto-set counts.writeCountsInterval = 10 (matches lastIteration)
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: controller.mobsim = qsim
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: global.numberOfThreads = 30
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: qsim.numberOfThreads = 30
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: qsim.flowCapacityFactor = 0.25
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Mirrored qsim.flowCapacityFactor -> hermes.flowCapacityFactor = 0.25
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: qsim.storageCapacityFactor = 0.3
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Mirrored qsim.storageCapacityFactor -> hermes.storageCapacityFactor = 0.3
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: qsim.stuckTime = 10.0
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: linkStats.averageLinkStatsOverIterations = 5
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied scoring.waitingPt = -3.0
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied scoring.modeParams.walk.constant = -1.0
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: transitRouter.maxBeelineWalkConnectionDistance = 250.0
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied configurable param: transitRouter.directWalkFactor = 1.3
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Mirrored qsim.flowCapacityFactor -> hermes.flowCapacityFactor = 0.25
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Mirrored qsim.storageCapacityFactor -> hermes.storageCapacityFactor = 0.3
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied scoring.waitingPt = -3.0
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Applied scoring.modeParams.walk.constant = -1.0
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Enabled transit module with transitModes=pt (from enabled modes: ['bus']) (preserved existing params on: transitRouter)
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Registered scoring activityParams for 'Dining'
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Registered scoring activityParams for 'Home'
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Registered scoring activityParams for 'Other'
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Registered scoring activityParams for 'School'
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Registered scoring activityParams for 'Shopping'
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Registered scoring activityParams for 'Social'
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Registered scoring activityParams for 'Work'
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Activity typicalDuration from survey: Dining=35min, Home=720min, Other=60min, School=420min, Shopping=25min, Social=95min, Work=435min
+2026-09-25 00:38:17 - matsim.config_manager - INFO - Activity scoring windows from survey: Dining=8.75-21.00h/min5m, Other=7.75-18.83h/min5m, School=7.08-20.00h/min55m, Shopping=7.67-19.67h/min5m, Social=7.00-22.00h/min20m, Work=6.00-21.12h/min30m
+2026-09-25 00:38:20 - matsim.config_manager - INFO - Activity params cover all 7 activity types in plans.xml: ['Dining', 'Home', 'Other', 'School', 'Shopping', 'Social', 'Work']
+2026-09-25 00:38:20 - matsim.config_manager - INFO - Config saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/config.xml
+2026-09-25 00:38:20 - __main__ - INFO -   Generated: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/config.xml
+2026-09-25 00:38:20 - __main__ - INFO - 
+2026-09-25 00:38:20 - __main__ - INFO - ============================================================
+2026-09-25 00:38:20 - __main__ - INFO - STEP 3: SETTING UP NETWORK
+2026-09-25 00:38:20 - __main__ - INFO - ============================================================
+2026-09-25 00:38:20 - __main__ - INFO - Found existing network.xml in experiment directory
+2026-09-25 00:38:20 - __main__ - INFO -   File: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/network.xml
+2026-09-25 00:38:23 - __main__ - INFO -   Size: 41.50 MB
+2026-09-25 00:38:23 - __main__ - INFO -   Nodes: 36066
+2026-09-25 00:38:23 - __main__ - INFO -   Links: 81752
+2026-09-25 00:38:23 - __main__ - INFO - Reusing existing network.xml
+2026-09-25 00:38:23 - __main__ - INFO - 
+2026-09-25 00:38:23 - __main__ - INFO - ============================================================
+2026-09-25 00:38:23 - __main__ - INFO - STEP 3b: GENERATING COUNTS FILE
+2026-09-25 00:38:23 - __main__ - INFO - ============================================================
+2026-09-25 00:38:23 - __main__ - INFO - Found existing counts.xml in experiment directory
+2026-09-25 00:38:23 - __main__ - INFO -   File: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/counts.xml
+2026-09-25 00:38:23 - __main__ - INFO -   Size: 7.27 KB
+2026-09-25 00:38:23 - __main__ - INFO - Reusing existing counts.xml (counts.rebuild = false)
+2026-09-25 00:38:23 - __main__ - INFO - 
+2026-09-25 00:38:23 - __main__ - INFO - ============================================================
+2026-09-25 00:38:23 - __main__ - INFO - STEP 4: GENERATING ACTIVITY PLANS (WORK + NON-WORK)
+2026-09-25 00:38:23 - __main__ - INFO - ============================================================
+2026-09-25 00:38:23 - __main__ - INFO - Found existing plans.xml in experiment directory
+2026-09-25 00:38:23 - __main__ - INFO -   File: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/plans.xml
+2026-09-25 00:38:27 - __main__ - INFO -   Size: 69.88 MB
+2026-09-25 00:38:27 - __main__ - INFO - Skipping plan generation (skip_if_exists=true)
+2026-09-25 00:38:27 - __main__ - INFO -   (set skip_if_exists=false to regenerate)
+2026-09-25 00:38:27 - __main__ - INFO - 
+2026-09-25 00:38:27 - __main__ - INFO - ============================================================
+2026-09-25 00:38:27 - __main__ - INFO - STEP 5: RUNNING MATSIM SIMULATION
+2026-09-25 00:38:27 - __main__ - INFO - ============================================================
+2026-09-25 00:38:27 - __main__ - INFO - Released plan-generation memory before MATSim: 0.3 GB -> 0.3 GB RSS (freed 0.0 GB)
+2026-09-25 00:38:27 - matsim.osm_downloader - INFO - OSM cache directory: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/data/osm_cache
+2026-09-25 00:38:27 - matsim.orchestrator - INFO - MATSim Orchestrator initialized
+2026-09-25 00:38:27 - __main__ - INFO - MATSim mode: basic
+2026-09-25 00:38:27 - __main__ - INFO - Custom parameters: {'coordinateSystem': 'auto', 'lastIteration': 10, 'outputDirectory': 'output', 'controller.mobsim': 'qsim', '_controller.mobsim_help': 'qsim | hermes. hermes is faster but is a simplified queue model that ignores trafficDynamics, linkDynamics and full stuckTime semantics. Use qsim for any congestion- or mode-choice-sensitive experiment.', 'global.numberOfThreads': 30, 'qsim.numberOfThreads': 30, 'qsim.flowCapacityFactor': 0.25, 'qsim.storageCapacityFactor': 0.3, 'qsim.stuckTime': 10.0, '_qsim.stuckTime_help': 'Seconds the frontmost vehicle on a link may fail to move before it is pushed onto the next link. Gridlock escape valve: HIGHER = waits LONGER. 10.0 is MATSim own default. Kept equal to Birmingham bham_stage2e_c2chains so the two cities are comparable. Only qsim honours this; hermes ignores it.', 'linkStats.averageLinkStatsOverIterations': 5, '_qsim.storageCapacityFactor_help': "Deliberately ABOVE flowCapacityFactor (1.2x, matching the basic template's own 0.1/0.12 ratio). Storage must be scaled superlinearly at reduced samples (Nagel & Floetteroed 2012): scaling it down linearly leaves short links holding too few vehicles to form a realistic queue, producing artificial gridlock. flowCapacityFactor must stay equal to scaling_factor because countsScaleFactor is derived as 1/flowCapacityFactor.", 'scoring.waitingPt': -3.0, '_estimator_scoring.waitingPt': 'Cold start (no prior experiment). Seeding waitingPt=-3.0 util/hr for transit density 3.11% (low-transit (1%-5%)).', 'scoring.modeParams.walk.constant': -1.0, '_estimator_scoring.modeParams.walk.constant': 'Cold start (no prior experiment). ACS walk share 5.22%. Seeding walk.constant=-1.0; subsequent runs will correct toward ACS using the clamped log-ratio update.', 'transitRouter.maxBeelineWalkConnectionDistance': 250.0, '_estimator_transitRouter.maxBeelineWalkConnectionDistance': 'Cold start (no prior experiment). ACS transit share 3.11% (low transit (<5%)). Seeding transit-router params from tier table; subsequent runs with --experiment-dir adjust by one tier when realised PT share is outside [70%, 130%] of the ACS target. Setting maxBeelineWalkConnectionDistance=250.0.', 'transitRouter.directWalkFactor': 1.3, '_estimator_transitRouter.directWalkFactor': 'Cold start (no prior experiment). ACS transit share 3.11% (low transit (<5%)). Seeding transit-router params from tier table; subsequent runs with --experiment-dir adjust by one tier when realised PT share is outside [70%, 130%] of the ACS target. Setting directWalkFactor=1.3.'}
+2026-09-25 00:38:27 - __main__ - INFO - 
+2026-09-25 00:38:27 - matsim.orchestrator - INFO - Setting up experiment: madison_cold_10iter
+2026-09-25 00:38:27 - matsim.orchestrator - INFO - Created experiment directory: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter
+2026-09-25 00:38:27 - matsim.orchestrator - INFO - Plans file already exists at destination: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/plans.xml
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Generating MATSim config for mode: basic
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Using config template: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/configs/basic/config.xml
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Auto-set writeLinkStatsInterval = 10 (matches lastIteration)
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Auto-set write*Interval = 10 (bulky per-iteration output written only at the final iteration; set matsim.write_intermediate_output=true to write every iteration)
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Auto-set counts.countsScaleFactor = 4.0 (1/0.25 flowCapacityFactor)
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Auto-set counts.writeCountsInterval = 10 (matches lastIteration)
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: controller.mobsim = qsim
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: global.numberOfThreads = 30
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: qsim.numberOfThreads = 30
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: qsim.flowCapacityFactor = 0.25
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Mirrored qsim.flowCapacityFactor -> hermes.flowCapacityFactor = 0.25
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: qsim.storageCapacityFactor = 0.3
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Mirrored qsim.storageCapacityFactor -> hermes.storageCapacityFactor = 0.3
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: qsim.stuckTime = 10.0
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: linkStats.averageLinkStatsOverIterations = 5
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied scoring.waitingPt = -3.0
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied scoring.modeParams.walk.constant = -1.0
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: transitRouter.maxBeelineWalkConnectionDistance = 250.0
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied configurable param: transitRouter.directWalkFactor = 1.3
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Mirrored qsim.flowCapacityFactor -> hermes.flowCapacityFactor = 0.25
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Mirrored qsim.storageCapacityFactor -> hermes.storageCapacityFactor = 0.3
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied scoring.waitingPt = -3.0
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Applied scoring.modeParams.walk.constant = -1.0
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Enabled transit module with transitModes=pt (from enabled modes: ['bus']) (preserved existing params on: transitRouter)
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Registered scoring activityParams for 'Dining'
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Registered scoring activityParams for 'Home'
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Registered scoring activityParams for 'Other'
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Registered scoring activityParams for 'School'
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Registered scoring activityParams for 'Shopping'
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Registered scoring activityParams for 'Social'
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Registered scoring activityParams for 'Work'
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Activity typicalDuration from survey: Dining=35min, Home=720min, Other=60min, School=420min, Shopping=25min, Social=95min, Work=435min
+2026-09-25 00:38:27 - matsim.config_manager - INFO - Activity scoring windows from survey: Dining=8.75-21.00h/min5m, Other=7.75-18.83h/min5m, School=7.08-20.00h/min55m, Shopping=7.67-19.67h/min5m, Social=7.00-22.00h/min20m, Work=6.00-21.12h/min30m
+2026-09-25 00:38:31 - matsim.config_manager - INFO - Activity params cover all 7 activity types in plans.xml: ['Dining', 'Home', 'Other', 'School', 'Shopping', 'Social', 'Work']
+2026-09-25 00:38:31 - matsim.config_manager - INFO - Config saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/config.xml
+2026-09-25 00:38:31 - matsim.orchestrator - INFO - Experiment setup complete: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter
+2026-09-25 00:38:31 - matsim.orchestrator - INFO - Validating MATSim setup...
+2026-09-25 00:38:31 - matsim.runner - INFO - Validating MATSim setup...
+2026-09-25 00:38:31 - matsim.runner - INFO - Java version: openjdk
+2026-09-25 00:38:31 - matsim.runner - INFO - Using JAR file: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25/matsim_25.jar
+2026-09-25 00:38:31 - matsim.runner - INFO - No lib directory found in /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25 (may not be needed)
+2026-09-25 00:38:31 - matsim.runner - INFO - MATSim setup validation passed
+2026-09-25 00:38:31 - matsim.orchestrator - INFO - Validating experiment configuration...
+2026-09-25 00:38:31 - matsim.config_manager - INFO - Found network.xml: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/network.xml
+2026-09-25 00:38:31 - matsim.config_manager - INFO - Found plans.xml: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/plans.xml
+2026-09-25 00:38:31 - matsim.config_manager - INFO - Found transitScheduleFile: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/transitSchedule.xml
+2026-09-25 00:38:31 - matsim.config_manager - INFO - Found vehiclesFile: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/transitVehicles.xml
+2026-09-25 00:38:31 - matsim.orchestrator - INFO - Starting MATSim simulation. Log file: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/matsim_output.log
+2026-09-25 00:38:31 - matsim.runner - INFO - Starting MATSim simulation with config: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/config.xml
+2026-09-25 00:38:31 - matsim.runner - INFO - Using JAR file: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25/matsim_25.jar
+2026-09-25 00:38:31 - matsim.runner - INFO - No lib directory found in /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25 (may not be needed)
+2026-09-25 00:38:31 - matsim.runner - INFO - Command: java -Xmx70g -Xms70g -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./heap_dumps -cp /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25/matsim_25.jar org.matsim.core.controler.Controler /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/config.xml
+2026-09-25 00:38:31 - matsim.runner - INFO - Waiting for simulation to complete...
+2026-09-25 01:18:43 - matsim.runner - INFO - Simulation completed in 2412.68 seconds
+2026-09-25 01:18:43 - matsim.runner - INFO - Simulation completed successfully
+2026-09-25 01:18:43 - matsim.orchestrator - INFO - Simulation completed
+2026-09-25 01:18:43 - __main__ - INFO - 
+2026-09-25 01:18:43 - __main__ - INFO - Simulation status: completed
+2026-09-25 01:18:43 - __main__ - INFO - 
+2026-09-25 01:18:43 - __main__ - INFO - ============================================================
+2026-09-25 01:18:43 - __main__ - INFO - STEP 6: EVALUATING SIMULATION
+2026-09-25 01:18:43 - __main__ - INFO - ============================================================
+2026-09-25 01:18:43 - __main__ - INFO - Initializing evaluator with ground truth data from: data/evaluation
+2026-09-25 01:18:43 - __main__ - INFO - Running evaluation...
+2026-09-25 01:18:43 - __main__ - INFO - 
+2026-09-25 01:18:43 - matsim.trip_timing - INFO - Trip timing figures: planned schedule (output/ITERS/it.0/0.plans.xml.gz) against iteration 10
+2026-09-25 01:18:59 - matsim.trip_timing - INFO - Saved dep_arr_by_activity_demand.png
+2026-09-25 01:19:00 - matsim.trip_timing - INFO - Saved dep_arr_by_activity_sim.png
+2026-09-25 01:19:02 - matsim.trip_timing - INFO - Saved trip_duration_by_hour_demand.png
+2026-09-25 01:19:03 - matsim.trip_timing - INFO - Saved trip_duration_by_hour_sim.png
+2026-09-25 01:19:04 - matsim.trip_timing - INFO -   it.10 activity durations: left out 30597 open-ended rows that are not a Home-to-Home overnight stay, and 0 all-day stays
+2026-09-25 01:19:05 - matsim.trip_timing - INFO - Saved activity_duration_by_type.png
+2026-09-25 01:19:05 - matsim.evaluator - INFO - Loading matched devices from: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/matched_devices.csv
+2026-09-25 01:19:05 - matsim.evaluator - INFO - Loaded 8 devices matched to network links
+2026-09-25 01:19:05 - matsim.evaluator - INFO - Using MATSim countscompare file: output/ITERS/it.10/10.countscompare.txt
+2026-09-25 01:19:05 - matsim.evaluator - INFO - Auto-detected network file: output/output_network.xml.gz
+2026-09-25 01:19:05 - matsim.evaluator - INFO - Auto-detected linkstats file: output/ITERS/it.10/10.linkstats.txt.gz
+2026-09-25 01:19:05 - matsim.evaluator - INFO - Loading scaling factors from experiment config...
+2026-09-25 01:19:05 - matsim.evaluator - INFO - Loaded scaling factors: population=0.25, flow=0.25, storage=0.3
+2026-09-25 01:19:05 - matsim.evaluator - INFO - Loading network for spatial visualization...
+2026-09-25 01:19:13 - matsim.evaluator - INFO - Loaded 81,752 links
+2026-09-25 01:19:13 - matsim.evaluator - INFO - Loading linkstats...
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Scaled simulated volumes by 4.00x (1/0.25 population scaling)
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Loaded 81,752 links from linkstats
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Comparing volumes from MATSim countscompare.txt...
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Read 192 station-hour comparisons from 10.countscompare.txt (8 stations)
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Generated 192 station-hour comparisons
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Calculating summary metrics...
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Saved comparison results to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/volume_comparison.csv
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Saved hourly relative-error box plot to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/hourly_relative_error_box.png
+2026-09-25 01:19:14 - matsim.evaluator - INFO - Saved hourly bias plot to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/hourly_bias.png
+2026-09-25 01:19:15 - matsim.evaluator - INFO - Saved station ratio dot plot to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/station_ratio_dotplot.png
+2026-09-25 01:19:15 - matsim.evaluator - INFO - Generating spatial overview maps...
+2026-09-25 01:19:15 - utils.region_utils - INFO - Loaded 1 county boundary polygons
+2026-09-25 01:19:17 - matsim.evaluator - INFO - Saved spatial overview to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/spatial_overview.png
+2026-09-25 01:19:18 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h00.png
+2026-09-25 01:19:19 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h01.png
+2026-09-25 01:19:21 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h02.png
+2026-09-25 01:19:22 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h03.png
+2026-09-25 01:19:23 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h04.png
+2026-09-25 01:19:24 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h05.png
+2026-09-25 01:19:25 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h06.png
+2026-09-25 01:19:27 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h07.png
+2026-09-25 01:19:28 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h08.png
+2026-09-25 01:19:29 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h09.png
+2026-09-25 01:19:31 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h10.png
+2026-09-25 01:19:32 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h11.png
+2026-09-25 01:19:33 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h12.png
+2026-09-25 01:19:34 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h13.png
+2026-09-25 01:19:36 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h14.png
+2026-09-25 01:19:37 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h15.png
+2026-09-25 01:19:38 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h16.png
+2026-09-25 01:19:40 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h17.png
+2026-09-25 01:19:41 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h18.png
+2026-09-25 01:19:42 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h19.png
+2026-09-25 01:19:43 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h20.png
+2026-09-25 01:19:45 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h21.png
+2026-09-25 01:19:46 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h22.png
+2026-09-25 01:19:47 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/count_error_h23.png
+2026-09-25 01:19:47 - matsim.evaluator - INFO - Generating heatmap-only map...
+2026-09-25 01:19:49 - matsim.evaluator - INFO - Saved heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_daily.png
+2026-09-25 01:19:49 - matsim.evaluator - INFO - Generating highway congestion heatmaps for 24 hour(s)...
+2026-09-25 01:19:50 - matsim.evaluator - INFO -   Highway links for peak heatmaps: 6,156 (of 81,752 total)
+2026-09-25 01:19:54 - matsim.evaluator - INFO -   12 AM congestion — Severe (0), Congested (17), Moderate (164), Free flow (643), no traffic: 5,332
+2026-09-25 01:19:55 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h00_highways.png
+2026-09-25 01:19:58 - matsim.evaluator - INFO -   1 AM congestion — Severe (5), Congested (14), Moderate (211), Free flow (1,602), no traffic: 4,324
+2026-09-25 01:19:59 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h01_highways.png
+2026-09-25 01:20:03 - matsim.evaluator - INFO -   2 AM congestion — Severe (0), Congested (18), Moderate (140), Free flow (3,472), no traffic: 2,526
+2026-09-25 01:20:03 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h02_highways.png
+2026-09-25 01:20:07 - matsim.evaluator - INFO -   3 AM congestion — Severe (4), Congested (119), Moderate (1,129), Free flow (3,893), no traffic: 1,011
+2026-09-25 01:20:08 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h03_highways.png
+2026-09-25 01:20:12 - matsim.evaluator - INFO -   4 AM congestion — Severe (6), Congested (328), Moderate (2,111), Free flow (3,087), no traffic: 624
+2026-09-25 01:20:13 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h04_highways.png
+2026-09-25 01:20:17 - matsim.evaluator - INFO -   5 AM congestion — Severe (10), Congested (393), Moderate (2,466), Free flow (2,816), no traffic: 471
+2026-09-25 01:20:17 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h05_highways.png
+2026-09-25 01:20:21 - matsim.evaluator - INFO -   6 AM congestion — Severe (24), Congested (506), Moderate (2,749), Free flow (2,487), no traffic: 390
+2026-09-25 01:20:22 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h06_highways.png
+2026-09-25 01:20:26 - matsim.evaluator - INFO -   7 AM congestion — Severe (67), Congested (769), Moderate (2,770), Free flow (2,186), no traffic: 364
+2026-09-25 01:20:26 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h07_highways.png
+2026-09-25 01:20:30 - matsim.evaluator - INFO -   8 AM congestion — Severe (104), Congested (917), Moderate (2,655), Free flow (2,118), no traffic: 362
+2026-09-25 01:20:31 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_8am_highways.png
+2026-09-25 01:20:35 - matsim.evaluator - INFO -   9 AM congestion — Severe (83), Congested (837), Moderate (2,650), Free flow (2,209), no traffic: 377
+2026-09-25 01:20:36 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h09_highways.png
+2026-09-25 01:20:39 - matsim.evaluator - INFO -   10 AM congestion — Severe (50), Congested (623), Moderate (2,656), Free flow (2,447), no traffic: 380
+2026-09-25 01:20:40 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h10_highways.png
+2026-09-25 01:20:44 - matsim.evaluator - INFO -   11 AM congestion — Severe (15), Congested (549), Moderate (2,659), Free flow (2,538), no traffic: 395
+2026-09-25 01:20:44 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h11_highways.png
+2026-09-25 01:20:48 - matsim.evaluator - INFO -   12 PM congestion — Severe (16), Congested (459), Moderate (2,778), Free flow (2,490), no traffic: 413
+2026-09-25 01:20:49 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h12_highways.png
+2026-09-25 01:20:53 - matsim.evaluator - INFO -   1 PM congestion — Severe (14), Congested (494), Moderate (2,782), Free flow (2,479), no traffic: 387
+2026-09-25 01:20:54 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h13_highways.png
+2026-09-25 01:20:58 - matsim.evaluator - INFO -   2 PM congestion — Severe (21), Congested (532), Moderate (2,797), Free flow (2,447), no traffic: 359
+2026-09-25 01:20:58 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h14_highways.png
+2026-09-25 01:21:02 - matsim.evaluator - INFO -   3 PM congestion — Severe (31), Congested (649), Moderate (2,802), Free flow (2,326), no traffic: 348
+2026-09-25 01:21:03 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h15_highways.png
+2026-09-25 01:21:07 - matsim.evaluator - INFO -   4 PM congestion — Severe (38), Congested (783), Moderate (2,757), Free flow (2,240), no traffic: 338
+2026-09-25 01:21:08 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h16_highways.png
+2026-09-25 01:21:12 - matsim.evaluator - INFO -   5 PM congestion — Severe (56), Congested (854), Moderate (2,650), Free flow (2,235), no traffic: 361
+2026-09-25 01:21:13 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_5pm_highways.png
+2026-09-25 01:21:17 - matsim.evaluator - INFO -   6 PM congestion — Severe (61), Congested (833), Moderate (2,629), Free flow (2,266), no traffic: 367
+2026-09-25 01:21:17 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h18_highways.png
+2026-09-25 01:21:21 - matsim.evaluator - INFO -   7 PM congestion — Severe (52), Congested (709), Moderate (2,692), Free flow (2,321), no traffic: 382
+2026-09-25 01:21:22 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h19_highways.png
+2026-09-25 01:21:26 - matsim.evaluator - INFO -   8 PM congestion — Severe (40), Congested (569), Moderate (2,695), Free flow (2,451), no traffic: 401
+2026-09-25 01:21:27 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h20_highways.png
+2026-09-25 01:21:31 - matsim.evaluator - INFO -   9 PM congestion — Severe (33), Congested (461), Moderate (2,686), Free flow (2,561), no traffic: 415
+2026-09-25 01:21:31 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h21_highways.png
+2026-09-25 01:21:35 - matsim.evaluator - INFO -   10 PM congestion — Severe (14), Congested (397), Moderate (2,683), Free flow (2,642), no traffic: 420
+2026-09-25 01:21:36 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h22_highways.png
+2026-09-25 01:21:40 - matsim.evaluator - INFO -   11 PM congestion — Severe (14), Congested (404), Moderate (2,607), Free flow (2,656), no traffic: 475
+2026-09-25 01:21:41 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/heatmap_h23_highways.png
+2026-09-25 01:21:48 - matsim.evaluator - INFO - Saved 24 log-log scatter plot(s) to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation
+2026-09-25 01:21:48 - matsim.evaluator - INFO - Generating per-device reports...
+2026-09-25 01:21:48 - matsim.evaluator - INFO - Generating per-device reports for 8 devices...
+2026-09-25 01:21:54 - matsim.evaluator - INFO - Per-device reports saved to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation/device_reports
+2026-09-25 01:21:54 - __main__ - INFO - 
+2026-09-25 01:21:54 - __main__ - INFO - ============================================================
+2026-09-25 01:21:54 - __main__ - INFO - EVALUATION RESULTS
+2026-09-25 01:21:54 - __main__ - INFO - ============================================================
+2026-09-25 01:21:54 - __main__ - INFO - Devices validated: 4
+2026-09-25 01:21:54 - __main__ - INFO - Total comparisons: 192
+2026-09-25 01:21:54 - __main__ - INFO - Mean Absolute Error (MAE): 259.24 vehicles
+2026-09-25 01:21:54 - __main__ - INFO - Root Mean Square Error (RMSE): 434.36 vehicles
+2026-09-25 01:21:54 - __main__ - INFO - GEH < 5 (hourly counts, target >=85%): 42.2%
+2026-09-25 01:21:54 - __main__ - INFO - GEH < 5 (station daily totals): 12.5%
+2026-09-25 01:21:54 - __main__ - INFO - Correlation: 0.959
+2026-09-25 01:21:54 - __main__ - INFO - Peak-hour correlation (6-9,15-18): 0.980
+2026-09-25 01:21:54 - __main__ - INFO - 
+2026-09-25 01:21:54 - __main__ - INFO - Results saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/evaluation
+2026-09-25 01:21:54 - __main__ - INFO - ============================================================
+2026-09-25 01:21:54 - __main__ - INFO - 
+2026-09-25 01:22:26 - validate_demand - INFO - Survey sources in DB: {('nhts', '2022'): np.int64(30462)}
+2026-09-25 01:22:26 - validate_demand - INFO - No local survey for this region — comparing against national NHTS only. A metro-specific household travel survey is the better reference; add one to config data.surveys with weight > 0.
+2026-09-25 01:22:26 - validate_demand - INFO - Simulated trips: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/output/ITERS/it.10/10.trips.csv.gz
+2026-09-25 01:22:35 - __main__ - INFO -   Demand validation vs survey added to summary
+2026-09-25 01:22:35 - __main__ - INFO - Experiment summary saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/experiment_summary.json
+2026-09-25 01:22:40 - __main__ - INFO - Experiment report saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter/report.html
+2026-09-25 01:22:40 - __main__ - INFO -   For a PDF: python scripts/experiment_report.py --html-to-pdf <that file>  (needs a browser)
+2026-09-25 01:22:40 - __main__ - INFO - Experiment tracked in: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/experiment_comparison.csv
+2026-09-25 01:22:40 - __main__ - INFO - Suggestion: Approaching acceptable. Fine-tune trip generation rates or time distributions.
+2026-09-25 01:22:40 - __main__ - INFO - ============================================================
+2026-09-25 01:22:40 - __main__ - INFO - EXPERIMENT COMPLETE
+2026-09-25 01:22:40 - __main__ - INFO - ============================================================
+2026-09-25 01:22:40 - __main__ - INFO - Experiment ID: madison_cold_10iter
+2026-09-25 01:22:40 - __main__ - INFO - Experiment directory: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/madison_cold_10iter
+2026-09-25 01:22:40 - __main__ - INFO - Status: completed
+2026-09-25 01:22:40 - __main__ - INFO - 
+2026-09-25 01:22:40 - __main__ - INFO - Results available at:
+2026-09-25 01:22:40 - __main__ - INFO -   Network: network.xml
+2026-09-25 01:22:40 - __main__ - INFO -   Plans: plans.xml
+2026-09-25 01:22:40 - __main__ - INFO -   Output: output/
+2026-09-25 01:22:40 - __main__ - INFO -   Evaluation: evaluation/
+2026-09-25 01:22:40 - __main__ - INFO - ============================================================

@@ -1,0 +1,93 @@
+{
+  "source_requested": "auto",
+  "source_used": "lodes_od",
+  "fallback_reason": null,
+  "geo_level": "block_group",
+  "lodes": {
+    "year": 2023,
+    "version": "LODES8",
+    "job_type": "JT00",
+    "segment": "S000",
+    "states": [
+      "01"
+    ],
+    "files": {
+      "al_main": 1760919,
+      "al_aux": 88135
+    },
+    "aux_sourced_ii": 0,
+    "aux_sourced_ii_share": 0.0
+  },
+  "flows": {
+    "internal_ii": 317723,
+    "outbound_ie": 61325,
+    "inbound_ei": 173076,
+    "internal_share": 0.8382,
+    "job_side_share": 0.6474,
+    "two_sided_share": 0.5755
+  },
+  "matrix": {
+    "rows": 719,
+    "cols": 707,
+    "nonzero_pairs": 124502,
+    "density": 0.244922,
+    "total_trips": 552124.0,
+    "zero_rows": 0,
+    "zero_cols": 0,
+    "residents_in_zero_rows": 0,
+    "jobs_in_zero_cols": 0
+  },
+  "comparison_to_gravity_base": {
+    "gravity_total": 387999.0,
+    "ratio": 1.423,
+    "agent_delta_pct": 42.3,
+    "observed_ii_total": 317723,
+    "observed_vs_gravity_ratio": 0.8189,
+    "implied_agent_delta_pct": -18.11,
+    "internal_share": 0.8382131022983896
+  },
+  "survey_blend": {
+    "branch": "blended",
+    "alpha_configured": 0.1,
+    "alpha_effective": 0.1,
+    "cells_changed": 0,
+    "effective_no_op": true
+  },
+  "trip_length": {
+    "mean_km": 26.3,
+    "median_km": 24.21,
+    "p25_km": 12.01,
+    "p75_km": 38.81,
+    "intrazonal_share": 0.0075
+  },
+  "boundary": {
+    "policy": "anchor",
+    "outbound_ie": 61325,
+    "inbound_ei": 173076,
+    "internal_share": 0.8382131022983896,
+    "anchored_ie": 61325.0,
+    "anchored_ei": 173076.0,
+    "anchored_total": 234401.0,
+    "source": "derived_from_totals"
+  },
+  "demand_coverage": {
+    "scaling_factor": 0.25,
+    "work_scaling_multiplier": 1,
+    "compensation_applied": false,
+    "note": "agent drop kept deliberately: observed flows give a work trip only to residents who work in-region, so the gravity model's extra agents were invented \u2014 see design.md \u00a72"
+  },
+  "runtime_seconds": {
+    "observed_od_load": 5.32,
+    "blend": 0.02
+  },
+  "reconciliation": {
+    "matrix_total": 552124.0,
+    "direct_aggregation_total": 552124.0,
+    "internal_ii_total": 317723.0,
+    "anchored_total": 234401.0,
+    "delta": 0.0,
+    "tolerance": 552.1,
+    "within_tolerance": true,
+    "aux_sourced_ii": 0
+  }
+}
