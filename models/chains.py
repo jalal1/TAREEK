@@ -219,30 +219,36 @@ class TripChainModel:
     and sample new chains while constraining to realistic patterns.
     """
 
+    # A stop-rate cell (length, last activity, flag) holding less than this
+    # share of the chain weight uses the per-(last activity, flag) rate instead.
+    THIN_CELL_SHARE = 0.003
+
     def __init__(self, chains_df: pd.DataFrame, home_boost_factor: float = 2.0,
                  length_distribution_df: pd.DataFrame = None,
-                 early_stop_exponent: float = 2.0):
+                 required_activity: Optional[str] = None,
+                 max_required: Optional[int] = None):
         """
         Initialize the model with survey data.
 
         Args:
             chains_df: DataFrame with columns 'pattern', 'frequency', 'probability'
-            home_boost_factor: Multiplier for Home starting probability to account for
-                             implicit home starts not captured in survey (default: 2.0)
-            length_distribution_df: Optional DataFrame with chain patterns to learn
-                the chain length distribution from. When None, the length distribution
-                is learned from chains_df (the filtered data). Pass the full unfiltered
-                survey chains here so that the 'generated' sampling method targets
-                realistic chain lengths rather than the shorter lengths typical of
-                purpose-filtered subsets.
-            early_stop_exponent: Controls how aggressively chains are stopped early.
-                1.0 = linear (original), 2.0 = quadratic (default, gentler),
-                3.0 = cubic. Higher values let chains grow closer to target_length.
+            home_boost_factor: Multiplier for Home in start_activity_dist.
+                Diagnostic only (get_summary); neither sampling method uses it.
+            length_distribution_df: Optional DataFrame to learn chain_length_dist
+                from. Diagnostic only (get_summary); neither sampling method uses it.
+            required_activity: Activity every chain must contain (e.g. 'Work',
+                'Shopping'), matching the filter of the plan generator that uses
+                this model. The 'generated' method learns only from chains that
+                contain it and never stops a chain before it has it.
+            max_required: Maximum count of required_activity per chain
+                (e.g. chains.max_work_activities). None = no maximum.
         """
         self.chains_df = chains_df.copy()
         self.home_boost_factor = home_boost_factor
         self._length_distribution_df = length_distribution_df
-        self._early_stop_exponent = early_stop_exponent
+        self.required_activity = required_activity
+        self.max_required = max_required
+        self._generated_tables = {}  # (min_length, max_length) -> tables
         self.chain_patterns = None
         self.chain_probabilities = None
 
@@ -400,96 +406,155 @@ class TripChainModel:
         """Sample a complete chain pattern directly from observed data."""
         return np.random.choice(self.chain_patterns, p=self.chain_probabilities)
 
+    def _required_flag(self, activities: List[str]) -> int:
+        """How much of the required activity the chain holds so far.
+
+        0 = none yet; for a model with max_required, the count (capped at it);
+        otherwise 1 = present. Always 0 when the model has no required activity.
+        """
+        if self.required_activity is None:
+            return 0
+        count = activities.count(self.required_activity)
+        return min(count, self.max_required or 1)
+
+    def _accepts(self, activities: List[str], min_length: int,
+                 max_length: Optional[int]) -> bool:
+        """True if a chain fits the length limits and the required-activity rule."""
+        if len(activities) < min_length:
+            return False
+        if max_length is not None and len(activities) > max_length:
+            return False
+        if self.required_activity is None:
+            return True
+        count = activities.count(self.required_activity)
+        return count >= 1 and (self.max_required is None or count <= self.max_required)
+
+    def _fit_generated_tables(self, min_length: int, max_length: Optional[int]) -> Optional[dict]:
+        """Learn the 'generated' tables from the chains the plan filter accepts.
+
+        Chains longer than max_length are left out, so every learned chain has
+        a place to stop at or before the cap.
+
+        Returns None when no chain is accepted.
+        """
+        start = defaultdict(float)
+        t2 = defaultdict(lambda: defaultdict(float))  # (prev2, prev, flag) -> next
+        t1 = defaultdict(lambda: defaultdict(float))  # (prev, flag) -> next
+        t0 = defaultdict(lambda: defaultdict(float))  # prev -> next
+        reach = defaultdict(float)     # (length, last, flag) -> weight that got there
+        stop = defaultdict(float)      # (length, last, flag) -> weight that ended there
+        reach_a = defaultdict(float)   # (last, flag)
+        stop_a = defaultdict(float)
+        longest = 0
+
+        for pattern, weight in zip(self.chain_patterns, self.chain_probabilities):
+            acts = [a.strip() for a in pattern.split('-')]
+            if not self._accepts(acts, min_length, max_length):
+                continue
+            longest = max(longest, len(acts))
+            start[acts[0]] += weight
+            for i in range(1, len(acts)):
+                flag = self._required_flag(acts[:i])
+                t1[(acts[i - 1], flag)][acts[i]] += weight
+                t0[acts[i - 1]][acts[i]] += weight
+                if i >= 2:
+                    t2[(acts[i - 2], acts[i - 1], flag)][acts[i]] += weight
+            for length in range(min_length, len(acts) + 1):
+                key = (length, acts[length - 1], self._required_flag(acts[:length]))
+                reach[key] += weight
+                reach_a[key[1:]] += weight
+                if length == len(acts):
+                    stop[key] += weight
+                    stop_a[key[1:]] += weight
+
+        total = sum(start.values())
+        if total <= 0:
+            return None
+
+        stop_by_last = {k: stop_a[k] / r for k, r in reach_a.items()}
+        stop_rate = {
+            k: (stop[k] / r if r / total >= self.THIN_CELL_SHARE else stop_by_last[k[1:]])
+            for k, r in reach.items()
+        }
+
+        start_acts = list(start)
+        start_probs = np.array([start[a] for a in start_acts], dtype=float)
+
+        return {
+            'start': (start_acts, start_probs / start_probs.sum()),
+            't2': {k: dict(v) for k, v in t2.items()},
+            't1': {k: dict(v) for k, v in t1.items()},
+            't0': {k: dict(v) for k, v in t0.items()},
+            'stop_rate': stop_rate,
+            'stop_by_last': stop_by_last,
+            'cap': longest,
+        }
+
     def sample_generated_chain(self, max_length: int = None, min_length: int = 3) -> str:
         """
-        Generate a new chain using 2nd-order Markov transitions
-        constrained to realistic patterns.
+        Generate a new chain with a 2nd-order Markov model and a survey stop rate.
 
-        The chain length is controlled by two mechanisms:
-        1. A target_length sampled from the survey distribution acts as the
-           soft target — beyond it, the full end_prob kicks in.
-        2. A hard ceiling (max_length or target+4) prevents runaway chains.
+        Both parts are learned from the chains the plan filter accepts (they
+        contain required_activity, within max_required, within the length limits):
+
+        - stop: after each activity, from min_length on, the chain stops with
+          P(stop | length, last activity, flag) = weight of chains that END at
+          this length with this last activity and flag / weight that REACH it.
+          Thin cells use P(stop | last activity, flag).
+        - next: P(next | prev2, prev, flag), backing off to (prev, flag), then prev.
+
+        flag is _required_flag(). No accepted chain ends before it has the
+        required activity, so the stop rate is 0 until it is in the chain.
+        Once max_required is reached, the required activity is not drawn again.
+
+        Stopping by the survey's own stop rate reproduces the survey's length
+        distribution. The previous rule (a sampled target length, a ramp below
+        it and the end-activity share above it) made the target a minimum and
+        gave chains 0.5-1.0 trips too many.
 
         Args:
-            max_length: Hard ceiling on chain length. If None, uses
-                        target_length + 4 (generous room to grow).
+            max_length: Hard ceiling on chain length. None = the longest accepted
+                        survey chain.
             min_length: Minimum chain length (default 3 = Home-X-Home minimum)
 
         Returns:
             Generated chain pattern as string
         """
-        # Sample a target length from the survey distribution.
-        # This is the soft target where the early stop reaches full strength.
-        target_length = self.sample_chain_length()
-        target_length = max(target_length, min_length)
+        key = (min_length, max_length)
+        if key not in self._generated_tables:
+            self._generated_tables[key] = self._fit_generated_tables(min_length, max_length)
+            if self._generated_tables[key] is None:
+                logger.warning(
+                    f"No survey chain with '{self.required_activity}' fits lengths "
+                    f"{min_length}-{max_length}; 'generated' falls back to observed patterns")
+        tables = self._generated_tables[key]
+        if tables is None:
+            return self.sample_direct_pattern()
 
-        # Hard ceiling — if max_length is explicitly set, respect it;
-        # otherwise use a generous default so chains can grow beyond target.
-        if max_length is not None:
-            hard_max = max(max_length, min_length)
-        else:
-            hard_max = max(target_length + 4, 10)
+        start_acts, start_probs = tables['start']
+        chain = [start_acts[np.random.choice(len(start_acts), p=start_probs)]]
 
-        # Sample starting activity
-        start_activities = list(self.start_activity_dist.keys())
-        start_probs = list(self.start_activity_dist.values())
-        first_activity = np.random.choice(start_activities, p=start_probs)
+        while len(chain) < tables['cap']:
+            flag = self._required_flag(chain)
+            if len(chain) >= min_length:
+                p_stop = tables['stop_rate'].get(
+                    (len(chain), chain[-1], flag),
+                    tables['stop_by_last'].get((chain[-1], flag), 0.0))
+                if np.random.random() < p_stop:
+                    break
 
-        chain = [first_activity]
+            counts = (tables['t2'].get((chain[-2], chain[-1], flag)) if len(chain) >= 2 else None) \
+                or tables['t1'].get((chain[-1], flag)) \
+                or tables['t0'].get(chain[-1])
+            if not counts:
+                break
 
-        # Build chain up to hard_max
-        while len(chain) < hard_max:
-            if len(chain) == 1:
-                # Sample 2nd activity using 1st order transitions
-                if first_activity in self.first_order_transitions:
-                    next_activities = list(self.first_order_transitions[first_activity].keys())
-                    next_probs = list(self.first_order_transitions[first_activity].values())
-                    next_activity = np.random.choice(next_activities, p=next_probs)
-                else:
-                    next_activity = np.random.choice(self.unique_activities)
-                chain.append(next_activity)
-            else:
-                # Use 2nd order transitions
-                prev_prev = chain[-2]
-                prev = chain[-1]
-                key = (prev_prev, prev)
-
-                if key in self.second_order_transitions:
-                    next_activities = list(self.second_order_transitions[key].keys())
-                    next_probs = list(self.second_order_transitions[key].values())
-                    next_activity = np.random.choice(next_activities, p=next_probs)
-                else:
-                    # Fallback to 1st order
-                    if prev in self.first_order_transitions:
-                        next_activities = list(self.first_order_transitions[prev].keys())
-                        next_probs = list(self.first_order_transitions[prev].values())
-                        next_activity = np.random.choice(next_activities, p=next_probs)
-                    else:
-                        next_activity = np.random.choice(self.unique_activities)
-
-                chain.append(next_activity)
-
-                # Probabilistic early stop using survey-derived target length.
-                # Below target_length: stop prob ramps up gently toward target.
-                # At/beyond target_length: stop prob = full end_prob from survey.
-                # The ramp shape is controlled by early_stop_exponent:
-                #   1.0 = linear, 2.0 = quadratic (default, gentler ramp),
-                #   3.0 = cubic (very gentle early, steep near target).
-                if len(chain) >= min_length:
-                    curr_activity = chain[-1]
-                    end_prob = self.end_activity_dist.get(curr_activity, 0)
-
-                    if len(chain) >= target_length:
-                        # At or past target: full stop probability
-                        scaled_end_prob = end_prob
-                    else:
-                        # Ramp up toward target
-                        progress = (len(chain) - min_length) / max(1, target_length - min_length)
-                        progress = progress ** self._early_stop_exponent
-                        scaled_end_prob = end_prob * progress
-
-                    if scaled_end_prob > 0 and np.random.random() < scaled_end_prob:
-                        break
+            at_max = self.max_required is not None and flag >= self.max_required
+            next_acts = [a for a in counts if not (at_max and a == self.required_activity)]
+            if not next_acts:
+                break
+            probs = np.array([counts[a] for a in next_acts], dtype=float)
+            chain.append(next_acts[np.random.choice(len(next_acts), p=probs / probs.sum())])
 
         return '-'.join(chain)
 

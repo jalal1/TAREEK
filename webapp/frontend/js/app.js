@@ -757,7 +757,7 @@ function collectFormData() {
       random_seed: val('demand-random_seed', 42),
       skip_if_exists: true,
       supported_chain_types: ['home_work_home'],
-      chain_sampling_method: 'generated',
+      chain_sampling_method: 'direct',
       max_chain_retries: 10,
       num_processes: 30,
       default_mode: 'car',
@@ -768,7 +768,6 @@ function collectFormData() {
       max_length: null,
       min_length: val('chain-min_length', 3),
       max_work_activities: val('chain-max_work', 2),
-      early_stop_exponent: val('chain-early_stop', 2.0),
     },
     od_matrix: {
       alpha: 0.1,

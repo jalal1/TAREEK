@@ -153,7 +153,7 @@
     "supported_chain_types": [
       "home_work_home"
     ],
-    "chain_sampling_method": "generated",
+    "chain_sampling_method": "direct",
     "max_chain_retries": 100,
     "num_processes": 30,
     "default_mode": "car",
@@ -250,9 +250,7 @@
     "min_length": 3,
     "_min_length_help": "Minimum activities per chain. 3 = smallest valid chain (Home-X-Home). Raise to force longer chains.",
     "max_work_activities": 2,
-    "_max_work_activities_help": "Maximum Work activities allowed per work chain. 1 = simple commute only, 2 = allows split-shift or lunch-at-home patterns.",
-    "early_stop_exponent": 2.0,
-    "_early_stop_exponent_help": "Controls early stopping aggressiveness in Markov chain generation. 1.0 = linear (original), 2.0 = quadratic (gentler, default), 3.0 = cubic. Higher values produce longer chains."
+    "_max_work_activities_help": "Maximum Work activities allowed per work chain. 1 = simple commute only, 2 = allows split-shift or lunch-at-home patterns."
   },
   "logging": {
     "level": "DEBUG",

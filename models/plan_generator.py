@@ -264,7 +264,7 @@ class _BasePlanGenerator:
         2. Contain between 1 and max_work_activities Work activities
         """
         max_retries = self.config.get('plan_generation', {}).get('max_chain_retries', 100)
-        method = self.config.get('plan_generation', {}).get('chain_sampling_method', 'generated')
+        method = self.config.get('plan_generation', {}).get('chain_sampling_method', 'direct')
         max_length = self.config.get('chains', {}).get('max_length', None)
         min_length = self.config.get('chains', {}).get('min_length', 3)
         max_work = self.config.get('chains', {}).get('max_work_activities', 2)
@@ -686,7 +686,7 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
 
         # Build models — blended when per-source data is available
         home_boost = config.get('chains', {}).get('home_boost_factor', 2.0)
-        early_stop_exp = config.get('chains', {}).get('early_stop_exponent', 2.0)
+        max_work = config.get('chains', {}).get('max_work_activities', 2)
         bw = config.get('time_models', {}).get('kde_bandwidth', 'scott')
 
         if 'per_source_data' in shared_data:
@@ -705,7 +705,7 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
                     chain_models[name] = TripChainModel(
                         cdf, home_boost_factor=home_boost,
                         length_distribution_df=all_cdf,
-                        early_stop_exponent=early_stop_exp)
+                        required_activity=BaseSurveyTrip.ACT_WORK, max_required=max_work)
             if len(chain_models) > 1:
                 self.chain_model = BlendedTripChainModel(chain_models, blend_weights)
             else:
@@ -733,7 +733,7 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
             all_chains_df = shared_data.get('all_chains_df')
             self.chain_model = TripChainModel(chains_df, home_boost_factor=home_boost,
                                               length_distribution_df=all_chains_df,
-                                              early_stop_exponent=early_stop_exp)
+                                              required_activity=BaseSurveyTrip.ACT_WORK, max_required=max_work)
             self.time_model = TripDurationModel(survey_df, config=config)
             self.activity_duration_model = ActivityDurationModel(
                 shared_data['persons'],
@@ -1107,10 +1107,10 @@ class PlanGenerator(_BasePlanGenerator):
         # so the Markov generator targets realistic lengths, not the shorter
         # lengths typical of purpose-filtered subsets.
         home_boost = self.config.get('chains', {}).get('home_boost_factor', 2.0)
-        early_stop_exp = self.config.get('chains', {}).get('early_stop_exponent', 2.0)
+        max_work = self.config.get('chains', {}).get('max_work_activities', 2)
         model = TripChainModel(chains_df, home_boost_factor=home_boost,
                                length_distribution_df=all_chains_df,
-                               early_stop_exponent=early_stop_exp)
+                               required_activity=BaseSurveyTrip.ACT_WORK, max_required=max_work)
 
         logger.info(f"  Chain model fitted with {len(chains_df)} patterns "
                     f"(length dist from {len(all_chains_df)} unfiltered)")
@@ -1121,7 +1121,7 @@ class PlanGenerator(_BasePlanGenerator):
         """Build per-source TripChainModels and wrap in BlendedTripChainModel."""
         use_weight = self.config.get('chains', {}).get('use_weighted_chains', True)
         home_boost = self.config.get('chains', {}).get('home_boost_factor', 2.0)
-        early_stop_exp = self.config.get('chains', {}).get('early_stop_exponent', 2.0)
+        max_work = self.config.get('chains', {}).get('max_work_activities', 2)
 
         per_source = {}
         for name, persons in all_persons.items():
@@ -1133,7 +1133,7 @@ class PlanGenerator(_BasePlanGenerator):
                 continue
             per_source[name] = TripChainModel(chains_df, home_boost_factor=home_boost,
                                               length_distribution_df=all_chains_df,
-                                              early_stop_exponent=early_stop_exp)
+                                              required_activity=BaseSurveyTrip.ACT_WORK, max_required=max_work)
             logger.info(f"  Chain model for '{name}': {len(chains_df)} patterns "
                         f"(length dist from {len(all_chains_df)} unfiltered)")
 

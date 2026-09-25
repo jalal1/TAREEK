@@ -301,7 +301,7 @@ def _build_plan_generation_config(form_data, defaults):
         "random_seed": pg.get("random_seed", pg_defaults.get("random_seed", 42)),
         "skip_if_exists": pg.get("skip_if_exists", pg_defaults.get("skip_if_exists", True)),
         "supported_chain_types": pg.get("supported_chain_types", pg_defaults.get("supported_chain_types", ["home_work_home"])),
-        "chain_sampling_method": pg.get("chain_sampling_method", pg_defaults.get("chain_sampling_method", "generated")),
+        "chain_sampling_method": pg.get("chain_sampling_method", pg_defaults.get("chain_sampling_method", "direct")),
         "max_chain_retries": pg.get("max_chain_retries", pg_defaults.get("max_chain_retries", 10)),
         "num_processes": pg.get("num_processes", pg_defaults.get("num_processes", 30)),
         "default_mode": pg.get("default_mode", pg_defaults.get("default_mode", "car")),
@@ -317,7 +317,6 @@ def _build_chains_config(form_data, defaults):
         "max_length": ch.get("max_length", ch_defaults.get("max_length", None)),
         "min_length": ch.get("min_length", ch_defaults.get("min_length", 3)),
         "max_work_activities": ch.get("max_work_activities", ch_defaults.get("max_work_activities", 2)),
-        "early_stop_exponent": ch.get("early_stop_exponent", ch_defaults.get("early_stop_exponent", 2.0)),
     }
 
 

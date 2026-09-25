@@ -120,11 +120,11 @@
     "supported_chain_types": [
       "home_work_home"
     ],
-    "chain_sampling_method": "generated",
+    "chain_sampling_method": "direct",
     "max_chain_retries": 10,
     "num_processes": 30,
     "default_mode": "car",
-    "cache_demand": false
+    "cache_demand": true
   },
   "od_matrix": {
     "source": "auto",
@@ -217,8 +217,7 @@
     "use_weighted_chains": true,
     "max_length": null,
     "min_length": 3,
-    "max_work_activities": 2,
-    "early_stop_exponent": 2
+    "max_work_activities": 2
   },
   "logging": {
     "level": "DEBUG",

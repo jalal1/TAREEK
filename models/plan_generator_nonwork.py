@@ -241,7 +241,6 @@ class _WorkerNonWorkPlanGenerator:
         persons = shared_data['persons']
         chains_df = shared_data['chains_df']
         home_boost = config.get('chains', {}).get('home_boost_factor', 2.0)
-        early_stop_exp = config.get('chains', {}).get('early_stop_exponent', 2.0)
         bw_method = config.get('time_models', {}).get('kde_bandwidth', 'scott')
 
         if 'per_source_data' in shared_data:
@@ -265,7 +264,7 @@ class _WorkerNonWorkPlanGenerator:
                     chain_models[name] = TripChainModel(
                         purpose_cdf, home_boost_factor=home_boost,
                         length_distribution_df=cdf,
-                        early_stop_exponent=early_stop_exp)
+                        required_activity=self.purpose)
             if len(chain_models) > 1:
                 self.chain_model = BlendedTripChainModel(chain_models, blend_weights)
             elif chain_models:
@@ -277,7 +276,7 @@ class _WorkerNonWorkPlanGenerator:
                 ].copy()
                 self.chain_model = TripChainModel(purpose_chains, home_boost_factor=home_boost,
                                                   length_distribution_df=chains_df,
-                                                  early_stop_exponent=early_stop_exp)
+                                                  required_activity=self.purpose)
 
             # Time models
             per_source_time = {name: TripDurationModel(df, config=config) for name, df in per_source_data.items()}
@@ -307,7 +306,7 @@ class _WorkerNonWorkPlanGenerator:
             ].copy()
             self.chain_model = TripChainModel(purpose_chains, home_boost_factor=home_boost,
                                               length_distribution_df=all_chains_df,
-                                              early_stop_exponent=early_stop_exp)
+                                              required_activity=self.purpose)
 
         # Build spatial index for fast POI lookups
         self.poi_spatial_index = POISpatialIndex(self.poi_data_grouped)
@@ -580,7 +579,7 @@ class _WorkerNonWorkPlanGenerator:
     def _sample_valid_chain(self, main_activity: str) -> Optional[str]:
         """Sample chain containing the main activity."""
         max_retries = self.config.get('plan_generation', {}).get('max_chain_retries', 100)
-        method = self.config.get('plan_generation', {}).get('chain_sampling_method', 'generated')
+        method = self.config.get('plan_generation', {}).get('chain_sampling_method', 'direct')
         max_length = self.config.get('chains', {}).get('max_length', None)
         min_length = self.config.get('chains', {}).get('min_length', 3)
 
@@ -1267,7 +1266,6 @@ class NonWorkPlanGenerator:
         unfiltered survey so the Markov generator targets realistic lengths.
         """
         home_boost = self.config.get('chains', {}).get('home_boost_factor', 2.0)
-        early_stop_exp = self.config.get('chains', {}).get('early_stop_exponent', 2.0)
 
         if (self._shared_data is not None
                 and 'per_source_chains_dfs' in self._shared_data):
@@ -1286,7 +1284,7 @@ class NonWorkPlanGenerator:
                     chain_models[name] = TripChainModel(
                         purpose_cdf, home_boost_factor=home_boost,
                         length_distribution_df=cdf,
-                        early_stop_exponent=early_stop_exp)
+                        required_activity=self.purpose)
                     logger.info(f"  Chain model for '{name}': {len(purpose_cdf)} {self.purpose} patterns "
                                 f"(excl. Work, length dist from {len(cdf)} unfiltered)")
 
@@ -1304,7 +1302,7 @@ class NonWorkPlanGenerator:
                 ].copy()
                 self.chain_model = TripChainModel(purpose_chains, home_boost_factor=home_boost,
                                                   length_distribution_df=self.chains_df,
-                                                  early_stop_exponent=early_stop_exp)
+                                                  required_activity=self.purpose)
                 logger.info(f"  Fallback chain model with {len(purpose_chains)} patterns (excl. Work)")
         else:
             # Single-source path
@@ -1319,7 +1317,7 @@ class NonWorkPlanGenerator:
                 purpose_chains,
                 home_boost_factor=home_boost,
                 length_distribution_df=self.chains_df,
-                early_stop_exponent=early_stop_exp
+                required_activity=self.purpose
             )
 
             logger.info(f"  Chain model initialized with {len(purpose_chains):,} chains "
@@ -1957,7 +1955,7 @@ class NonWorkPlanGenerator:
             Chain string or None
         """
         max_retries = self.config.get('plan_generation', {}).get('max_chain_retries', 100)
-        method = self.config.get('plan_generation', {}).get('chain_sampling_method', 'generated')
+        method = self.config.get('plan_generation', {}).get('chain_sampling_method', 'direct')
         max_length = self.config.get('chains', {}).get('max_length', None)
         min_length = self.config.get('chains', {}).get('min_length', 3)
 
