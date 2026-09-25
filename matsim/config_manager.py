@@ -5,7 +5,7 @@ Handles loading templates and generating customized config.xml files
 
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -349,6 +349,200 @@ class ConfigManager:
                               {'name': name, 'value': str(value)})
 
         logger.info(f"Registered scoring activityParams for '{activity_type}'")
+
+    def apply_survey_activity_params(self, tree: ET.ElementTree) -> None:
+        """Write survey-derived typicalDuration for every human activity type.
+
+        typicalDuration is where an activity's utility peaks under MATSim's
+        default 'relative' score computation, so a value that disagrees with
+        the demand actually generated makes replanning pull against the
+        plans. The base template used to hardcode seven activity types at one
+        region's numbers; measured against NHTS those were out by up to 3.3x
+        (Social 60 min against an observed 196, School 150 against 430), and
+        being hardcoded they could not be right for more than one region
+        anyway.
+
+        The durations come from ``matsim._survey_typical_durations``, which
+        the plan-generation step stashes on the config after fitting the
+        activity duration model. That is also why this is a no-op on the
+        early config write: the model does not exist yet. The pre-flight
+        config keeps MATSim's own defaults, and the write before the
+        simulation carries the real numbers.
+
+        openingTime, closingTime and minimalDuration are also written, from
+        ``matsim._survey_activity_params``, which the same plan-generation
+        step derives from the same fitted model. Leaving them undefined is
+        not neutral: verified against this repo's matsim_25.jar an omitted
+        one serialises as "undefined" and applies no constraint, so with
+        performing=+6.0 an activity keeps paying for as long as an agent
+        sits at it. Measured on Birmingham (bham_stage1e_50iter) that ran
+        Shopping to 3.36x its typicalDuration, Other to 2.19x and Social to
+        1.94x, and the accumulated lateness pushed evening counts from 1.14x
+        observed at hour 18 to 3.10x by hour 23.
+
+        Home is excluded upstream and stays undefined here. Its overnight
+        stay wraps midnight so a 0-24 window is meaningless, and a Home
+        minimalDuration is exactly what once penalised every mid-day return
+        home and broke the multi-tour chains the plan generator produces.
+
+        latestStartTime and earliestEndTime stay undefined: they gate the
+        lateArrival/earlyDeparture penalties, which are global scoring
+        parameters this writer does not set.
+
+        priority, scoringThisActivityAtAll and typicalDurationScoreComputation
+        are written at their MATSim defaults rather than left implicit. The
+        diagnosis above depends on typicalDurationScoreComputation being
+        'relative' - that log form is what keeps marginal utility positive at
+        every duration - and a value the config depends on should not be a
+        default that could change under it.
+        """
+        typical = self.matsim_config.get('_survey_typical_durations') or {}
+        if not typical:
+            logger.debug(
+                "No survey typical durations available yet; leaving activity "
+                "params at MATSim defaults for this write"
+            )
+            return
+
+        # MATSim matches an activity's type string exactly, so "Social" and
+        # "social" are two different types: one of them ends up with no
+        # activityParams and the run dies on the first agent that performs it.
+        # Two spellings reaching here at once means an upstream purpose map
+        # disagrees with BaseSurveyTrip's canonical names, which is worth
+        # failing on rather than writing a config that aborts later.
+        by_lower: Dict[str, List[str]] = {}
+        for activity_type in typical:
+            by_lower.setdefault(activity_type.lower(), []).append(activity_type)
+        collisions = {k: v for k, v in by_lower.items() if len(v) > 1}
+        if collisions:
+            raise ValueError(
+                "Activity types differing only by case were derived from the "
+                f"survey: {collisions}. MATSim treats these as distinct types "
+                "and will abort on whichever one has no activityParams. Fix "
+                "the purpose mapping in the survey loader so it emits the "
+                "canonical BaseSurveyTrip.ACT_* spelling."
+            )
+
+        def _hhmmss(total_seconds: int) -> str:
+            hours, rem = divmod(int(total_seconds), 3600)
+            mins, secs = divmod(rem, 60)
+            return f"{hours:02d}:{mins:02d}:{secs:02d}"
+
+        scoring = self.matsim_config.get('_survey_activity_params') or {}
+
+        for activity_type, minutes in sorted(typical.items()):
+            if minutes is None or minutes <= 0:
+                logger.warning(
+                    f"Skipping typicalDuration for '{activity_type}': "
+                    f"non-positive value {minutes}"
+                )
+                continue
+            params = {
+                'typicalDuration': _hhmmss(round(float(minutes) * 60)),
+                # Written explicitly, not left to MATSim's defaults: see the
+                # note in this method's docstring.
+                'typicalDurationScoreComputation': 'relative',
+                'priority': '1.0',
+                'scoringThisActivityAtAll': 'true',
+            }
+
+            window = scoring.get(activity_type) or {}
+            opening = window.get('opening_hour')
+            closing = window.get('closing_hour')
+            if opening is not None and closing is not None:
+                params['openingTime'] = _hhmmss(round(float(opening) * 3600))
+                params['closingTime'] = _hhmmss(round(float(closing) * 3600))
+            minimal = window.get('minimal_duration_minutes')
+            if minimal is not None and float(minimal) > 0:
+                params['minimalDuration'] = _hhmmss(round(float(minimal) * 60))
+
+            self.add_activity_params(tree, activity_type, params)
+
+        logger.info(
+            "Activity typicalDuration from survey: "
+            + ", ".join(f"{a}={m:.0f}min" for a, m in sorted(typical.items()))
+        )
+        if scoring:
+            logger.info(
+                "Activity scoring windows from survey: "
+                + ", ".join(
+                    f"{a}=" + "/".join(filter(None, [
+                        (f"{v['opening_hour']:.2f}-{v['closing_hour']:.2f}h"
+                         if 'opening_hour' in v else None),
+                        (f"min{v['minimal_duration_minutes']:.0f}m"
+                         if 'minimal_duration_minutes' in v else None),
+                    ]))
+                    for a, v in sorted(scoring.items())
+                )
+            )
+        else:
+            logger.info(
+                "No survey activity scoring windows available; openingTime, "
+                "closingTime and minimalDuration stay undefined"
+            )
+
+    def verify_activity_params_cover_plans(
+        self,
+        tree: ET.ElementTree,
+        plans_path: Path,
+    ) -> None:
+        """Fail if plans.xml performs an activity the config cannot score.
+
+        MATSim aborts partway into the first iteration on an activity type it
+        has no activityParams for, after the network and plans have already
+        been read. The type strings are matched exactly, so a case difference
+        ("Social" against "social") is enough. Reading the types out of
+        plans.xml here turns that into an immediate, specific error.
+
+        Skipped silently when plans.xml is not there yet: the pre-flight
+        config write happens before plan generation.
+        """
+        if not plans_path.exists():
+            return
+
+        scoring_params = self._get_scoring_parameterset(tree)
+        if scoring_params is None:
+            return
+
+        declared = {
+            p.find("param[@name='activityType']").get('value')
+            for p in scoring_params.findall("parameterset[@type='activityParams']")
+            if p.find("param[@name='activityType']") is not None
+        }
+
+        # Stream the file: a full-population plans.xml runs to hundreds of MB,
+        # and only the activity type attributes are needed.
+        performed = set()
+        try:
+            for _, elem in ET.iterparse(plans_path, events=('end',)):
+                if elem.tag == 'activity':
+                    act_type = elem.get('type')
+                    if act_type:
+                        performed.add(act_type)
+                if elem.tag == 'person':
+                    elem.clear()
+        except ET.ParseError as e:
+            logger.warning(f"Could not scan {plans_path} for activity types: {e}")
+            return
+
+        missing = performed - declared
+        if missing:
+            case_hints = {
+                m: [d for d in declared if d.lower() == m.lower()]
+                for m in sorted(missing)
+            }
+            hints = {m: v for m, v in case_hints.items() if v}
+            raise ValueError(
+                f"plans.xml performs activity types with no activityParams in "
+                f"config.xml: {sorted(missing)}. MATSim would abort on the "
+                f"first agent performing one. Declared: {sorted(declared)}."
+                + (f" Case mismatch suspected: {hints}." if hints else "")
+            )
+
+        logger.info(
+            f"Activity params cover all {len(performed)} activity types in "
+            f"plans.xml: {sorted(performed)}"
+        )
 
     def set_replanning_strategies(
         self,
@@ -865,10 +1059,20 @@ class ConfigManager:
         if self.matsim_config.get('transit_network', False):
             self._enable_transit_module(tree)
 
+        # Survey-derived activity durations, before freight: freight registers
+        # its own activity types and must not have them overwritten by a
+        # passenger-survey value.
+        self.apply_survey_activity_params(tree)
+
         # Freight last, so it sees the final strategy list and iteration count.
         # It reads the strategies the template plus configurable_params left in
         # place, and re-tags them, which only works once they are settled.
         self.configure_freight(tree, last_iteration)
+
+        # After every activity type has been registered (survey + freight),
+        # check the config can actually score the plans it will be run with.
+        self.verify_activity_params_cover_plans(
+            tree, experiment_path / 'plans.xml')
 
         # Save to file
         output_path.parent.mkdir(parents=True, exist_ok=True)

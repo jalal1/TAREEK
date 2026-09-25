@@ -187,6 +187,12 @@
   "duration_constraints": {
     "activity_durations": {
       "_trim_priority_help": "Controls trimming order when schedule exceeds 24h. Higher = trimmed first (discretionary before mandatory). 1=mandatory, 2=default, 3=discretionary",
+      "Home": {
+        "min_minutes": 10,
+        "max_minutes": 600,
+        "trim_priority": 1,
+        "blend_weight": 0
+      },
       "Work": {
         "min_minutes": 10,
         "max_minutes": 600,

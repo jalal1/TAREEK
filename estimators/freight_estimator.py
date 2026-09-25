@@ -537,6 +537,10 @@ def update_estimated_config(
 
     new_config = apply_recommendations(base, recommendations)
     new_config.pop("_config_dir", None)
+    # Activity typicalDurations are derived from the survey on every run
+    # and recorded in config_used.json as provenance. Carrying them into a
+    # region config would freeze one run's values.
+    new_config.get("matsim", {}).pop("_survey_typical_durations", None)
 
     with open(estimated_path, "w") as f:
         json.dump(new_config, f, indent=2)

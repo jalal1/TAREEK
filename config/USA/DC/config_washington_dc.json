@@ -183,6 +183,12 @@
   },
   "duration_constraints": {
     "activity_durations": {
+      "Home": {
+        "min_minutes": 10,
+        "max_minutes": 600,
+        "trim_priority": 1,
+        "blend_weight": 0
+      },
       "Work": {
         "min_minutes": 10,
         "max_minutes": 600,

@@ -552,10 +552,14 @@ class ExperimentRunner:
         the network, plans, or counts files (it just *references* them by
         relative filename, and MATSim opens them at simulation time).
 
-        Step 5 will regenerate this file from the same inputs before running
-        the simulation; the two writes are bit-identical, so this is safe
-        even if a later step were to mutate state we depend on. The file
-        also persists for inspection if a downstream step crashes.
+        Step 5 regenerates this file before running the simulation, and the
+        two writes are no longer identical: by then plan generation has fitted
+        the activity duration model, so the second write carries survey-derived
+        typicalDuration values for each activity type while this one leaves
+        MATSim's defaults in place (see
+        ConfigManager.apply_survey_activity_params). Everything else is the
+        same in both. The file also persists for inspection if a downstream
+        step crashes.
         """
         from matsim.config_manager import ConfigManager
 
@@ -1205,6 +1209,20 @@ class ExperimentRunner:
             # Generate work plans (use target_plans for work)
             work_plans, work_stats = self.plan_generator.generate_plans(target_plans=target_plans)
             self.plan_stats['work'] = work_stats
+
+            # PlanGenerator is handed the config through a temp JSON file, so
+            # its self.config is a separate dict and anything it records there
+            # is invisible here. Copy the observed activity durations back so
+            # the config write before the simulation can use them; see
+            # ConfigManager.apply_survey_activity_params.
+            derived = self.plan_generator.config.get('matsim', {}).get(
+                '_survey_typical_durations')
+            if derived:
+                self.config.setdefault('matsim', {})['_survey_typical_durations'] = derived
+            derived_scoring = self.plan_generator.config.get('matsim', {}).get(
+                '_survey_activity_params')
+            if derived_scoring:
+                self.config.setdefault('matsim', {})['_survey_activity_params'] = derived_scoring
             logger.info(f"Generated {len(work_plans):,} work plans")
             logger.info("")
 

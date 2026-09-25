@@ -1017,6 +1017,60 @@ class PlanGenerator(_BasePlanGenerator):
             self._all_survey_data = None
             self._blend_weights = None
 
+        # Hand the observed activity durations to the MATSim config writer.
+        # Both branches above converge on self.activity_duration_model, and the
+        # blended one returns a blend-weighted median across every configured
+        # survey, so this covers the multi-source case without special-casing
+        # it here. The config write before the simulation picks these up; see
+        # ConfigManager.apply_survey_activity_params.
+        try:
+            typical = self.activity_duration_model.typical_durations()
+            if typical:
+                self.config.setdefault('matsim', {})['_survey_typical_durations'] = typical
+                logger.info(
+                    "  Survey typicalDuration for MATSim: "
+                    + ", ".join(f"{a}={m:.0f}min" for a, m in sorted(typical.items()))
+                )
+            else:
+                logger.warning(
+                    "No activity durations extracted from the survey — MATSim "
+                    "activity params keep template defaults"
+                )
+        except Exception as e:
+            # Never fail plan generation over a scoring hint.
+            logger.warning(f"Could not derive typical activity durations: {e}")
+
+        # Opening/closing windows and a minimalDuration floor, from the same
+        # fitted model. Without a closingTime an activity accrues utility for
+        # as long as an agent sits at it, which is what let Shopping run 3.36x
+        # its typicalDuration and pushed the evening counts to 3.1x observed.
+        # See ConfigManager.apply_survey_activity_params.
+        try:
+            scoring = self.activity_duration_model.activity_scoring_params()
+            if scoring:
+                self.config.setdefault('matsim', {})['_survey_activity_params'] = scoring
+                logger.info(
+                    "  Survey activity scoring windows for MATSim: "
+                    + ", ".join(
+                        f"{a}=" + "/".join(
+                            filter(None, [
+                                (f"{v['opening_hour']:.1f}-{v['closing_hour']:.1f}h"
+                                 if 'opening_hour' in v else None),
+                                (f"min{v['minimal_duration_minutes']:.0f}m"
+                                 if 'minimal_duration_minutes' in v else None),
+                            ]))
+                        for a, v in sorted(scoring.items()))
+                )
+            else:
+                logger.info(
+                    "No activity scoring windows derived from the survey — "
+                    "MATSim leaves opening/closing times undefined"
+                )
+        except Exception as e:
+            # Same contract as the durations above: a scoring hint must never
+            # take the plan generation down with it.
+            logger.warning(f"Could not derive activity scoring windows: {e}")
+
         # Initialize POI manager
         logger.info("Initializing POI manager...")
         self.poi_manager = self._init_poi_manager()

@@ -1749,6 +1749,10 @@ def main():
 
         # Remove internal keys before saving
         new_config.pop("_config_dir", None)
+        # Activity typicalDurations are derived from the survey on every run
+        # and recorded in config_used.json as provenance. Carrying them into a
+        # region config would freeze one run's values.
+        new_config.get("matsim", {}).pop("_survey_typical_durations", None)
 
         # Print projected demand
         print_projected_demand(config, new_config, estimate, population_stats, avg_legs, survey_trips_per_capita)

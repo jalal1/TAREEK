@@ -17,6 +17,82 @@ def _is_main_process() -> bool:
     """Return True if running in the main process (not a multiprocessing worker)."""
     return multiprocessing.current_process().name == 'MainProcess'
 
+
+def _weighted_median(values: np.ndarray, weights: np.ndarray) -> float:
+    """Median of ``values`` under ``weights``.
+
+    The tolerance is not cosmetic. Summing many small weights accumulates
+    rounding error, so a boundary that is exactly half in exact arithmetic
+    can land a few 1e-14 below it; without the epsilon an exact tie steps
+    past every tied value and lands on the wrong side of the distribution.
+    Ties resolve to the lower value, the usual convention.
+    """
+    values = np.asarray(values, dtype=float)
+    weights = np.asarray(weights, dtype=float)
+    order = np.argsort(values)
+    values, weights = values[order], weights[order]
+    total = weights.sum()
+    if total <= 0:
+        return float(np.median(values))
+    cumulative = np.cumsum(weights)
+    eps = 1e-9 * max(total, 1.0)
+    cutoff = int(np.searchsorted(cumulative, total / 2.0 - eps, side='left'))
+    return float(values[min(cutoff, len(values) - 1)])
+
+
+def _weighted_quantile(values: np.ndarray, weights: np.ndarray,
+                       q: float) -> float:
+    """Quantile ``q`` of ``values`` under ``weights``.
+
+    Same conventions as :func:`_weighted_median`, which is this function at
+    q=0.5: the epsilon absorbs the rounding error of summing many small
+    weights so an exact boundary does not step past every tied value, and
+    ties resolve to the lower value.
+    """
+    values = np.asarray(values, dtype=float)
+    weights = np.asarray(weights, dtype=float)
+    if values.size == 0:
+        return float('nan')
+    order = np.argsort(values)
+    values, weights = values[order], weights[order]
+    total = weights.sum()
+    if total <= 0:
+        return float(np.quantile(values, q))
+    cumulative = np.cumsum(weights)
+    eps = 1e-9 * max(total, 1.0)
+    cutoff = int(np.searchsorted(cumulative, total * q - eps, side='left'))
+    return float(values[min(cutoff, len(values) - 1)])
+
+
+def _weights_for(df: pd.DataFrame, index, label: str) -> Optional[np.ndarray]:
+    """Survey expansion weights aligned to ``index``, or None.
+
+    A survey's trip weight says how many real trips a record stands for, so a
+    distribution fitted without it describes the sample rather than the
+    population. The chain model and the OD matrices already weight; the KDEs
+    here did not, which made them inconsistent with the rest of the pipeline.
+    NHTS WTTRDFIN spans roughly 9,600x between its smallest and largest value,
+    so this is not a rounding-level difference.
+
+    Returns None when the column is absent or unusable, which makes the caller
+    fall back to an unweighted fit rather than fail.
+    """
+    if BaseSurveyTrip.TRIP_WEIGHT not in df.columns:
+        return None
+    weights = pd.to_numeric(
+        df.loc[index, BaseSurveyTrip.TRIP_WEIGHT], errors='coerce')
+    # A non-positive or missing weight cannot expand anything. Treat it as 1
+    # rather than dropping the observation: the record is still a real trip.
+    weights = weights.where(weights > 0).fillna(1.0)
+    values = weights.to_numpy(dtype=float)
+    if values.size == 0 or not np.isfinite(values).all() or values.sum() <= 0:
+        if _is_main_process():
+            logger.warning(
+                f"Unusable trip weights for {label}; fitting unweighted")
+        return None
+    return values
+
+
 class TripDurationModel:
     """
     Model departure and arrival time distributions by activity pair.
@@ -84,12 +160,17 @@ class TripDurationModel:
             depart_min = self._time_to_minutes(group[self.depart_col].dropna())
             arrive_min = self._time_to_minutes(group[self.arrive_col].dropna())
 
+            # Expansion weights, aligned to the rows each series kept.
+            depart_w = _weights_for(group, depart_min.index, f"depart {activity_key}")
+            arrive_w = _weights_for(group, arrive_min.index, f"arrive {activity_key}")
+
             # Fit KDE if we have enough samples
             if len(depart_min) > min_kde_samples:
                 try:
                     self.depart_models[activity_key] = gaussian_kde(
                         depart_min,
-                        bw_method='scott'
+                        bw_method='scott',
+                        weights=depart_w,
                     )
                 except Exception:
                     if _is_main_process():
@@ -104,7 +185,8 @@ class TripDurationModel:
                 try:
                     self.arrive_models[activity_key] = gaussian_kde(
                         arrive_min,
-                        bw_method='scott'
+                        bw_method='scott',
+                        weights=arrive_w,
                     )
                 except Exception:
                     if _is_main_process():
@@ -126,7 +208,15 @@ class TripDurationModel:
                     f"(rejected {n_rejected} outside [{min_trip_dur}, {max_trip_dur}] min range)"
                 )
             if len(valid_dur) > 0:
-                self._mean_trip_durations[activity_key] = float(valid_dur.mean())
+                # Weighted mean, for the same reason the KDEs are weighted:
+                # this feeds the schedule time budget, so it should describe
+                # the population rather than the sample.
+                dur_w = _weights_for(group, valid_dur.index, f"duration {activity_key}")
+                if dur_w is not None:
+                    self._mean_trip_durations[activity_key] = float(
+                        np.average(valid_dur.to_numpy(dtype=float), weights=dur_w))
+                else:
+                    self._mean_trip_durations[activity_key] = float(valid_dur.mean())
 
         # Compute global mean as fallback for unknown pairs
         all_durations = [mean_dur for mean_dur in self._mean_trip_durations.values()]
@@ -320,6 +410,52 @@ class TripDurationModel:
         
         return figs
 
+# MATSim allows one typicalDuration per activity type, but Home plays two
+# roles: the overnight anchor that opens and closes every plan, and the
+# mid-day return inside a multi-tour chain. The survey can only measure the
+# second, because the duration extractor walks consecutive trip pairs and a
+# day's opening and closing Home are never between two trips.
+#
+# Using the measured mid-chain median (~2.5h in NHTS) for both is actively
+# harmful. Under the default 'relative' scoring the marginal utility of
+# staying somewhere falls as typicalDuration / t, so at 2.5h an agent sitting
+# at home 14 hours values the next hour at ~1.1 util/h against ~5.1 at 12h.
+# Home becomes cheap to leave and agents get pushed out of the house at night.
+#
+# The overnight stay dominates the day and is what the parameter should be
+# tuned for, so Home is pinned here instead of measured. The floor only ever
+# raises the value, so a survey that somehow reports long Home stays keeps its
+# own number.
+HOME_TYPICAL_DURATION_MINUTES = 12 * 60
+
+# Survey support below which a derived scoring window is not trustworthy.
+# A handful of observations puts p05/p95 on individual records, and a wrong
+# openingTime silently zeroes an activity's utility for part of the day.
+MIN_OBS_FOR_SCORING_WINDOW = 200
+
+# minimalDuration is a floor against implausibly short stops, not a
+# substantial fraction of the day. Capping it here keeps a pathological
+# survey from writing a value that penalises normal-length activities: an
+# 8-hour Home minimalDuration once did exactly that, penalising every
+# mid-day return home and breaking multi-tour chains.
+MINIMAL_DURATION_CAP_FRACTION = 0.25
+
+
+def _adjust_home_typical_duration(durations: Dict[str, float]) -> Dict[str, float]:
+    """Raise Home to the overnight anchor value. See the note above."""
+    home = BaseSurveyTrip.ACT_HOME
+    if home in durations and durations[home] < HOME_TYPICAL_DURATION_MINUTES:
+        logger.info(
+            f"Home typicalDuration: using {HOME_TYPICAL_DURATION_MINUTES:.0f} min "
+            f"(overnight anchor) instead of the measured mid-chain median "
+            f"{durations[home]:.0f} min — MATSim allows only one value per "
+            f"activity type and the overnight stay dominates the day"
+        )
+        durations = dict(durations)
+        durations[home] = float(HOME_TYPICAL_DURATION_MINUTES)
+    return durations
+
+
 class ActivityDurationModel:
     """
     Model activity duration distributions using KDE.
@@ -328,7 +464,9 @@ class ActivityDurationModel:
     - Person goes Home→Work at 7:00-7:30, then Work→Shop at 13:00-13:15
     - Work duration = 13:00 - 7:30 = 5.5 hours
 
-    Only fits "middle" activities (not first/last of the day).
+    Only fits "middle" activities (not first/last of the day). Mid-chain Home
+    returns are middle activities and are fitted like any other type; the
+    day's opening and closing Home never enter the pairwise walk.
     """
 
     def __init__(self, persons_dict: Dict, bw_method: str = 'scott', config: Optional[Dict] = None):
@@ -418,9 +556,15 @@ class ActivityDurationModel:
                     # Activity is the destination of trip_i
                     activity = trip_i[BaseSurveyTrip.DESTINATION_PURPOSE]
 
-                    # Skip Home activities (first/last of the day)
-                    if activity == BaseSurveyTrip.ACT_HOME:
-                        continue
+                    # Home is NOT skipped here. This loop only ever walks
+                    # consecutive trip pairs, so the first and last Home of a
+                    # person-day can never appear in it — every Home seen here
+                    # is a mid-chain return (Home-Work-Home-Shopping-Home).
+                    # Skipping it left no 'Home' KDE, so sample_duration()
+                    # raised for any multi-tour chain and _assign_times()
+                    # discarded the whole plan after exhausting its retries.
+                    # Mid-chain Home is ~12% of intermediate activities, so
+                    # that silently removed most multi-tour demand.
 
                     # Duration = departure time of next trip - arrival time of current trip
                     arrive_time = pd.to_datetime(trip_i[BaseSurveyTrip.ARRIVE_TIME])
@@ -429,16 +573,35 @@ class ActivityDurationModel:
                     duration_seconds = (depart_time - arrive_time).total_seconds()
                     duration_minutes = duration_seconds / 60.0
 
+                    # Overlapping or out-of-order survey records yield a
+                    # non-positive dwell; a KDE fitted through them would put
+                    # mass below zero.
+                    if duration_minutes <= 0:
+                        n_rejected += 1
+                        continue
+
                     # Use per-activity config bounds if available, else global
                     act_cfg = self.activity_constraints.get(activity, {})
                     min_dur = act_cfg.get('min_minutes', global_min)
                     max_dur = act_cfg.get('max_minutes', global_max)
 
                     if min_dur <= duration_minutes <= max_dur:
+                        # Carry the expansion weight of the trip that ARRIVED
+                        # at this activity: that is the record the dwell is
+                        # observed from. A missing or non-positive weight
+                        # becomes 1 so the observation still counts once.
+                        weight = trip_i.get(BaseSurveyTrip.TRIP_WEIGHT, 1.0)
+                        try:
+                            weight = float(weight)
+                        except (TypeError, ValueError):
+                            weight = 1.0
+                        if not np.isfinite(weight) or weight <= 0:
+                            weight = 1.0
                         durations.append({
                             'activity': activity,
                             'duration_minutes': duration_minutes,
                             'arrival_hour': arrive_time.hour + arrive_time.minute / 60.0,
+                            'weight': weight,
                         })
                     else:
                         n_rejected += 1
@@ -474,13 +637,16 @@ class ActivityDurationModel:
             self.activity_types.append(activity)
 
             duration_min = group['duration_minutes'].values
+            duration_w = (group['weight'].to_numpy(dtype=float)
+                          if 'weight' in group.columns else None)
 
             # Fit survey KDE if we have enough samples
             if len(duration_min) > min_kde_samples:
                 try:
                     self.survey_duration_models[activity] = gaussian_kde(
                         duration_min,
-                        bw_method=self.bw_method
+                        bw_method=self.bw_method,
+                        weights=duration_w,
                     )
                     survey_fitted_count += 1
                     if _is_main_process():
@@ -563,8 +729,10 @@ class ActivityDurationModel:
                 dur_vals = grp['duration_minutes'].values
                 if len(dur_vals) >= min_kde_bin_samples:
                     try:
+                        bin_w = (grp['weight'].to_numpy(dtype=float)
+                                 if 'weight' in grp.columns else None)
                         self.survey_duration_models_binned[(activity, bin_label)] = gaussian_kde(
-                            dur_vals, bw_method=self.bw_method
+                            dur_vals, bw_method=self.bw_method, weights=bin_w
                         )
                         binned_count += 1
                         if _is_main_process():
@@ -712,6 +880,132 @@ class ActivityDurationModel:
         ]).round(2)
 
         return stats.sort_values('count', ascending=False)
+
+    def typical_durations(self) -> Dict[str, float]:
+        """Median observed duration per activity, in minutes.
+
+        Feeds MATSim's activityParams typicalDuration, which under the default
+        'relative' score computation is where an activity's utility peaks.
+        The median, not the mean: these distributions are skewed (Work is
+        mean 352 against median 420 in NHTS, pulled down by short shifts),
+        and the peak belongs where the mass is rather than where a tail
+        drags the average.
+
+        Returns:
+            ``{'Work': 420.0, 'Shopping': 30.0, ...}``; empty when no
+            durations were extracted.
+        """
+        if self.durations_df.empty:
+            return {}
+        has_weights = 'weight' in self.durations_df.columns
+        result = {}
+        for activity, grp in self.durations_df.groupby('activity'):
+            values = grp['duration_minutes'].to_numpy(dtype=float)
+            if has_weights:
+                result[str(activity)] = _weighted_median(
+                    values, grp['weight'].to_numpy(dtype=float))
+            else:
+                result[str(activity)] = float(np.median(values))
+        return _adjust_home_typical_duration(result)
+
+    def activity_scoring_params(self) -> Dict[str, Dict[str, float]]:
+        """Survey-derived MATSim activityParams beyond typicalDuration.
+
+        Returns, per activity, any of:
+
+        ``opening_hour`` / ``closing_hour``
+            Weighted p05 of observed arrival times and p95 of observed
+            departure times. Outside this window MATSim accrues no utility
+            for the activity, which is what stops an agent being paid to
+            sit at a Shopping activity all evening. Without them every
+            activity scores indefinitely: measured on Birmingham, Shopping
+            ran 3.36x its typicalDuration and the evening counts overshot
+            to 3.1x observed by hour 23.
+
+        ``minimal_duration_minutes``
+            Weighted p05 of observed durations, capped at
+            ``MINIMAL_DURATION_CAP_FRACTION`` of the typical duration.
+
+        Home is deliberately given no entry. Its overnight stay wraps
+        midnight, so a p05/p95 window on a 0-24 clock is meaningless, and
+        this model never observes that stay anyway - only mid-chain
+        returns (see ``_extract_activity_durations``). A minimalDuration on
+        Home is what previously penalised every mid-day return home and
+        broke multi-tour chains, so it is left undefined as well.
+
+        An activity with fewer than ``MIN_OBS_FOR_SCORING_WINDOW``
+        observations is omitted rather than guessed at, and so is a closing
+        time that lands past midnight: MATSim runs an extended day, and
+        clamping such a window to 23:59 would invent a departure spike at
+        midnight rather than describe anything observed.
+
+        Returns:
+            ``{'Shopping': {'opening_hour': 7.65, 'closing_hour': 20.25,
+            'minimal_duration_minutes': 5.0}, ...}``; empty when the survey
+            carries no usable durations.
+        """
+        if self.durations_df.empty:
+            return {}
+        if 'arrival_hour' not in self.durations_df.columns:
+            logger.warning(
+                "No arrival_hour in survey durations; skipping activity "
+                "scoring windows"
+            )
+            return {}
+
+        typical = self.typical_durations()
+        has_weights = 'weight' in self.durations_df.columns
+        result: Dict[str, Dict[str, float]] = {}
+
+        for activity, grp in self.durations_df.groupby('activity'):
+            activity = str(activity)
+            if activity == BaseSurveyTrip.ACT_HOME:
+                continue
+            grp = grp.dropna(subset=['arrival_hour', 'duration_minutes'])
+            if len(grp) < MIN_OBS_FOR_SCORING_WINDOW:
+                logger.debug(
+                    f"{activity}: {len(grp)} observations is below "
+                    f"{MIN_OBS_FOR_SCORING_WINDOW}; leaving its scoring "
+                    "window undefined"
+                )
+                continue
+
+            durations = grp['duration_minutes'].to_numpy(dtype=float)
+            arrivals = grp['arrival_hour'].to_numpy(dtype=float)
+            weights = (grp['weight'].to_numpy(dtype=float) if has_weights
+                       else np.ones(len(grp), dtype=float))
+
+            params: Dict[str, float] = {}
+
+            opening = _weighted_quantile(arrivals, weights, 0.05)
+            closing = _weighted_quantile(arrivals + durations / 60.0,
+                                         weights, 0.95)
+            if np.isfinite(opening) and np.isfinite(closing) and closing < 24.0:
+                if opening < closing:
+                    params['opening_hour'] = opening
+                    params['closing_hour'] = closing
+                else:
+                    logger.warning(
+                        f"{activity}: derived opening {opening:.2f}h is not "
+                        f"before closing {closing:.2f}h; leaving the window "
+                        "undefined"
+                    )
+            elif np.isfinite(closing):
+                logger.info(
+                    f"{activity}: p95 departure {closing:.2f}h runs past "
+                    "midnight into MATSim's extended day; leaving the window "
+                    "undefined rather than clamping it"
+                )
+
+            minimal = _weighted_quantile(durations, weights, 0.05)
+            cap = MINIMAL_DURATION_CAP_FRACTION * typical.get(activity, 0.0)
+            if np.isfinite(minimal) and minimal > 0 and cap > 0:
+                params['minimal_duration_minutes'] = float(min(minimal, cap))
+
+            if params:
+                result[activity] = params
+
+        return result
 
 
 class BlendedTripDurationModel:
@@ -896,3 +1190,129 @@ class BlendedActivityDurationModel:
         for model in self.models.values():
             types.update(model.activity_types)
         return list(types)
+
+    def typical_durations(self) -> Dict[str, float]:
+        """Blend-weighted median duration per activity, in minutes.
+
+        Pools every source's raw observations and takes a weighted median,
+        rather than averaging the per-source medians. Averaging medians would
+        weight a source by its configured blend weight alone and ignore how
+        many observations back it, so a 100-trip survey at weight 0.5 would
+        count as much as a 10,000-trip one. Here each observation carries
+        ``blend_weight / n_source_observations``, which reproduces the mixture
+        the sampler actually draws from: a source's total influence equals its
+        blend weight regardless of its size.
+
+        Sources that never observed an activity contribute nothing to it, and
+        the remaining weights carry the full distribution for that activity.
+
+        Returns:
+            ``{activity: median_minutes}`` across all sources.
+        """
+        # Gather (values, per-observation weight) per activity. Two weightings
+        # compose here: the survey's own expansion weight, which says how many
+        # real trips a record stands for, and the blend weight, which says how
+        # much this source counts against the others. Normalising the survey
+        # weights within a source before scaling by the blend weight keeps a
+        # source's total influence equal to its blend weight regardless of how
+        # many observations or how large an expansion factor it carries.
+        pooled: Dict[str, List[Tuple[np.ndarray, np.ndarray]]] = {}
+        for name, prob in zip(self.source_names, self.probabilities):
+            model = self.models[name]
+            if model.durations_df.empty:
+                continue
+            has_weights = 'weight' in model.durations_df.columns
+            for activity, grp in model.durations_df.groupby('activity'):
+                vals = grp['duration_minutes'].to_numpy(dtype=float)
+                if len(vals) == 0:
+                    continue
+                if has_weights:
+                    obs_w = grp['weight'].to_numpy(dtype=float)
+                else:
+                    obs_w = np.ones(len(vals), dtype=float)
+                total = obs_w.sum()
+                if total <= 0:
+                    obs_w = np.ones(len(vals), dtype=float)
+                    total = float(len(vals))
+                pooled.setdefault(str(activity), []).append(
+                    (vals, obs_w / total * float(prob)))
+
+        result: Dict[str, float] = {}
+        for activity, parts in pooled.items():
+            values = np.concatenate([v for v, _ in parts])
+            weights = np.concatenate([w for _, w in parts])
+            if weights.sum() <= 0:
+                continue
+            result[activity] = _weighted_median(values, weights)
+
+        return _adjust_home_typical_duration(result)
+
+    def activity_scoring_params(self) -> Dict[str, Dict[str, float]]:
+        """Blend-weighted activity scoring windows across every source.
+
+        Pools raw observations the same way :meth:`typical_durations` does -
+        each observation carries ``blend_weight / n_source_observations`` -
+        so a source's influence equals its blend weight regardless of how
+        many records back it. See
+        :meth:`ActivityDurationModel.activity_scoring_params` for what the
+        values mean and why Home is excluded.
+        """
+        typical = self.typical_durations()
+        pooled: Dict[str, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]] = {}
+
+        for name, prob in zip(self.source_names, self.probabilities):
+            model = self.models[name]
+            if model.durations_df.empty:
+                continue
+            if 'arrival_hour' not in model.durations_df.columns:
+                continue
+            has_weights = 'weight' in model.durations_df.columns
+            frame = model.durations_df.dropna(
+                subset=['arrival_hour', 'duration_minutes'])
+            for activity, grp in frame.groupby('activity'):
+                if str(activity) == BaseSurveyTrip.ACT_HOME:
+                    continue
+                vals = grp['duration_minutes'].to_numpy(dtype=float)
+                if len(vals) == 0:
+                    continue
+                arr = grp['arrival_hour'].to_numpy(dtype=float)
+                if has_weights:
+                    obs_w = grp['weight'].to_numpy(dtype=float)
+                else:
+                    obs_w = np.ones(len(vals), dtype=float)
+                total = obs_w.sum()
+                if total <= 0:
+                    obs_w = np.ones(len(vals), dtype=float)
+                    total = float(len(vals))
+                pooled.setdefault(str(activity), []).append(
+                    (vals, arr, obs_w / total * float(prob)))
+
+        result: Dict[str, Dict[str, float]] = {}
+        for activity, parts in pooled.items():
+            n_obs = sum(len(v) for v, _, _ in parts)
+            if n_obs < MIN_OBS_FOR_SCORING_WINDOW:
+                continue
+            durations = np.concatenate([v for v, _, _ in parts])
+            arrivals = np.concatenate([a for _, a, _ in parts])
+            weights = np.concatenate([w for _, _, w in parts])
+            if weights.sum() <= 0:
+                continue
+
+            params: Dict[str, float] = {}
+            opening = _weighted_quantile(arrivals, weights, 0.05)
+            closing = _weighted_quantile(arrivals + durations / 60.0,
+                                         weights, 0.95)
+            if (np.isfinite(opening) and np.isfinite(closing)
+                    and closing < 24.0 and opening < closing):
+                params['opening_hour'] = opening
+                params['closing_hour'] = closing
+
+            minimal = _weighted_quantile(durations, weights, 0.05)
+            cap = MINIMAL_DURATION_CAP_FRACTION * typical.get(activity, 0.0)
+            if np.isfinite(minimal) and minimal > 0 and cap > 0:
+                params['minimal_duration_minutes'] = float(min(minimal, cap))
+
+            if params:
+                result[activity] = params
+
+        return result
