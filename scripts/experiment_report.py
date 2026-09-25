@@ -390,6 +390,130 @@ def build_hour_tabs(eval_dir: Path, embed_dir: Optional[Path]) -> Tuple[List[str
     return L, used
 
 
+# Trip timing figures, written by matsim/trip_timing.py. Each pair is the
+# generated demand (iteration 0) on the left and the last iteration on the
+# right, drawn on the same scale so they read side by side.
+TRIP_TIMING_PAIRS: List[Tuple[str, str, str]] = [
+    ("dep_arr_by_activity_demand.png", "dep_arr_by_activity_sim.png",
+     "Trips per hour. Bars above zero are departures, coloured by the "
+     "activity the trip leaves. Bars below zero are arrivals, coloured by the "
+     "activity the trip goes to. Trips after midnight are in 23+. Compare the "
+     "evening: if the right side has more late arrivals to Home than the "
+     "left, the chains moved later during the simulation."),
+    ("trip_duration_by_hour_demand.png", "trip_duration_by_hour_sim.png",
+     "Trip travel time by departure hour, one panel for each destination "
+     "activity. Solid line: mean. Dashed line: median. Band: p25 to p75. When "
+     "the mean is much higher than the median, a small number of long trips "
+     "cause it. If evening durations stay short, congestion is not the cause "
+     "of an evening overshoot. The axis is set from hours 0 to 22, because 23+ "
+     "holds every trip after midnight and can include trips of many hours; a "
+     "mean above the axis is printed with its value."),
+]
+TRIP_TIMING_SINGLE = (
+    "activity_duration_by_type.png",
+    "Time at each activity: planned (open box, the free-flow schedule of "
+    "plans.xml) against the last iteration (filled box). Box: p25 to p75. "
+    "Whiskers: p5 to p95. Log scale. The number above each pair is the ratio "
+    "of medians, simulated divided by planned. The dashed mark is the "
+    "typicalDuration in config.xml. The overnight Home stay is joined across "
+    "midnight; a day that starts or ends away from Home has no overnight "
+    "stay in this figure. A ratio well above 1 on Shopping, Dining, Social or "
+    "Other means scoring makes agents stay longer than the plan, and every "
+    "later trip of the day moves later. A box above the dashed mark on both "
+    "sides means the plan itself is longer than typicalDuration.")
+
+
+def _trip_timing_check_line(eval_dir: Path) -> Optional[str]:
+    """One or two sentences on where the planned side came from."""
+    path = eval_dir / "trip_timing_check.json"
+    if not path.is_file():
+        return None
+    try:
+        c = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if c.get("source") == "it0_executed":
+        return ("<p><strong>Warning:</strong> this run has no "
+                "<code>output/ITERS/it.0/0.plans.xml.gz</code>, so the left-hand "
+                "figures show the executed iteration 0. That includes the "
+                "congestion of iteration 0 and is not the plan.</p>")
+    if c.get("source") != "it0_plans":
+        return None
+    ok = not c["schedule_off"] and not c["legs_without_time"]
+    head = "Check" if ok else "Warning"
+    text = (f"<p><strong>{head}:</strong> the planned side is plans.xml as "
+            f"routed by MATSim at free flow, before any simulation: "
+            f"{c['planned_trips']:,} trips, {c['planned_activities']:,} "
+            f"activities. ")
+    if ok:
+        text += (f"All {c['schedule_checked']:,} planned stops keep their "
+                 f"max_dur (largest difference "
+                 f"{c['schedule_max_diff_s']:.0f} s).")
+    else:
+        text += (f"{c['schedule_off']:,} of {c['schedule_checked']:,} planned "
+                 f"stops differ from max_dur by more than {c['tolerance_s']} s, "
+                 f"and {c['legs_without_time']:,} legs have no router time.")
+    executed = c.get("it0_activities_executed")
+    if executed is not None and executed < c["planned_activities"]:
+        missing = c["planned_activities"] - executed
+        text += (f" The executed iteration 0 reached {executed:,} of them; "
+                 f"{missing:,} were cut off at the end of the simulation or "
+                 f"lost to stuck agents.")
+    return text + "</p>"
+
+
+def build_trip_timing_section(eval_dir: Path,
+                              embed_dir: Optional[Path]) -> Tuple[List[str], set]:
+    """Demand-vs-simulation trip timing figures. Returns lines and names used.
+
+    Plain HTML, not Markdown-in-HTML, for the same reason as the hour tabs:
+    md_in_html does not reliably recurse into nested <figure> elements.
+    """
+    pairs = [(a, b, cap) for a, b, cap in TRIP_TIMING_PAIRS
+             if (eval_dir / a).is_file() and (eval_dir / b).is_file()]
+    single, single_cap = TRIP_TIMING_SINGLE
+    has_single = (eval_dir / single).is_file()
+    if not pairs and not has_single:
+        return [], set()
+
+    used: set = set()
+    L: List[str] = []
+    L.append("## Trip Timing and Activity Duration")
+    L.append("")
+    L.append("The generated demand beside what the simulation did with it. Left: "
+             "the plan, with MATSim's free-flow travel times (plans.xml has no "
+             "travel times, so the router's times from iteration 0 are used, "
+             "before any traffic is simulated). Right: the last iteration, after "
+             "replanning. Scoring can make agents stay at an activity longer "
+             "than the plan says. Each long stop moves every later trip of the "
+             "day to a later time, which adds traffic in the late evening. "
+             "Congestion also makes trips longer on the right, so compare the "
+             "duration figures before you blame the stops.")
+    L.append("")
+    check = _trip_timing_check_line(eval_dir)
+    if check:
+        L.append(check)
+        L.append("")
+    L.append('<div class="wide-section">')
+    for left, right, caption in pairs:
+        L.append('<div class="fig-grid">')
+        for name, side in ((left, "Planned demand (free-flow)"),
+                           (right, "Simulation (last iteration)")):
+            used.add(name)
+            src = _image_src(eval_dir / name, embed_dir)
+            L.append(_figure(src, name, f"<strong>{side}.</strong> {caption}"))
+        L.append("</div>")
+    if has_single:
+        used.add(single)
+        L.append('<div class="fig-grid full">')
+        L.append(_figure(_image_src(eval_dir / single, embed_dir), single,
+                         single_cap))
+        L.append("</div>")
+    L.append("</div>")
+    L.append("")
+    return L, used
+
+
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
@@ -1129,6 +1253,11 @@ def build_markdown(run: Dict[str, Any], baseline: Optional[Dict[str, Any]],
         L.append("</div>")
         L.append("")
 
+    # Trip timing, still whole-day: demand beside simulation.
+    timing_lines, timing_used = build_trip_timing_section(eval_dir, embed_dir)
+    L.extend(timing_lines)
+    used |= timing_used
+
     # Per-hour figures, after the whole-day ones: read the day's shape first,
     # then drill into an hour.
     hour_lines, hour_used = build_hour_tabs(eval_dir, embed_dir)
@@ -1403,6 +1532,25 @@ __HOUR_TAB_RULES__
 }
 @media (max-width: 700px) {
   .hour-figs { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Trip timing: demand (left) beside simulation (right). Same break-out as
+   .hour-tabs — the duration figure is a 2x4 grid of panels, and at half the
+   980px reading width each panel would be about 110px wide. At 1600px each
+   figure gets roughly 780px. Below 1000px the pair stacks, demand on top. */
+.wide-section {
+  position: relative; left: 50%; transform: translateX(-50%);
+  width: min(1600px, calc(100vw - 36px));
+}
+.fig-grid.full { grid-template-columns: minmax(0, 1fr); }
+.wide-section .fig-grid.full > figure { max-width: 1200px; justify-self: center; }
+@media (max-width: 1000px) {
+  .wide-section .fig-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media print {
+  .wide-section {
+    position: static; left: auto; transform: none; width: auto;
+  }
 }
 """
 
