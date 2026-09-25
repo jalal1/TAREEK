@@ -145,6 +145,100 @@ class SurveyManager:
             self.sources[survey_type] = source
             logger.info(f"Initialized survey source: {survey_type} (year={entry.get('year', '?')})")
 
+    # ── Day-type filtering ──────────────────────────────────────────────
+
+    def _day_type(self) -> str:
+        """Which travel days to model: 'weekday' (default), 'weekend' or 'all'.
+
+        Weekday is the default because everything the model is validated
+        against is weekday-only: both counts loaders filter to Mon-Fri
+        (CountsGenerator._load_custom_counts, FHACountsManager). Modelling a
+        72/28 weekday/weekend mixture against a weekday yardstick flattens
+        the morning peak and inflates the evening. Measured on NHTS 2022:
+        07-09 holds 21.3% of weekday departures but 12.2% of weekend ones,
+        and 19-23 holds 7.5% against 16.0%. Activity durations move too: on
+        the weekday-only fit a median School stay is 411 min against 315 when
+        weekend days are pooled in, and Social is 95 against 105.
+
+        Note this does NOT address the 0-4 shortfall -- weekday and weekend
+        night departures are both far below what the counts show. It is a
+        peak-shape and duration correction.
+        """
+        value = str(self.config.get('data', {}).get('day_type', 'weekday')).lower()
+        if value not in ('weekday', 'weekend', 'all'):
+            raise ValueError(
+                f"data.day_type must be 'weekday', 'weekend' or 'all', "
+                f"got '{value}'"
+            )
+        return value
+
+    def _filter_day_type(self, df: pd.DataFrame, source_key: str) -> pd.DataFrame:
+        """Drop trips that do not match the configured day type.
+
+        The travel day is read off ``depart_time`` rather than carried in a
+        column of its own, so nothing has to change in the database: TBI
+        records a real calendar date, and the NHTS loader encodes TRAVDAY
+        into the synthetic date it builds (see NHTSSurveyTrip).
+
+        A source whose dates carry no day-of-week variation — every trip on
+        one weekday — cannot have been given a real travel day, so it is
+        passed through untouched with a warning rather than being wholly
+        dropped or wholly kept by accident.
+        """
+        day_type = self._day_type()
+        if day_type == 'all':
+            return df
+
+        depart = df.get(BaseSurveyTrip.DEPART_TIME)
+        if depart is None:
+            logger.warning(
+                f"Survey '{source_key}' has no '{BaseSurveyTrip.DEPART_TIME}' "
+                f"column — cannot filter to {day_type}; using all its trips."
+            )
+            return df
+
+        depart = pd.to_datetime(depart, errors='coerce')
+        weekday = depart.dt.weekday  # Monday=0 .. Sunday=6
+
+        # Data ingested before the loader preserved the travel day sits on a
+        # single synthetic date, so every trip reads as the same weekday.
+        # Filtering on that would keep everything or drop everything for the
+        # wrong reason; say so instead.
+        distinct_days = int(weekday.dropna().nunique())
+        if distinct_days <= 1:
+            logger.warning(
+                f"Survey '{source_key}': every trip falls on the same weekday, "
+                f"so its travel day was not preserved (data ingested before "
+                f"day-type tracking, or a survey with no day information). "
+                f"Using all its trips instead of filtering to {day_type}. "
+                f"Delete its rows from the survey_trips table to re-run the "
+                f"ETL and enable filtering."
+            )
+            return df
+
+        is_weekend = weekday >= 5
+        keep = is_weekend if day_type == 'weekend' else ~is_weekend
+        # A trip whose depart_time could not be parsed has no day and is
+        # excluded: it cannot be placed in the modelled day.
+        keep = keep & weekday.notna()
+
+        filtered = df[keep]
+        n_dropped = len(df) - len(filtered)
+        if n_dropped:
+            n_unknown = int(weekday.isna().sum())
+            logger.info(
+                f"Survey '{source_key}': kept {len(filtered):,}/{len(df):,} "
+                f"{day_type} trips (dropped {n_dropped:,}"
+                + (f", of which {n_unknown:,} had an unparseable date" if n_unknown else "")
+                + ")"
+            )
+        if filtered.empty:
+            raise ValueError(
+                f"Survey '{source_key}' has no {day_type} trips after day-type "
+                f"filtering. Set data.day_type='all' to disable the filter."
+            )
+        return filtered
+
     # ── Multi-source interface ──────────────────────────────────────────
 
     def load_data(self) -> Dict[str, pd.DataFrame]:
@@ -155,7 +249,7 @@ class SurveyManager:
         """
         result = {}
         for key, source in self.sources.items():
-            result[key] = source.load_data()
+            result[key] = self._filter_day_type(source.load_data(), key)
             logger.info(f"Loaded {len(result[key])} records for '{key}'")
         return result
 
@@ -167,7 +261,24 @@ class SurveyManager:
         """
         result = {}
         for key, source in self.sources.items():
-            result[key] = source.process_persons()
+            # process_persons() groups whatever sits in source.data, so the
+            # day-type filter has to be applied to that frame rather than to
+            # the result. Otherwise the activity duration model — which is
+            # built from persons, not from the trip frame — would keep every
+            # weekend day.
+            #
+            # source.data is restored afterwards: the filter is a view of this
+            # call, not a permanent edit to the source. Leaving it filtered
+            # would make a later load_data() filter an already-filtered frame
+            # and report misleading counts.
+            if source.data is None:
+                source.load_data()
+            original = source.data
+            try:
+                source.data = self._filter_day_type(original, key)
+                result[key] = source.process_persons()
+            finally:
+                source.data = original
             logger.info(f"Processed {len(result[key])} persons for '{key}'")
         return result
 

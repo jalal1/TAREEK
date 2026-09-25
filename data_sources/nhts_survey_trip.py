@@ -25,9 +25,12 @@ class NHTSSurveyTrip(BaseSurveyTrip):
       None.  This means NHTS data **cannot** contribute to OD matrices;
       it can only feed trip-chain, trip-duration, and activity-duration
       models.
-    - Times are in HHMM integer format with no real calendar date.
-      Datetimes are synthesised with a fixed date (2022-01-01) so that
-      ``process_persons()`` grouping and time-arithmetic work correctly.
+    - Times are in HHMM integer format with no real calendar date
+      (TDAYDATE is year-month only). Datetimes are synthesised against a
+      reference week so that ``process_persons()`` grouping and
+      time-arithmetic work correctly AND the day of week is preserved:
+      TRAVDAY (1=Sunday..7=Saturday) sets which day of that week a trip
+      falls on, so ``depart_time.dt.weekday`` is the trip's real weekday.
     """
 
     # ── Raw CSV columns needed from the NHTS trip file ───────────────────
@@ -39,6 +42,7 @@ class NHTSSurveyTrip(BaseSurveyTrip):
         'TRVLCMIN', 'TRPMILES',
         'WTTRDFIN',
         'TDAYDATE',
+        'TRAVDAY',
     ]
 
     # ── NHTS WHYTO → WHYTRP1S deterministic mapping ─────────────────────
@@ -235,16 +239,40 @@ class NHTSSurveyTrip(BaseSurveyTrip):
             df[self.MODE_TYPE] = df['TRPTRANS'].map(self.MODE_MAP).fillna(self.MODE_OTHER)
 
             # ── Construct datetime from HHMM integers ─────────────────────
-            # Use a fixed synthetic date; only time-of-day matters.
+            # The synthetic date carries the real day of week.
+            #
+            # NHTS has no calendar date (TDAYDATE is year-month only), but it
+            # does record TRAVDAY, 1=Sunday .. 7=Saturday. Anchoring the week
+            # at Sunday 2022-01-02 and offsetting by TRAVDAY-1 makes
+            # depart_time.dt.weekday the trip's actual weekday, so day-type
+            # filtering reads it straight off the timestamp with no extra
+            # column to carry through the database.
+            #
+            # A trip with an unusable TRAVDAY keeps the original 2022-01-01
+            # anchor, a Saturday, which day-type filtering then treats as
+            # weekend rather than silently passing it off as a weekday.
+            week_anchor = pd.Timestamp('2022-01-02')  # a Sunday
+            travday = pd.to_numeric(df['TRAVDAY'], errors='coerce')
+            day_offset = (travday - 1).where(travday.between(1, 7))
+            n_bad_day = int(day_offset.isna().sum())
+            if n_bad_day:
+                logger.warning(
+                    f"{n_bad_day} NHTS trips have an unusable TRAVDAY; their "
+                    f"day of week is unknown and they will be treated as "
+                    f"weekend by day-type filtering"
+                )
+            # -1 puts an unknown day on 2022-01-01 (Saturday).
+            day_offset = pd.to_timedelta(day_offset.fillna(-1), unit='D')
+
             def hhmm_to_datetime(hhmm_series):
                 hh = hhmm_series // 100
                 mm = hhmm_series % 100
                 # Clamp to valid range
                 hh = hh.clip(0, 23)
                 mm = mm.clip(0, 59)
-                return pd.to_datetime(
-                    '2022-01-01'
-                ) + pd.to_timedelta(hh * 60 + mm, unit='m')
+                return (week_anchor
+                        + day_offset
+                        + pd.to_timedelta(hh * 60 + mm, unit='m'))
 
             df[self.DEPART_TIME] = hhmm_to_datetime(df['STRTTIME'])
             df[self.ARRIVE_TIME] = hhmm_to_datetime(df['ENDTIME'])

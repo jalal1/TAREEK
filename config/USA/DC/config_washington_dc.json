@@ -8,6 +8,8 @@
   },
   "data": {
     "data_dir": "/home/exouser/Documents/Tareek/data",
+    "day_type": "weekday",
+    "_day_type_help": "Which travel days to model: 'weekday' (default), 'weekend' or 'all'. Both counts loaders filter to Mon-Fri, so a weekday demand model is what the validation compares against. Measured on NHTS 2022: 07-09 holds 21.3% of weekday departures but 12.2% of weekend ones, and a median School stay is 414 min on a weekday against 105 on a weekend.",
     "lodes": {
       "year": 2023,
       "job_type": "JT00",

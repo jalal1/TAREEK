@@ -15,6 +15,8 @@
   },
   "data": {
     "data_dir": "/home/exouser/Documents/Tareek/data",
+    "day_type": "weekday",
+    "_day_type_help": "Which travel days to model: 'weekday' (default), 'weekend' or 'all'. Both counts loaders filter to Mon-Fri, so a weekday demand model is what the validation compares against. Measured on NHTS 2022: 07-09 holds 21.3% of weekday departures but 12.2% of weekend ones, and a median School stay is 414 min on a weekday against 105 on a weekend.",
     "census_api_key": "YOUR_CENSUS_API_KEY_HERE",
     "_census_api_key_help": "Free API key from https://api.census.gov/data/key_signup.html. Used by demand_estimator.py to fetch ACS commute data (B08301, B08303) for calibration",
     "lodes": {
