@@ -397,7 +397,8 @@ TRIP_TIMING_PAIRS: List[Tuple[str, str, str]] = [
     ("dep_arr_by_activity_demand.png", "dep_arr_by_activity_sim.png",
      "Trips per hour. Bars above zero are departures, coloured by the "
      "activity the trip leaves. Bars below zero are arrivals, coloured by the "
-     "activity the trip goes to. Trips after midnight are in 23+. Compare the "
+     "activity the trip goes to. Hour 23 is 23:00-23:59 only; trips after "
+     "midnight are in the separate 24+ column. Compare the "
      "evening: if the right side has more late arrivals to Home than the "
      "left, the chains moved later during the simulation."),
     ("trip_duration_by_hour_demand.png", "trip_duration_by_hour_sim.png",
@@ -405,9 +406,10 @@ TRIP_TIMING_PAIRS: List[Tuple[str, str, str]] = [
      "activity. Solid line: mean. Dashed line: median. Band: p25 to p75. When "
      "the mean is much higher than the median, a small number of long trips "
      "cause it. If evening durations stay short, congestion is not the cause "
-     "of an evening overshoot. The axis is set from hours 0 to 22, because 23+ "
-     "holds every trip after midnight and can include trips of many hours; a "
-     "mean above the axis is printed with its value."),
+     "of an evening overshoot. Trips that depart after midnight are in the "
+     "separate 24+ column (point: mean and median, bar: p25 to p75), because "
+     "they can include trips of many hours. The axis is set from hours 0 to "
+     "23; a mean above the axis is printed with its value."),
 ]
 TRIP_TIMING_SINGLE = (
     "activity_duration_by_type.png",

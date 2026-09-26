@@ -76,9 +76,17 @@ ALL_COLOR = "#3a434e"
 INK = "#1f2328"
 
 DAY_S = 24 * 3600
-# Hour bins run 0-23; anything departing or arriving after midnight goes in 23
-# and the tick reads "23+". Wrapping to hour 0 would hide the late ratchet.
+# Hour bins 0-23 hold their own hour only. Anything departing or arriving
+# after midnight goes in one extra bin, AFTER_MIDNIGHT, drawn apart from the
+# day (at x = AFTER_MIDNIGHT_X, behind a dashed line) and labelled "24+".
+# Pooling it into 23 made hour 23 look like an evening peak when it was a
+# handful of very long post-midnight trips; wrapping it to hour 0 would hide
+# the late ratchet.
 LAST_HOUR = 23
+AFTER_MIDNIGHT = 24
+AFTER_MIDNIGHT_X = 25
+BINS = list(range(LAST_HOUR + 1)) + [AFTER_MIDNIGHT]
+BIN_X = np.array(list(range(LAST_HOUR + 1)) + [AFTER_MIDNIGHT_X])
 # Hour x destination cells with fewer trips than this are not drawn in the
 # duration figure — a mean over three trips is noise, not a finding.
 MIN_TRIPS_PER_CELL = 10
@@ -175,9 +183,9 @@ def _trip_frame(from_type, to_type, dep_s, trav_s) -> pd.DataFrame:
         "trav_min": np.asarray(trav_s, dtype="float64") / 60.0,
     })
     out = out[out["dep_s"].notna() & out["trav_min"].notna()]
-    out["dep_hour"] = (out["dep_s"] // 3600).clip(upper=LAST_HOUR).astype(int)
+    out["dep_hour"] = (out["dep_s"] // 3600).clip(upper=AFTER_MIDNIGHT).astype(int)
     arr = out["dep_s"] + out["trav_min"] * 60.0
-    out["arr_hour"] = (arr // 3600).clip(upper=LAST_HOUR).astype(int)
+    out["arr_hour"] = (arr // 3600).clip(upper=AFTER_MIDNIGHT).astype(int)
     return out
 
 
@@ -390,16 +398,23 @@ def _count_executed_activities(experiment_dir: Path) -> Optional[int]:
 # Figures
 # ---------------------------------------------------------------------------
 
+def _after_midnight_divider(ax):
+    """Dashed line that sets the after-midnight column apart from the day."""
+    ax.axvline((LAST_HOUR + AFTER_MIDNIGHT_X) / 2, color="#8c8c8c",
+               linewidth=0.8, linestyle=(0, (3, 3)))
+
+
 def _hour_axis(ax):
-    ax.set_xticks(range(0, 24))
-    ax.set_xticklabels([str(h) for h in range(LAST_HOUR)] + [f"{LAST_HOUR}+"],
+    ax.set_xticks(BIN_X)
+    ax.set_xticklabels([str(h) for h in range(LAST_HOUR + 1)] + ["24+"],
                        fontsize=8)
-    ax.set_xlim(-0.6, LAST_HOUR + 0.6)
+    ax.set_xlim(-0.6, AFTER_MIDNIGHT_X + 0.6)
+    _after_midnight_divider(ax)
 
 
 def _hourly_counts(trips: pd.DataFrame, hour_col: str, type_col: str) -> pd.DataFrame:
     return (trips.groupby([hour_col, type_col]).size().unstack(fill_value=0)
-            .reindex(range(24), fill_value=0))
+            .reindex(BINS, fill_value=0))
 
 
 def plot_dep_arr(trips: pd.DataFrame, types: List[str], ylim: float,
@@ -407,14 +422,15 @@ def plot_dep_arr(trips: pd.DataFrame, types: List[str], ylim: float,
     """Departures stacked up from zero, arrivals stacked down, by activity."""
     dep = _hourly_counts(trips, "dep_hour", "from_type")
     arr = _hourly_counts(trips, "arr_hour", "to_type")
-    hours = np.arange(24)
+    hours = BIN_X
+    nb = len(BINS)
 
     fig, ax = plt.subplots(figsize=(13, 6))
-    up = np.zeros(24)
-    down = np.zeros(24)
+    up = np.zeros(nb)
+    down = np.zeros(nb)
     for t in types:
-        d = dep[t].values if t in dep else np.zeros(24)
-        a = arr[t].values if t in arr else np.zeros(24)
+        d = dep[t].values if t in dep else np.zeros(nb)
+        a = arr[t].values if t in arr else np.zeros(nb)
         # White edges give the 2px-style gap between stacked segments, so
         # adjacent types stay distinct without relying on colour alone.
         ax.bar(hours, d, bottom=up, width=0.8, color=_color(t),
@@ -429,7 +445,7 @@ def plot_dep_arr(trips: pd.DataFrame, types: List[str], ylim: float,
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(
         lambda v, _: f"{abs(v):,.0f}"))
     ax.set_ylabel("Trips per hour (sample, not scaled)")
-    ax.set_xlabel("Hour of Day")
+    ax.set_xlabel("Hour of Day (24+ = after midnight)")
     _hour_axis(ax)
     ax.grid(True, axis="y", alpha=0.3)
     ax.set_axisbelow(True)
@@ -451,7 +467,7 @@ def _duration_stats(trips: pd.DataFrame) -> pd.DataFrame:
     stats = pd.DataFrame({
         "n": g.size(), "mean": g.mean(), "median": g.median(),
         "p25": g.quantile(0.25), "p75": g.quantile(0.75),
-    }).reindex(range(24))
+    }).reindex(BINS)
     stats.loc[~(stats["n"] >= MIN_TRIPS_PER_CELL),
               ["mean", "median", "p25", "p75"]] = np.nan
     return stats
@@ -466,17 +482,17 @@ def _duration_panels(trips: pd.DataFrame, types: List[str]):
 
 
 def _duration_ymax(panels) -> float:
-    """Axis top from hours 0-22 only.
+    """Axis top from hours 0-23 only, never from the after-midnight bin.
 
-    The 23+ bin collects every trip after midnight, and it can hold trips that
-    last many hours: on bham_stage2c_directchains the planned walk trips
-    departing in 23+ averaged 435 min (router fallback from pt when no service
-    runs), which set a 0-680 min axis and flattened every other hour on both
-    sides of the pair. Values above the axis are printed instead of drawn.
+    The after-midnight bin can hold trips that last many hours: on
+    bham_stage2c_directchains the planned walk trips departing after midnight
+    averaged 435 min (router fallback from pt when no service runs), which set
+    a 0-680 min axis and flattened every other hour on both sides of the pair.
+    Values above the axis are printed instead of drawn.
     """
-    peaks = [np.nanmax(s.loc[:LAST_HOUR - 1, ["mean", "p75"]].values)
+    peaks = [np.nanmax(s.loc[:LAST_HOUR, ["mean", "p75"]].values)
              for _, _, s, _ in panels
-             if s.loc[:LAST_HOUR - 1, "mean"].notna().any()]
+             if s.loc[:LAST_HOUR, "mean"].notna().any()]
     return max(peaks) if peaks else 60.0
 
 
@@ -486,35 +502,51 @@ def plot_duration(panels, ymax: float, title: str, path: Path) -> None:
     nrows = math.ceil(len(panels) / ncols)
     fig, axes = plt.subplots(nrows, ncols, figsize=(15, 3.6 * nrows + 0.8),
                              sharex=True, sharey=True, squeeze=False)
-    hours = np.arange(24)
+    hours = np.arange(LAST_HOUR + 1)
     for ax, (label, color, s, n) in zip(axes.flat, panels):
-        ax.fill_between(hours, s["p25"], s["p75"], color=color, alpha=0.22,
+        day = s.loc[:LAST_HOUR]
+        ax.fill_between(hours, day["p25"], day["p75"], color=color, alpha=0.22,
                         linewidth=0)
         # Markers, because an hour with enough trips between two that have too
         # few is a single point, and a line through one point draws nothing.
-        ax.plot(hours, s["mean"], color=color, linewidth=2, marker="o",
+        ax.plot(hours, day["mean"], color=color, linewidth=2, marker="o",
                 markersize=3)
-        ax.plot(hours, s["median"], color=color, linewidth=1.4,
+        ax.plot(hours, day["median"], color=color, linewidth=1.4,
                 linestyle=(0, (4, 2)), marker="o", markersize=2.5,
                 markerfacecolor="white")
-        ax.set_title(f"{label}  (n={n:,})", fontsize=10, loc="left")
+        # After midnight: its own column, not joined to the day's line, with
+        # the p25-p75 range as a bar.
+        late = s.loc[AFTER_MIDNIGHT]
+        if pd.notna(late["mean"]):
+            ax.plot([AFTER_MIDNIGHT_X] * 2, [late["p25"], late["p75"]],
+                    color=color, alpha=0.45, linewidth=5, solid_capstyle="butt")
+            ax.plot([AFTER_MIDNIGHT_X], [late["mean"]], color=color, marker="o",
+                    markersize=4, linestyle="none")
+            ax.plot([AFTER_MIDNIGHT_X], [late["median"]], color=color, marker="o",
+                    markersize=3.5, markerfacecolor="white", linestyle="none")
+        _after_midnight_divider(ax)
+        n_late = int(s.loc[AFTER_MIDNIGHT, "n"]) if pd.notna(s.loc[AFTER_MIDNIGHT, "n"]) else 0
+        ax.set_title(f"{label}  (n={n:,}; after midnight {n_late:,})",
+                     fontsize=10, loc="left")
         if not s["mean"].notna().any():
             ax.text(0.5, 0.5, f"fewer than {MIN_TRIPS_PER_CELL} trips\nin every hour",
                     transform=ax.transAxes, ha="center", va="center",
                     fontsize=9, color="#5a6470")
         ax.grid(True, alpha=0.3)
-        ax.set_xticks(range(0, 24, 3))
+        ax.set_xticks(list(range(0, LAST_HOUR + 1, 3)) + [AFTER_MIDNIGHT_X])
+        ax.set_xticklabels([str(h) for h in range(0, LAST_HOUR + 1, 3)] + ["24+"])
         ax.tick_params(axis="x", labelsize=8)
-        ax.set_xlim(-0.5, LAST_HOUR + 0.5)
+        ax.set_xlim(-0.5, AFTER_MIDNIGHT_X + 0.5)
     top = ymax * 1.05
     for ax, (_, color, s, _) in zip(axes.flat, panels):
         # A mean above the axis is clipped, so print its value at the top edge.
         for h, v in s["mean"].items():
             if pd.notna(v) and v > top:
-                ax.annotate(f"mean {v:.0f}", xy=(h, top), xytext=(-3, -3),
+                x = AFTER_MIDNIGHT_X if h == AFTER_MIDNIGHT else h
+                ax.annotate(f"mean {v:.0f}", xy=(x, top), xytext=(-3, -3),
                             textcoords="offset points", ha="right", va="top",
                             fontsize=8, color=INK)
-                ax.plot([h], [top], marker="^", color=color, markersize=6,
+                ax.plot([x], [top], marker="^", color=color, markersize=6,
                         clip_on=False)
     for ax in axes.flat[len(panels):]:
         ax.set_visible(False)
@@ -522,7 +554,7 @@ def plot_duration(panels, ymax: float, title: str, path: Path) -> None:
     for ax in axes[:, 0]:
         ax.set_ylabel("Trip duration [min]")
     for ax in axes[-1, :]:
-        ax.set_xlabel("Departure hour (23 = 23+)")
+        ax.set_xlabel("Departure hour (24+ = after midnight)")
 
     handles = [
         Line2D([], [], color=ALL_COLOR, linewidth=2, marker="o", markersize=3,
@@ -536,8 +568,10 @@ def plot_duration(panels, ymax: float, title: str, path: Path) -> None:
                frameon=False, bbox_to_anchor=(0.99, 1.0))
     fig.suptitle(title, fontsize=12, fontweight="bold", x=0.01, ha="left")
     fig.text(0.01, 0.005, f"Hours with fewer than {MIN_TRIPS_PER_CELL} trips "
-             f"are not drawn. The axis is set from hours 0-22; a mean above it "
-             f"is marked with its value.", fontsize=8, color="#5a6470")
+             f"are not drawn. Hour 23 is 23:00-23:59 only; trips that depart after "
+             f"midnight are in the separate 24+ column (bar: p25 to p75). The axis "
+             f"is set from hours 0-23; a mean above it is marked with its value.",
+             fontsize=8, color="#5a6470")
     plt.tight_layout(rect=(0, 0.02, 1, 0.96))
     plt.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
