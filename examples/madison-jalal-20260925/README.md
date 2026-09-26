@@ -152,8 +152,6 @@ national survey.
 | ![Station ratios](evaluation/station_ratio_dotplot.png) | ![Hourly error](evaluation/hourly_relative_error_box.png) |
 | Sim/obs ratio per station, sorted | Signed relative error per hour, all stations |
 
-![Spatial overview](evaluation/spatial_overview.png)
-
 More figures are in [`evaluation/`](evaluation/). The full set, with captions, is in
 [`report.html`](report.html).
 

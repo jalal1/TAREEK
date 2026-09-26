@@ -15,7 +15,7 @@ networks/plans).
 
 | Region | Author | Date | Highlights |
 |--------|--------|------|------------|
-| [Birmingham, AL](birmingham-jalal-20260924/) | Jalal | 2026-09-24 | 2 counties, 0.25 scaling, 10 iters, qsim; sim/obs 0.945, corr 0.78, 53 counts; [full report](birmingham-jalal-20260924/report.html) |
+| [Birmingham, AL](birmingham-jalal-20260925/) | Jalal | 2026-09-25 | 2 counties, 0.25 scaling, 10 iters, qsim, first-of-day start times; sim/obs 0.953, corr 0.78, 53 counts; [full report](birmingham-jalal-20260925/report.html) |
 | [Madison, WI (cold start)](madison-jalal-20260925/) | Jalal | 2026-09-25 | Dane County, estimator-seeded config, 0.25 scaling, 10 iters; sim/obs 1.009, corr 0.96, only 8 counts; [full report](madison-jalal-20260925/report.html) |
 
 ## Contributing
