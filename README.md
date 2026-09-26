@@ -64,11 +64,12 @@ show 0.5× and 2× the observed volume. Most stations are between the dashed lin
   <img src="docs/images/bham_counts_loglog_8am.jpg" width="520" alt="Simulated vs. observed volumes at 8 AM, Birmingham" />
 </p>
 
-**Highway congestion at 8 AM.** The color of each highway link shows the simulated speed
-divided by the free-flow speed. Green is free flow. Red is near gridlock. You can see the
-morning congestion on the roads into downtown Birmingham.
+**Error at each hour of the day.** Each box shows the signed relative error of all count
+stations for one hour. Above zero, the model has too much traffic. Below zero, it has too
+little. The red line is the median and the black dot is the mean. You can see in which
+hours the model is good and in which hours it needs more work.
 
-![Highway congestion at 8 AM, Birmingham](examples/birmingham-jalal-20260925/evaluation/heatmap_8am_highways.png)
+![Signed relative error by hour, Birmingham](examples/birmingham-jalal-20260925/evaluation/hourly_relative_error_box.png)
 
 **Departures and arrivals per hour, by activity.** Bars above zero show the trips that
 leave each activity. Bars below zero show the trips that arrive at each activity. You can
