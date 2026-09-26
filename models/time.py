@@ -127,7 +127,24 @@ class TripDurationModel:
         self._mean_trip_durations = {}  # Mean trip duration (minutes) per activity pair
         self._global_mean_duration = None  # Fallback global mean
 
+        # Which survey trips the FIRST departure of a generated day is drawn
+        # from. 'all_trips' (the old behaviour) uses the KDE of every trip of
+        # the pair, which puts midday and after-work trips into the start
+        # time: Birmingham work chains started at 9.2 h against 7.9 h in the
+        # survey, and the late start was measured as ~64% of the 22-23 h count
+        # excess. 'first_of_day' fits a second set of KDEs on the first trip
+        # of each person-day only.
+        self.first_departure_source = self.config.get('time_models', {}).get(
+            'first_departure_source', 'all_trips')
+        if self.first_departure_source not in ('all_trips', 'first_of_day'):
+            raise ValueError(
+                f"time_models.first_departure_source must be 'all_trips' or "
+                f"'first_of_day', got {self.first_departure_source!r}")
+        self.first_depart_models = {}  # KDEs fitted on first-of-day trips only
+
         self._fit_distributions()
+        if self.first_departure_source == 'first_of_day':
+            self._fit_first_of_day()
     
     def _time_to_minutes(self, dt_series):
         """Convert datetime to minutes since midnight."""
@@ -234,7 +251,64 @@ class TripDurationModel:
         logger.info(f"Fitted models for {len(self.activity_pairs)} activity pairs")
         logger.info(f"Mean trip durations: global={self._global_mean_duration:.1f}min, "
                     f"per-pair={len(self._mean_trip_durations)} pairs")
-        
+
+    def _fit_first_of_day(self):
+        """Fit departure KDEs on the first trip of each person-day.
+
+        A person-day is (person, calendar date of departure), so multi-day
+        surveys give one first trip per day. Pairs with too few first trips
+        get no model here; sample_first_departure() then falls back to the
+        all-trips KDE of the pair.
+        """
+        person_col = BaseSurveyTrip.PERSON_ID
+        if person_col not in self.df.columns:
+            raise ValueError(
+                f"first_departure_source='first_of_day' needs the "
+                f"'{person_col}' column in the survey data")
+        df = self.df.dropna(subset=[self.depart_col])
+        day = df[self.depart_col].dt.normalize()
+        order = df.assign(_day=day).sort_values([person_col, '_day', self.depart_col])
+        first = order.groupby([person_col, '_day'], sort=False).head(1)
+
+        min_kde_samples = 5
+        for (origin, dest), group in first.groupby([self.origin_col, self.dest_col]):
+            depart_min = self._time_to_minutes(group[self.depart_col])
+            if len(depart_min) <= min_kde_samples:
+                continue
+            try:
+                self.first_depart_models[(origin, dest)] = gaussian_kde(
+                    depart_min,
+                    bw_method='scott',
+                    weights=_weights_for(group, depart_min.index,
+                                         f"first depart {(origin, dest)}"),
+                )
+            except Exception:
+                if _is_main_process():
+                    logger.warning(f"Could not fit first-of-day KDE for {(origin, dest)}")
+
+        if _is_main_process():
+            logger.info(
+                f"First-of-day departure KDEs: {len(self.first_depart_models)} pairs "
+                f"from {len(first)} first trips (of {len(df)} trips)")
+
+    def sample_first_departure(self, origin_purpose, dest_purpose, n_samples=1):
+        """Sample the departure time (minutes) of the FIRST trip of a day.
+
+        With first_departure_source='all_trips' this is exactly
+        sample_dep_arr_time()[0], including its random draws, so the old
+        behaviour is reproduced. With 'first_of_day' it uses the first-trip
+        KDE of the pair and falls back to the all-trips KDE when the pair has
+        none. Raises ValueError when neither model exists, like
+        sample_dep_arr_time().
+        """
+        key = (origin_purpose, dest_purpose)
+        if self.first_departure_source == 'first_of_day' and key in self.first_depart_models:
+            depart_min = self.first_depart_models[key].resample(n_samples)[0]
+            return np.clip(depart_min, 0, 1440)
+        depart_min, _ = self.sample_dep_arr_time(origin_purpose, dest_purpose,
+                                                 n_samples=n_samples)
+        return depart_min
+
     def mean_trip_duration(self, origin_purpose: str, dest_purpose: str) -> float:
         """
         Get mean trip duration (minutes) for a given activity pair.
@@ -1068,6 +1142,24 @@ class BlendedTripDurationModel:
                     n_samples=n_samples, random_state=random_state,
                 )
 
+        raise ValueError(
+            f"No source has a model for activity pair {activity_key}"
+        )
+
+    def sample_first_departure(self, origin_purpose, dest_purpose, n_samples=1):
+        """First-trip departure (minutes) from a weighted-random source.
+
+        Same source choice and fallback as sample_dep_arr_time(); each
+        source applies its own first_departure_source setting.
+        """
+        activity_key = (origin_purpose, dest_purpose)
+        source = np.random.choice(self.source_names, p=self.probabilities)
+        fallback_order = [source] + [s for s in self.source_names if s != source]
+        for src in fallback_order:
+            model = self.models[src]
+            if activity_key in model.depart_models:
+                return model.sample_first_departure(
+                    origin_purpose, dest_purpose, n_samples=n_samples)
         raise ValueError(
             f"No source has a model for activity pair {activity_key}"
         )

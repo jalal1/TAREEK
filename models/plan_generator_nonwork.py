@@ -348,6 +348,7 @@ class _WorkerNonWorkPlanGenerator:
             'schedules_built': 0,
             'schedules_trimmed': 0,
             'schedules_over_budget_dropped': 0,
+            'schedules_resampled': 0,
             'trim_excess_minutes_total': 0.0,
             'trim_excess_minutes_max': 0.0,
             'trim_minutes_applied_total': 0.0,
@@ -745,7 +746,7 @@ class _WorkerNonWorkPlanGenerator:
                     return False
 
                 # Get departure time for leaving first activity
-                first_depart_min, _ = self.trip_duration_model.sample_dep_arr_time(
+                first_depart_min = self.trip_duration_model.sample_first_departure(
                     activities[0].type, activities[1].type, n_samples=1
                 )
                 first_depart_min = first_depart_min[0]
@@ -809,6 +810,14 @@ class _WorkerNonWorkPlanGenerator:
                 # If exceeds 24 hours, trim activities using priority-based approach
                 if total_time_used > 1440:
                     excess = total_time_used - 1440
+
+                    # over_budget='resample': new start and durations instead of
+                    # trimming to the cap; see the work generator. The last
+                    # retry still trims, so no plan is lost to the budget.
+                    if (self.config.get('duration_constraints', {}).get('over_budget', 'trim') == 'resample'
+                            and retry < max_retries - 1):
+                        self.stats['schedules_resampled'] += 1
+                        raise ValueError("Schedule over 24h budget: resampling")
 
                     if excess >= middle_activities_duration:
                         self.stats['schedules_over_budget_dropped'] += 1
@@ -952,6 +961,7 @@ class NonWorkPlanGenerator:
             'schedules_built': 0,
             'schedules_trimmed': 0,
             'schedules_over_budget_dropped': 0,
+            'schedules_resampled': 0,
             'trim_excess_minutes_total': 0.0,
             'trim_excess_minutes_max': 0.0,
             'trim_minutes_applied_total': 0.0,
@@ -1656,6 +1666,9 @@ class NonWorkPlanGenerator:
                 f"    Trimmed to fit 24h: {trimmed:,} ({trimmed / built * 100:.2f}%)")
             logger.info(
                 f"    Dropped, over budget: {dropped:,} ({dropped / built * 100:.2f}%)")
+            logger.info(
+                f"    Resampled, over budget (over_budget=resample): "
+                f"{self.stats['schedules_resampled']:,}")
         if trimmed > 0:
             logger.info(
                 f"    Excess per trimmed schedule: "
@@ -1694,6 +1707,7 @@ class NonWorkPlanGenerator:
             'schedules_trimmed_pct': round(trimmed / built * 100, 2) if built else 0.0,
             'schedules_over_budget_dropped': dropped,
             'schedules_over_budget_dropped_pct': round(dropped / built * 100, 2) if built else 0.0,
+            'schedules_resampled': self.stats['schedules_resampled'],
             'trim_excess_minutes_mean': round(
                 self.stats['trim_excess_minutes_total'] / trimmed, 1) if trimmed else 0.0,
             'trim_excess_minutes_max': round(self.stats['trim_excess_minutes_max'], 1),
@@ -1775,7 +1789,7 @@ class NonWorkPlanGenerator:
                      'chain_retries_missing_purpose', 'chain_retries_has_work',
                      'chain_attempts', 'poi_retries', 'time_retries',
                      'schedules_built', 'schedules_trimmed',
-                     'schedules_over_budget_dropped',
+                     'schedules_over_budget_dropped', 'schedules_resampled',
                      'trim_excess_minutes_total', 'trim_minutes_applied_total'):
             self.stats[key] += worker_stats.get(key, 0)
 
@@ -2221,7 +2235,7 @@ class NonWorkPlanGenerator:
                     return False
 
                 # Get departure time for leaving first activity
-                first_depart_min, _ = self.trip_duration_model.sample_dep_arr_time(
+                first_depart_min = self.trip_duration_model.sample_first_departure(
                     activities[0].type, activities[1].type, n_samples=1
                 )
                 first_depart_min = first_depart_min[0]
@@ -2286,6 +2300,14 @@ class NonWorkPlanGenerator:
                 # If exceeds 24 hours, trim activities using priority-based approach
                 if total_time_used > 1440:
                     excess = total_time_used - 1440
+
+                    # over_budget='resample': new start and durations instead of
+                    # trimming to the cap; see the work generator. The last
+                    # retry still trims, so no plan is lost to the budget.
+                    if (self.config.get('duration_constraints', {}).get('over_budget', 'trim') == 'resample'
+                            and retry < max_retries - 1):
+                        self.stats['schedules_resampled'] += 1
+                        raise ValueError("Schedule over 24h budget: resampling")
 
                     if excess >= middle_activities_duration:
                         self.stats['schedules_over_budget_dropped'] += 1

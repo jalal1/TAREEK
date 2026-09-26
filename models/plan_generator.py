@@ -509,21 +509,25 @@ class _BasePlanGenerator:
                 # restore the old behaviour for an A/B comparison.
                 use_actual = self.config.get('time_models', {}).get(
                     'first_departure_from_actual_trip', True)
+                #
+                # sample_first_departure() draws from the first-of-day KDE when
+                # time_models.first_departure_source='first_of_day', else from
+                # the all-trips KDE exactly as before.
                 if not use_actual and self._has_work_activity(activities):
-                    first_depart_min, _ = self.time_model.sample_dep_arr_time(
+                    first_depart_min = self.time_model.sample_first_departure(
                         BaseSurveyTrip.ACT_HOME, BaseSurveyTrip.ACT_WORK, n_samples=1
                     )
                 else:
-                    # The trip actually being made. sample_dep_arr_time raises
+                    # The trip actually being made. The sampler raises
                     # when a pair has too few survey samples to fit a KDE, so
                     # fall back to Home→Work rather than letting the retry loop
                     # discard the agent — a rare pair must not cost us a trip.
                     try:
-                        first_depart_min, _ = self.time_model.sample_dep_arr_time(
+                        first_depart_min = self.time_model.sample_first_departure(
                             activities[0].type, activities[1].type, n_samples=1
                         )
                     except ValueError:
-                        first_depart_min, _ = self.time_model.sample_dep_arr_time(
+                        first_depart_min = self.time_model.sample_first_departure(
                             BaseSurveyTrip.ACT_HOME, BaseSurveyTrip.ACT_WORK,
                             n_samples=1
                         )
@@ -620,6 +624,17 @@ class _BasePlanGenerator:
                 # mandatory activities (Work, School) based on trim_priority in config
                 if total_time_used > 1440:
                     excess = total_time_used - 1440
+
+                    # over_budget='resample': draw a new start and new
+                    # durations instead of compressing this day to the cap.
+                    # Trimming to the cap piles day-ends up just before it
+                    # (hour 23 with min_evening_home_minutes=0), measured as
+                    # ~30% of the Birmingham 22-23 h excess. The last retry
+                    # still trims, so no plan is lost to the budget.
+                    if (self.config.get('duration_constraints', {}).get('over_budget', 'trim') == 'resample'
+                            and retry < max_retries - 1):
+                        self.stats['schedules_resampled'] += 1
+                        raise ValueError("Schedule over 24h budget: resampling")
 
                     if excess >= middle_activities_duration:
                         self.stats['schedules_over_budget_dropped'] += 1
@@ -786,6 +801,7 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
             'schedules_built': 0,
             'schedules_trimmed': 0,
             'schedules_over_budget_dropped': 0,
+            'schedules_resampled': 0,
             'trim_excess_minutes_total': 0.0,
             'trim_excess_minutes_max': 0.0,
             'trim_minutes_applied_total': 0.0,
@@ -1120,6 +1136,7 @@ class PlanGenerator(_BasePlanGenerator):
             'schedules_built': 0,
             'schedules_trimmed': 0,
             'schedules_over_budget_dropped': 0,
+            'schedules_resampled': 0,
             'trim_excess_minutes_total': 0.0,
             'trim_excess_minutes_max': 0.0,
             'trim_minutes_applied_total': 0.0,
@@ -1906,6 +1923,9 @@ class PlanGenerator(_BasePlanGenerator):
                 f"    Trimmed to fit 24h: {trimmed:,} ({trimmed / built * 100:.2f}%)")
             logger.info(
                 f"    Dropped, over budget: {dropped:,} ({dropped / built * 100:.2f}%)")
+            logger.info(
+                f"    Resampled, over budget (over_budget=resample): "
+                f"{self.stats['schedules_resampled']:,}")
         if trimmed > 0:
             logger.info(
                 f"    Excess per trimmed schedule: "
@@ -1947,6 +1967,7 @@ class PlanGenerator(_BasePlanGenerator):
             'schedules_trimmed_pct': round(trimmed / built * 100, 2) if built else 0.0,
             'schedules_over_budget_dropped': dropped,
             'schedules_over_budget_dropped_pct': round(dropped / built * 100, 2) if built else 0.0,
+            'schedules_resampled': self.stats['schedules_resampled'],
             'trim_excess_minutes_mean': round(
                 self.stats['trim_excess_minutes_total'] / trimmed, 1) if trimmed else 0.0,
             'trim_excess_minutes_max': round(self.stats['trim_excess_minutes_max'], 1),
@@ -1988,7 +2009,7 @@ class PlanGenerator(_BasePlanGenerator):
                      'chain_retries_too_many_work', 'chain_attempts',
                      'poi_retries', 'time_retries',
                      'schedules_built', 'schedules_trimmed',
-                     'schedules_over_budget_dropped',
+                     'schedules_over_budget_dropped', 'schedules_resampled',
                      'trim_excess_minutes_total', 'trim_minutes_applied_total'):
             self.stats[key] += worker_stats.get(key, 0)
 

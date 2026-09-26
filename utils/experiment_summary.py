@@ -745,6 +745,7 @@ def build_summary(
     total_schedules_trimmed = sum(get_stat(s, 'schedules_trimmed') for s in all_stats)
     total_schedules_dropped = sum(
         get_stat(s, 'schedules_over_budget_dropped') for s in all_stats)
+    total_schedules_resampled = sum(get_stat(s, 'schedules_resampled') for s in all_stats)
     total_trim_excess = sum(
         get_stat(s, 'trim_excess_minutes_mean') * get_stat(s, 'schedules_trimmed')
         for s in all_stats)
@@ -824,6 +825,7 @@ def build_summary(
         'schedules_over_budget_dropped_pct': round(
             total_schedules_dropped / total_schedules_built * 100, 2
         ) if total_schedules_built else 0.0,
+        'schedules_resampled': total_schedules_resampled,
         'trim_excess_minutes_mean': round(
             total_trim_excess / total_schedules_trimmed, 1
         ) if total_schedules_trimmed else 0.0,
@@ -897,6 +899,9 @@ def build_summary(
             'schedules_over_budget_dropped_pct': 'schedules_over_budget_dropped as a percentage of '
                                                  'schedules_built. These are lost late-day plans, so a '
                                                  'high rate biases demand away from evening and night',
+            'schedules_resampled': 'Over-budget schedule attempts that were redrawn (new start and '
+                                   'durations) instead of trimmed; duration_constraints.over_budget='
+                                   '"resample". Each one also counts in schedules_built',
             'trim_excess_minutes_mean': 'Mean minutes a trimmed schedule overran 24h by',
             'trim_excess_minutes_max': 'Largest single overrun in minutes (max across purposes, not a sum)',
             'trim_minutes_applied_mean': 'Mean minutes actually removed per trimmed schedule. Falls '

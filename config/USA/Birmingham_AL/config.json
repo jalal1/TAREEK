@@ -146,7 +146,9 @@
   "time_models": {
     "kde_bandwidth": "scott",
     "max_time_retries": 10,
-    "max_duration_sample_attempts": 100
+    "max_duration_sample_attempts": 100,
+    "first_departure_source": "all_trips",
+    "_first_departure_source_help": "all_trips | first_of_day. first_of_day draws the first departure of a day from a KDE of first-of-day survey trips only (fallback: all trips of the pair)"
   },
   "duration_constraints": {
     "activity_durations": {
@@ -207,6 +209,8 @@
     },
     "max_travel_buffer_minutes": 180,
     "min_evening_home_minutes": 0,
+    "over_budget": "trim",
+    "_over_budget_help": "trim | resample. resample redraws a schedule that overruns 24h (new start and durations); only the last retry trims",
     "trim_jitter_minutes": 15,
     "departure_jitter_minutes": 5
   },
