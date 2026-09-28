@@ -15,8 +15,9 @@ networks/plans).
 
 | Region | Author | Date | Highlights |
 |--------|--------|------|------------|
-| [Birmingham, AL](birmingham-jalal-20260925/) | Jalal | 2026-09-25 | 2 counties, 0.25 scaling, 10 iters, qsim, first-of-day start times; sim/obs 0.953, corr 0.78, 53 counts; [full report](birmingham-jalal-20260925/report.html) |
-| [Madison, WI (cold start)](madison-jalal-20260925/) | Jalal | 2026-09-25 | Dane County, estimator-seeded config, 0.25 scaling, 10 iters; sim/obs 1.009, corr 0.96, only 8 counts; [full report](madison-jalal-20260925/report.html) |
+| [Twin Cities, MN-WI](twincities-jalal-20260928/) | Jalal | 2026-09-28 | 15 counties, 0.15 scaling, 10 iters, hermes, person-first demand, non-work ×1.4, freight on; sim/obs 0.868, corr 0.875, CV 0.276, 94 counts; [full report](twincities-jalal-20260928/report.html) |
+| [Birmingham, AL](birmingham-jalal-20260928/) | Jalal | 2026-09-28 | 2 counties, 0.25 scaling, 10 iters, hermes, person-first demand, work ×1.2, non-work ×2.0, freight on; sim/obs 0.912, corr 0.81, CV 0.717, 53 counts; [full report](birmingham-jalal-20260928/report.html) |
+| [Madison, WI](madison-jalal-20260928/) | Jalal | 2026-09-28 | Dane County, 0.25 scaling, 10 iters, hermes, person-first demand, work ×1.1, non-work ×1.8, freight on; sim/obs 0.813, corr 0.97, CV 0.148, only 10 counts; [full report](madison-jalal-20260928/report.html) |
 
 ## Contributing
 

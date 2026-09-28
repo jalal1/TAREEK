@@ -52,7 +52,7 @@ again. Some research directions and practical problems that TAREEK can help with
 ### What a TAREEK run gives you
 
 Each run makes a full evaluation report. The figures below come from the
-[Birmingham, AL example](examples/birmingham-jalal-20260925/) (2 counties, 25% population
+[Birmingham, AL example](examples/birmingham-jalal-20260928/) (2 counties, 25% population
 sample, 10 MATSim iterations).
 
 **Simulated vs. observed traffic at 8 AM.** Each point is one direction at one count
@@ -69,13 +69,13 @@ stations for one hour. Above zero, the model has too much traffic. Below zero, i
 little. The red line is the median and the black dot is the mean. You can see in which
 hours the model is good and in which hours it needs more work.
 
-![Signed relative error by hour, Birmingham](examples/birmingham-jalal-20260925/evaluation/hourly_relative_error_box.png)
+![Signed relative error by hour, Birmingham](examples/birmingham-jalal-20260928/evaluation/hourly_relative_error_box.png)
 
 **Departures and arrivals per hour, by activity.** Bars above zero show the trips that
 leave each activity. Bars below zero show the trips that arrive at each activity. You can
 see the morning trips from home to work and school, and the afternoon trips back home.
 
-![Departures and arrivals per hour, Birmingham](examples/birmingham-jalal-20260925/evaluation/dep_arr_by_activity_sim.png)
+![Departures and arrivals per hour, Birmingham](examples/birmingham-jalal-20260928/evaluation/dep_arr_by_activity_sim.png)
 
 **Count station error at 8 AM.** Each bar is one direction at one count station. Green
 is an error of 15% or less, yellow is 15-30%, and red is more than 30%. Use this map to
@@ -116,8 +116,9 @@ traffic, red links are congested, and blue shows transit stops and lines.*
 
 The [examples folder](examples/) has complete runs for real regions: the config that was
 used, the results, and a full `report.html` for each run. Now it has
-[Birmingham, AL](examples/birmingham-jalal-20260925/) and
-[Madison, WI](examples/madison-jalal-20260925/). We will add more cities.
+[Twin Cities, MN-WI](examples/twincities-jalal-20260928/),
+[Birmingham, AL](examples/birmingham-jalal-20260928/) and
+[Madison, WI](examples/madison-jalal-20260928/). We will add more cities.
 
 You can also add your own region. See [examples/CONTRIBUTING.md](examples/CONTRIBUTING.md).
 

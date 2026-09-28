@@ -8,6 +8,8 @@
   "data": {
     "data_dir": "/home/exouser/Documents/Tareek/data",
     "day_type": "weekday",
+    "survey_months": "regular",
+    "_survey_months_help": "Survey months used for day types, chains and times: 'regular' (Mar-May, Sep-Nov), 'all', or a list of months. Keep counts.fha.month inside it.",
     "_day_type_help": "Which travel days to model: 'weekday' (default), 'weekend' or 'all'. Both counts loaders filter to Mon-Fri, so a weekday demand model is what the validation compares against. Measured on NHTS 2022: 07-09 holds 21.3% of weekday departures but 12.2% of weekend ones, and a median School stay is 414 min on a weekday against 105 on a weekend.",
     "census_api_key": "YOUR_CENSUS_API_KEY_HERE",
     "_census_api_key_help": "Free API key from https://api.census.gov/data/key_signup.html. Used by demand_estimator.py to fetch ACS commute data (B08301, B08303) for calibration",
@@ -21,7 +23,8 @@
         "type": "nhts",
         "year": "2022",
         "file": "nhts/csv/tripv2pub.csv",
-        "weight": 1
+        "weight": 1,
+        "person_file": "nhts/csv/perv2pub.csv"
       }
     ]
   },
@@ -114,7 +117,7 @@
   "plan_generation": {
     "target_plans": "all",
     "scaling_factor": 0.25,
-    "work_scaling_multiplier": 1,
+    "work_scaling_multiplier": 1.2,
     "random_seed": 42,
     "skip_if_exists": false,
     "supported_chain_types": [
@@ -124,7 +127,7 @@
     "max_chain_retries": 10,
     "num_processes": 30,
     "default_mode": "car",
-    "cache_demand": true
+    "cache_demand": false
   },
   "od_matrix": {
     "source": "auto",
@@ -260,9 +263,10 @@
     },
     "configurable_params": {
       "coordinateSystem": "auto",
-      "lastIteration": 50,
+      "lastIteration": 10,
       "outputDirectory": "output",
-      "controller.mobsim": "qsim",
+      "controller.mobsim": "hermes",
+      "hermes.endTime": "36:00:00",
       "_controller.mobsim_help": "qsim | hermes. hermes is faster but is a simplified queue model that ignores trafficDynamics, linkDynamics and full stuckTime semantics. Use qsim for any congestion- or mode-choice-sensitive experiment.",
       "global.numberOfThreads": 30,
       "qsim.numberOfThreads": 30,
@@ -283,7 +287,7 @@
     "fha": {
       "data_dir": "data/FHA_counts",
       "year": 2024,
-      "month": 7,
+      "month": 10,
       "weight": 1
     },
     "custom": {
@@ -306,13 +310,13 @@
     }
   },
   "nonwork_purposes": {
-    "nonwork_trip_share": 0.8,
+    "nonwork_trip_share": 2.0,
     "Shopping": {
       "enabled": true,
       "trip_generation": {
         "survey_rate": "auto",
         "config_rate": 0.25,
-        "blend_weight": 0.7
+        "blend_weight": 0
       },
       "od_matrix": {
         "beta": 2,
@@ -327,7 +331,7 @@
       "trip_generation": {
         "survey_rate": "auto",
         "config_rate": 0.25,
-        "blend_weight": 0.7
+        "blend_weight": 0
       },
       "od_matrix": {
         "beta": 1.8,
@@ -342,7 +346,7 @@
       "trip_generation": {
         "survey_rate": "auto",
         "config_rate": 0.15,
-        "blend_weight": 0.7
+        "blend_weight": 0
       },
       "od_matrix": {
         "beta": 2,
@@ -357,7 +361,7 @@
       "trip_generation": {
         "survey_rate": "auto",
         "config_rate": 0.15,
-        "blend_weight": 0.7
+        "blend_weight": 0
       },
       "od_matrix": {
         "beta": 2,
@@ -372,7 +376,7 @@
       "trip_generation": {
         "survey_rate": "auto",
         "config_rate": 0.2,
-        "blend_weight": 0.7
+        "blend_weight": 0
       },
       "od_matrix": {
         "beta": 2,
@@ -385,12 +389,12 @@
   },
   "freight": {
     "_help": "Boundary truck trips (E-I, I-E, E-E). See docs/freight/design.md",
-    "enabled": false,
+    "enabled": true,
     "demand_source": "hpms_cordon",
     "_demand_source_help": "hpms_cordon | car_share | absolute",
     "truck_share": null,
     "_truck_share_help": "null = resolve from HPMS/national table; a number pins it",
-    "demand_scale": 1.0,
+    "demand_scale": 0.3,
     "_demand_scale_help": "fraction of observed boundary freight to simulate. 1.0 = the full HPMS-derived volume. NOT a calibration target - the cordon screenline cannot judge it, because its yardstick is the same cordon weighting the demand comes from. Lower it only as a deliberate throttle.",
     "trips_per_day": null,
     "hpms": {
