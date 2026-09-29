@@ -25,14 +25,20 @@ logger = setup_logger(__name__)
 class MATSimOrchestrator:
     """Orchestrate MATSim simulation pipeline"""
 
-    def __init__(self, config_path: Optional[Path] = None, config_dict: Optional[Dict] = None):
+    def __init__(self, config_path: Optional[Path] = None, config_dict: Optional[Dict] = None,
+                 experiments_root: Optional[Path] = None):
         """
         Initialize orchestrator
 
         Args:
             config_path: Path to config.json file. If None, uses default location
             config_dict: Config dictionary (takes precedence over config_path if provided)
+            experiments_root: Directory that holds the experiment folders. Must be
+                the same root the plans and network were written to; default is
+                the repo's experiments/.
         """
+        self.experiments_root = (Path(experiments_root) if experiments_root is not None
+                                 else Path(__file__).parent.parent / 'experiments')
         if config_dict is not None:
             # Use provided config dictionary
             self.config = config_dict
@@ -68,8 +74,7 @@ class MATSimOrchestrator:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             experiment_id = f"exp_{timestamp}"
 
-        experiments_base = Path(__file__).parent.parent / 'experiments'
-        experiment_path = experiments_base / experiment_id
+        experiment_path = self.experiments_root / experiment_id
 
         experiment_path.mkdir(parents=True, exist_ok=True)
         logger.info(f"Created experiment directory: {experiment_path}")
@@ -217,7 +222,7 @@ class MATSimOrchestrator:
             blocking: Whether to wait for simulation to complete
 
         Returns:
-            Subprocess handle if not blocking, None if blocking
+            Subprocess handle (finished when blocking; read .returncode)
         """
         config_path = experiment_path / 'config.xml'
 
@@ -246,11 +251,12 @@ class MATSimOrchestrator:
         )
 
         if blocking:
+            # The process has finished; its return code tells the caller whether
+            # MATSim succeeded (a non-zero code means it stopped with an error).
             logger.info("Simulation completed")
-            return None
         else:
             logger.info("Simulation started in background")
-            return process
+        return process
 
     def create_and_run_experiment(
         self,
@@ -289,8 +295,17 @@ class MATSimOrchestrator:
 
         if should_run:
             experiment_path = Path(metadata['paths']['experiment'])
-            self.run_experiment(experiment_path, blocking=True)
-            metadata['simulation_status'] = 'completed'
+            process = self.run_experiment(experiment_path, blocking=True)
+            return_code = getattr(process, 'returncode', None)
+            if return_code not in (0, None):
+                # Without this check a run where MATSim exits with an error was
+                # reported as completed, and the evaluation then read partial output.
+                metadata['simulation_status'] = 'failed'
+                metadata['matsim_return_code'] = return_code
+                logger.error(f"MATSim exited with code {return_code}; see "
+                             f"{experiment_path / 'matsim_output.log'}")
+            else:
+                metadata['simulation_status'] = 'completed'
         else:
             metadata['simulation_status'] = 'not_run'
             logger.info("Simulation not run (run_simulation=False)")

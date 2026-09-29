@@ -1508,7 +1508,11 @@ class ExperimentRunner:
             self._release_memory_before_simulation()
 
             # Initialize orchestrator with the config we loaded
-            self.orchestrator = MATSimOrchestrator(config_dict=self.config)
+            # Same root as the plans and network: with a custom experiments_root
+            # the orchestrator would otherwise look for network.xml under the
+            # repo's experiments/ and fail before MATSim starts.
+            self.orchestrator = MATSimOrchestrator(config_dict=self.config,
+                                                   experiments_root=self.experiments_root)
 
             # Get MATSim config
             matsim_config = self.config['matsim']
