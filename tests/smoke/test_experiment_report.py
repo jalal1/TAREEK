@@ -299,3 +299,65 @@ def test_freight_section_surfaces_tier1_failures():
 
     assert "cordon_direction_respected" in text
     assert "failed" in text.lower()
+
+
+# ---------------------------------------------------------------------------
+# Demand budget section (person-first demand)
+# ---------------------------------------------------------------------------
+
+def _budget_run(tmp_path, share=1.4):
+    budget = {
+        "p_commute_workers": 0.525,
+        "segment_population": {"worker": 1000, "student": 300, "nonworker_adult": 500, "child_0_4": 200},
+        "segment_probs": {
+            "worker": {"commute": 0.525, "other_travel": 0.316, "no_travel": 0.159,
+                       "travel": 0.841, "person_days": 2867.0},
+            "student": {"commute": 0.002, "other_travel": 0.838, "no_travel": 0.160,
+                        "travel": 0.840, "person_days": 898.0},
+            "nonworker_adult": {"commute": 0.023, "other_travel": 0.594, "no_travel": 0.383,
+                                "travel": 0.617, "person_days": 2544.0},
+        },
+        "nonwork_persons_unscaled": {"Shopping": 400, "School": 350},
+        "knob_factors": {"Shopping": share, "School": share},
+        "age_split_source": "ACS 2023 B01001 (cache)",
+        "notes": ["nonworker_adult: 2.3% of days are commute days"],
+    }
+    (tmp_path / "demand_budget.json").write_text(json.dumps(budget))
+    (tmp_path / "config_used.json").write_text(json.dumps({
+        "plan_generation": {"work_scaling_multiplier": 1.0},
+        "nonwork_purposes": {"nonwork_trip_share": share},
+        "data": {"survey_months": "regular"},
+    }))
+    return {"population": {"total_population": 2000}, "plans": {"total": 300},
+            "parameters": {"scaling_factor": 0.2}}
+
+
+@pytest.mark.smoke
+def test_demand_budget_section_reports_segments_knobs_and_purposes(tmp_path):
+    summary = _budget_run(tmp_path)
+    md = "\n".join(R._demand_budget_section(tmp_path, summary))
+    assert "## Demand budget" in md
+    assert "| Workers | 1,000 | 52.5% | 31.6% | 15.9% | 2,867 |" in md
+    assert "| Children 0-4 | 200 |" in md
+    assert "P(commute) of workers: 52.5%" in md
+    assert "`nonwork_trip_share` 1.40" in md
+    # survey: (1000*0.841 + 300*0.840 + 500*0.617) / 2000 = 70.1%; plans: 300 / (2000*0.2) = 75.0%
+    assert "survey 70.1%, plans made 75.0%" in md
+    # purposes sorted by size, with the knob factor
+    assert md.index("| Shopping | 400 | 1.40 |") < md.index("| School | 350 | 1.40 |")
+    assert "> nonworker_adult: 2.3% of days are commute days" in md
+
+
+@pytest.mark.smoke
+def test_demand_budget_section_absent_without_budget_file(tmp_path):
+    assert R._demand_budget_section(tmp_path, {}) == []
+
+
+@pytest.mark.smoke
+def test_build_markdown_places_budget_before_counts(tmp_path):
+    summary = _budget_run(tmp_path)
+    summary.update(_summary())
+    md = R.build_markdown({"summary": summary, "evaluation": summary["evaluation"], "dir": tmp_path},
+                          None, None)
+    assert "## Demand budget" in md
+    assert md.index("## Demand budget") < md.index("## Count validation")

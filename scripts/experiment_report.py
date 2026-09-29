@@ -694,6 +694,100 @@ FREIGHT_GLOSSARY: List[Tuple[str, str]] = [
 ]
 
 
+def _load_json(path: Path) -> Optional[Dict[str, Any]]:
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def _pct(value: Any, decimals: int = 1) -> str:
+    return "—" if value is None else f"{100 * float(value):.{decimals}f}%"
+
+
+def _demand_budget_section(exp_dir: Path, summary: Dict[str, Any]) -> List[str]:
+    """Report the person-first demand budget (models/demand_budget.py).
+
+    The budget decides how many plans exist before any of them is simulated:
+    which share of each person group commutes, travels for other purposes or
+    stays home, and how many non-work travellers each main purpose gets. The
+    count ratios cannot be read without it, because a demand knob moves them
+    as much as the model does. Absent for runs made before the budget existed.
+    """
+    budget = _load_json(exp_dir / "demand_budget.json")
+    if not budget:
+        return []
+    cfg = _load_json(exp_dir / "config_used.json") or {}
+    seg_pop = budget.get("segment_population") or {}
+    probs = budget.get("segment_probs") or {}
+    purposes = budget.get("nonwork_persons_unscaled") or {}
+    factors = budget.get("knob_factors") or {}
+
+    L: List[str] = []
+    L.append("## Demand budget")
+    L.append("")
+    L.append("How many persons of each group travel on the modelled day, from the survey "
+             "person-days. It sets the number of plans before MATSim runs, so read it "
+             "before the count ratios below.")
+    L.append("")
+
+    labels = [("worker", "Workers"), ("student", "Students 5-17"),
+              ("nonworker_adult", "Adults, not working")]
+    L.append("| Person group | Persons | Commute | Other travel | No travel | Survey person-days |")
+    L.append("|---|---:|---:|---:|---:|---:|")
+    for key, label in labels:
+        p = probs.get(key) or {}
+        L.append(f"| {label} | {_fmt(seg_pop.get(key), 0)} | {_pct(p.get('commute'))} "
+                 f"| {_pct(p.get('other_travel'))} | {_pct(p.get('no_travel'))} "
+                 f"| {_fmt(p.get('person_days'), 0)} |")
+    if "child_0_4" in seg_pop:
+        L.append(f"| Children 0-4 | {_fmt(seg_pop.get('child_0_4'), 0)} | — | — | — | "
+                 f"no own plan |")
+    L.append("")
+
+    pg = cfg.get("plan_generation", {}) or {}
+    nw = cfg.get("nonwork_purposes", {}) or {}
+    data = cfg.get("data", {}) or {}
+    work_mult = pg.get("work_scaling_multiplier", 1.0)
+    share = nw.get("nonwork_trip_share", 1.0)
+    L.append(f"- **P(commute) of workers: {_pct(budget.get('p_commute_workers'))}.** Work "
+             f"plans = LODES work places × P(commute) × `work_scaling_multiplier` "
+             f"({_fmt(work_mult, 2)}).")
+    L.append(f"- **Demand knobs:** `work_scaling_multiplier` {_fmt(work_mult, 2)}, "
+             f"`nonwork_trip_share` {_fmt(share, 2)} (neutral = 1.0). A knob above 1.0 "
+             f"makes more demand than the survey says.")
+    L.append(f"- **Survey months:** `{data.get('survey_months', 'regular')}` · "
+             f"**age split of non-workers:** {budget.get('age_split_source') or '—'}")
+
+    # Travelling persons per resident: survey value vs the plans that were made.
+    pop = (summary.get("population") or {}).get("total_population")
+    plans = summary.get("plans") or {}
+    sf = (summary.get("parameters") or {}).get("scaling_factor")
+    total_seg = sum(float(v) for v in seg_pop.values()) if seg_pop else 0.0
+    if total_seg > 0:
+        survey_travel = sum(float(seg_pop.get(k, 0)) * float((probs.get(k) or {}).get("travel", 0))
+                            for k, _ in labels) / total_seg
+        line = f"- **Residents with a plan:** survey {_pct(survey_travel)}"
+        if pop and sf and plans.get("total"):
+            line += f", plans made {_pct(plans['total'] / (float(pop) * float(sf)))}"
+        L.append(line + " (plans made also include the knobs and the workers who "
+                 "live outside the region).")
+    L.append("")
+
+    if purposes:
+        L.append("| Main purpose of other-travel days | Travellers (full population) | Knob factor |")
+        L.append("|---|---:|---:|")
+        for p in sorted(purposes, key=lambda k: -float(purposes[k] or 0)):
+            L.append(f"| {p} | {_fmt(purposes[p], 0)} | {_fmt(factors.get(p), 2)} |")
+        L.append("")
+
+    for note in budget.get("notes") or []:
+        L.append(f"> {note}")
+        L.append("")
+    return L
+
+
 def _freight_section(summary: Dict[str, Any], baseline: Optional[Dict[str, Any]],
                      mo: Dict[str, Any]) -> List[str]:
     """Report what the freight module put in and what it did to the network.
@@ -1106,6 +1200,9 @@ def build_markdown(run: Dict[str, Any], baseline: Optional[Dict[str, Any]],
                      "which a trip does some way into its journey. The two describe "
                      "different moments and need not agree.")
             L.append("")
+
+    # ---- demand budget (person-first) ------------------------------------
+    L.extend(_demand_budget_section(exp_dir, summary))
 
     L.append("## Count validation")
     L.append("")
