@@ -570,32 +570,33 @@ def compute_survey_benchmarks(
     print(f"  => Blended trips/travel-person-day: {tpc_result['blended']:.2f}")
 
     # ----- Travel-day participation rate -----
-    # The trip table contains rows only for days with >=1 trip, so simply
-    # counting persons-with-trips / total-persons-in-table will always be
-    # ~100%. To get a defensible participation rate we'd need a person
-    # roster including zero-trip days, which neither TBI nor NHTS exposes
-    # through survey_trips. Until a roster table exists, fall back to the
-    # config-provided nonwork_trip_share (typically ~0.80) and skip the
-    # auto-recommendation that pushed it to 1.0 based on the bogus 100%.
-    nonwork_cfg = config.get("nonwork_purposes", {})
-    config_share = float(nonwork_cfg.get("nonwork_trip_share", 0.80))
-    # Clamp to [0, 1] to be safe.
-    config_share = max(0.0, min(1.0, config_share))
-    computed_travel_rate = config_share
-
-    print("  Travel-day participation rate (non-travel days are not in the trip "
-          "table, so we cannot compute this from surveys directly):")
-    print(f"    using config nonwork_purposes.nonwork_trip_share = "
-          f"{config_share:.2%} as participation proxy")
+    # From the survey person-days (person files include zero-trip days):
+    # the weighted share of person-days with at least one trip, blended over
+    # the sources that have person-days. The same days (day type, months) as
+    # the demand budget are used.
+    person_days = survey_manager.get_person_days()
+    rates, rate_w = [], []
+    for source_name, pdf in person_days.items():
+        if pdf is None or pdf.empty:
+            continue
+        w = pdf[BaseSurveyTrip.PD_WEIGHT]
+        share = w[pdf[BaseSurveyTrip.PD_N_TRIPS] > 0].sum() / w.sum()
+        rates.append(share)
+        rate_w.append(blend_weights.get(source_name, 1.0))
+        print(f"    {source_name}: travel-day share {share:.1%} "
+              f"({len(pdf):,} person-days incl. no-travel days)")
+    if not rates:
+        print("  ERROR: no active survey has person-days (person_file). The travel-day "
+              "share cannot be measured.", file=sys.stderr)
+        sys.exit(1)
+    computed_travel_rate = sum(r * w for r, w in zip(rates, rate_w)) / sum(rate_w)
 
     # Adjust trips/travel-day to a population-wide trips/capita/day.
-    # Multiplying by the participation rate spreads trip-day totals over
-    # the full population (including non-travelers).
     unadjusted_blended = tpc_result["blended"]
     tpc_result["blended"] = round(unadjusted_blended * computed_travel_rate, 2)
     print(f"  => Adjusted trips/capita/day: {unadjusted_blended:.2f} × "
           f"{computed_travel_rate:.2%} = {tpc_result['blended']:.2f}  "
-          f"[accounts for non-travelers via nonwork_trip_share]")
+          f"[travel-day share from survey person-days]")
 
     # ----- Avg legs per chain -----
     print("  Computing avg legs per chain from survey trip chains...")
@@ -731,25 +732,15 @@ def estimate_demand(
     flow_cap = matsim_params.get("qsim.flowCapacityFactor", scaling_factor)
     storage_cap = matsim_params.get("qsim.storageCapacityFactor", scaling_factor)
 
-    # --- Population reallocation (WFH + worker-nonwork share) ---
-    # Two adjustments applied to the raw LODES population split:
-    #
-    # 1. Work-from-home discount (Fix #2). ACS B08301_021E reports the share
-    #    of workers who primarily worked from home. These workers exist as
-    #    agents but do not generate a Home->Work->Home commute. Move them
-    #    into the nonwork pool so they still produce nonwork trips
-    #    (errands, school drop-offs, etc.).
-    #
-    # 2. Worker-nonwork-share approximation (Fix #4). The nonwork generator
-    #    currently runs only on `non_employees`, so the "before/after work"
-    #    nonwork legs that commuting workers make (lunch, gym, daycare) are
-    #    effectively missing — the work generator handles them only via
-    #    avg_legs_work, and the dominant Home-Work-Home pattern under-counts
-    #    them. As a quick approximation, treat a fraction `alpha` of
-    #    commuting workers as additional nonwork-pool members. NHTS suggests
-    #    workers contribute ~40-50% of all nonwork person-trips, so 0.45 is
-    #    a reasonable default. This is a *quick fix* — it inflates totals
-    #    correctly but does not produce worker-attached chains.
+    # --- Person-first demand budget (models/demand_budget.py) ---
+    # The same function the plan generators use: day types per segment from
+    # the survey person-days, and per-purpose non-work persons per home
+    # block. The WFH discount and worker_nonwork_share approximations are
+    # gone: the survey day types already hold work from home, part time and
+    # leave, and workers on a non-commute day are in the non-work demand.
+    # ACS work-from-home stays as a cross-check only (printed by the caller).
+    from models.demand_budget import compute_demand_budget
+    budget = compute_demand_budget(config, build_chains=False)
     nonwork_cfg = config.get("nonwork_purposes", {})
     wfh_rate = 0.0
     wfh_source = None
@@ -758,63 +749,35 @@ def estimate_demand(
         acs_total_wfh = sum(d.get("work_from_home", 0) for d in acs_data.values())
         if acs_total_workers > 0:
             wfh_rate = acs_total_wfh / acs_total_workers
-            wfh_source = "ACS B08301_021E"
-    # Allow config override (e.g. for sensitivity analysis or when ACS is off).
-    cfg_wfh = nonwork_cfg.get("wfh_rate_override")
-    if cfg_wfh is not None:
-        wfh_rate = max(0.0, min(1.0, float(cfg_wfh)))
-        wfh_source = "config nonwork_purposes.wfh_rate_override"
+            wfh_source = "ACS B08301_021E (cross-check only)"
 
-    worker_nonwork_alpha = float(
-        nonwork_cfg.get("worker_nonwork_share", 0.45)
-    )
-    worker_nonwork_alpha = max(0.0, min(1.0, worker_nonwork_alpha))
-
-    wfh_employees = employees * wfh_rate
-    commuting_employees = employees - wfh_employees
-    # Workers added to nonwork pool: WFH workers (full count, they're home
-    # all day) plus alpha * commuting workers (partial — these workers also
-    # appear on the work side).
-    workers_in_nonwork_pool = wfh_employees + worker_nonwork_alpha * commuting_employees
+    p_commute = budget.p_commute
+    commuting_employees = employees * p_commute
+    wfh_employees = employees - commuting_employees  # not commuting today (any reason)
+    worker_nonwork_alpha = budget.segment_probs["worker"]["other_travel"]
+    workers_in_nonwork_pool = employees * worker_nonwork_alpha
     effective_nonwork_population = non_employees + workers_in_nonwork_pool
 
     # --- Work trips ---
-    # Only commuting workers generate work plans.
+    # The generator uses the LODES OD total (incl. anchored boundary flows)
+    # x P(commute); resident employees x P(commute) is the close projection.
     effective_work_scaling = scaling_factor * work_scaling_multiplier
-    work_plans_unscaled = commuting_employees
-    work_plans_scaled = work_plans_unscaled * effective_work_scaling
+    work_plans_unscaled = commuting_employees * work_scaling_multiplier
+    work_plans_scaled = commuting_employees * effective_work_scaling
 
-    # --- Nonwork trips ---
-    # Pool = non_employees + WFH workers + alpha * commuting workers.
-    # nonwork_trip_share is then applied as the per-day participation rate
-    # within that pool (default ~0.80 — config-driven, not auto-pushed).
+    # --- Nonwork persons (one per travel day, by main purpose) ---
     nonwork_trip_share = nonwork_cfg.get("nonwork_trip_share", 1.0)
     nonwork_purposes = _get_nonwork_purposes(config)
-
     nonwork_plans_unscaled = 0
     purpose_details = {}
     for purpose, info in nonwork_purposes.items():
-        survey_rate = info["survey_rate"]
-        config_rate = info["config_rate"]
-        blend_weight = info["blend_weight"]
-
-        # Blend formula from od_matrix_nonwork.py
-        if survey_rate == "auto":
-            # Can't compute survey rate without survey data; use config_rate
-            final_rate = config_rate
-            survey_rate_used = None
-        else:
-            final_rate = (1 - blend_weight) * float(survey_rate) + blend_weight * config_rate
-            survey_rate_used = float(survey_rate)
-
-        purpose_trips = effective_nonwork_population * final_rate * nonwork_trip_share
+        purpose_trips = budget.purpose_origin_totals.get(purpose, 0.0)
         nonwork_plans_unscaled += purpose_trips
-
         purpose_details[purpose] = {
-            "survey_rate": survey_rate_used,
-            "config_rate": config_rate,
-            "blend_weight": blend_weight,
-            "final_rate": final_rate,
+            "survey_rate": round(purpose_trips / total_pop, 5) if total_pop else None,
+            "config_rate": info["config_rate"],
+            "blend_weight": info["blend_weight"],
+            "final_rate": round(purpose_trips / total_pop, 5) if total_pop else 0.0,
             "unscaled_trips": purpose_trips,
             "scaled_trips": purpose_trips * scaling_factor,
         }
@@ -2126,18 +2089,16 @@ def print_scorecard(
     commuting_emp = pop.get("commuting_employees", pop["employees"])
     workers_in_pool = pop.get("workers_in_nonwork_pool", 0)
     eff_nonwork_pop = pop.get("effective_nonwork_population", pop["non_employees"])
-    if wfh_rate > 0 or alpha > 0:
-        print(f"\n    Reallocation (Fix #2 WFH + Fix #4 worker-nonwork share):")
-        if wfh_rate > 0:
-            print(f"      WFH rate:                  {wfh_rate:.1%}  "
-                  f"[{wfh_source or 'unknown source'}]")
-            print(f"      WFH employees (no commute):    {wfh_emp:>12,.0f}")
-        print(f"      Commuting employees:           {commuting_emp:>12,.0f}")
-        print(f"      Worker-nonwork share (alpha):  {alpha:.2f}  "
-              f"[config nonwork_purposes.worker_nonwork_share]")
-        print(f"      Workers added to nonwork pool: {workers_in_pool:>12,.0f}")
-        print(f"      Effective nonwork pool:        {eff_nonwork_pop:>12,.0f}  "
-              f"(non_employees + WFH + alpha*commuting)")
+    print(f"\n    Worker day types (survey person-days, demand budget):")
+    print(f"      Commuting today:               {commuting_emp:>12,.0f}")
+    print(f"      Not commuting today:           {wfh_emp:>12,.0f}  "
+          f"(work from home, part time, leave, ...)")
+    print(f"      Workers on a non-work travel day: {workers_in_pool:>9,.0f}  "
+          f"(share {alpha:.1%})")
+    print(f"      Non-work population:           {eff_nonwork_pop:>12,.0f}  "
+          f"(non_employees + workers on a non-work travel day)")
+    if wfh_rate > 0:
+        print(f"      Cross-check, ACS work from home: {wfh_rate:.1%}  [{wfh_source}]")
 
     # --- Section 3: Config parameters used ---
     sf = estimate["scaling"]

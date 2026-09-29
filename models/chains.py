@@ -115,12 +115,17 @@ def filter_chains_by_type(chains_df: pd.DataFrame,
 
     return filtered_df
 
-def process_trip_chains(persons: Dict[str, Dict[str, pd.DataFrame]], use_weight: bool = False) -> List[Dict]:
+def process_trip_chains(persons: Dict[str, Dict[str, pd.DataFrame]], use_weight: bool = False,
+                        weight_fn=None) -> List[Dict]:
     """Process trip chains from person trips dictionary, optionally using trip weights.
 
     Args:
         persons: Dictionary of person trips {person_id: {date: trips_df}}
         use_weight: Whether to use the 'trip_weight' column when counting chains.
+        weight_fn: Optional ``f(person_id, date, trips_df, weight) -> weight``.
+            Re-weights each person-day before chains are counted; a return
+            value of 0 leaves the day out. The demand budget uses it to build
+            one chain pool per main purpose with the region's segment mix.
 
     Returns:
         List of chain patterns with frequencies
@@ -178,6 +183,11 @@ def process_trip_chains(persons: Dict[str, Dict[str, pd.DataFrame]], use_weight:
                 else:
                     chain_weight = 1
 
+                if weight_fn is not None:
+                    chain_weight = weight_fn(person_id, date, sorted_trips, chain_weight)
+                    if not chain_weight or chain_weight <= 0:
+                        continue
+
                 # print("Chain weight:", chain_weight)
 
                 chains.append({
@@ -191,7 +201,7 @@ def process_trip_chains(persons: Dict[str, Dict[str, pd.DataFrame]], use_weight:
         # Calculate chain frequencies (weighted if requested)
         chain_counter = Counter()
         for chain in chains:
-            chain_counter[chain['chain']] += chain['weight'] if use_weight else 1
+            chain_counter[chain['chain']] += chain['weight'] if (use_weight or weight_fn) else 1
 
         total_chains = sum(chain_counter.values())
 

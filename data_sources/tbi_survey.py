@@ -74,11 +74,67 @@ class TBISurveyTrip(BaseSurveyTrip):
         'For-Hire Vehicle': MODE_OTHER,
     }
 
+    # ── Person-day files (Day + Person tables) ──────────────────────────
+    DAY_RAW_COLUMNS = ['person_id', 'travel_date', 'travel_dow', 'num_trips', 'day_weight']
+    PERSON_RAW_COLUMNS = ['person_id', 'age', 'employment']
+    WORKER_LABELS = {'Employed full-time', 'Employed part-time', 'Self-employed'}
+    CHILD_AGE_LABELS = {'Under 5'}
+    STUDENT_AGE_LABELS = {'5 to 15', '16 to 17'}
+    DOW_TO_WEEKDAY = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3,
+                      'Friday': 4, 'Saturday': 5, 'Sunday': 6}
+
     def __init__(self, config: Dict):
         super().__init__(config)
         self.metadata = {
             'source_type': 'tbi',
         }
+
+    def load_person_days(self) -> Optional[pd.DataFrame]:
+        """Person-days from the TBI Day and Person files.
+
+        Config keys on the survey entry: ``day_file`` (…2023Day.csv) and
+        ``person_file`` (…2023Person.csv). TBI observes several days per
+        person, so each row carries its calendar ``date``. Days with a zero
+        ``day_weight`` are not part of the weighted sample and are dropped.
+        """
+        entry = self._survey_entry()
+        day_path = self._resolve_data_path(entry.get('day_file'))
+        person_path = self._resolve_data_path(entry.get('person_file'))
+        if day_path is None or person_path is None:
+            logger.warning("TBI: 'day_file' and 'person_file' are both needed in the "
+                           "survey config entry — no person-days")
+            return None
+        for path in (day_path, person_path):
+            if not Path(path).exists():
+                raise FileNotFoundError(f"TBI person-day file not found: {path}")
+
+        day = pd.read_csv(day_path, usecols=self.DAY_RAW_COLUMNS,
+                          dtype={'person_id': str}, encoding='iso-8859-1')
+        per = pd.read_csv(person_path, usecols=self.PERSON_RAW_COLUMNS,
+                          dtype={'person_id': str}, encoding='iso-8859-1')
+        d = day.merge(per, on='person_id', how='left')
+
+        segment = np.select(
+            [d['employment'].isin(self.WORKER_LABELS),
+             d['age'].isin(self.CHILD_AGE_LABELS),
+             d['age'].isin(self.STUDENT_AGE_LABELS),
+             d['age'].notna() & ~d['age'].isin(['Missing'])],
+            [self.SEG_WORKER, self.SEG_CHILD, self.SEG_STUDENT, self.SEG_NONWORKER_ADULT],
+            default='unknown')
+        date = pd.to_datetime(d['travel_date'], errors='coerce')
+        out = pd.DataFrame({
+            self.PD_PERSON_ID: d['person_id'],
+            self.PD_DATE: date.dt.strftime('%Y-%m-%d'),
+            self.PD_WEIGHT: pd.to_numeric(d['day_weight'], errors='coerce').fillna(0.0),
+            self.PD_SEGMENT: segment,
+            self.PD_MONTH: date.dt.month,
+            self.PD_WEEKDAY: d['travel_dow'].map(self.DOW_TO_WEEKDAY),
+            self.PD_N_TRIPS: pd.to_numeric(d['num_trips'], errors='coerce').fillna(0).clip(lower=0),
+        })
+        out = out[(out[self.PD_WEIGHT] > 0) & (out[self.PD_SEGMENT] != 'unknown')
+                  & out[self.PD_DATE].notna()]
+        logger.info(f"TBI person-days: {len(out):,} from {day_path}")
+        return out.reset_index(drop=True)
 
     def _get_allowed_county_fips(self) -> set:
         """Extract 3-digit county FIPS codes from config region.counties.

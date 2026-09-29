@@ -141,9 +141,22 @@ def load_shared_nonwork_data(config: Dict) -> Dict:
         }
         logger.info(f"  Multi-source blending ready: {list(blend_weights.items())}")
 
+    # Demand budget: day types per segment from the survey person-days, the
+    # per-block origins of each main purpose (written into home_locs_dict),
+    # and one chain pool per main purpose. See models/demand_budget.py.
+    from models.demand_budget import compute_demand_budget
+    persons_by_source = (multi_source_data['per_source_persons'] if multi_source_data
+                         else {next(iter(survey_manager.sources)): persons})
+    budget = compute_demand_budget(config, survey_manager=survey_manager,
+                                   persons_by_source=persons_by_source,
+                                   home_locs_dict=home_locs_dict)
+
     logger.info("-" * 60)
 
     result = {
+        'demand_budget': budget,
+        'purpose_chains_dfs': budget.purpose_chains_dfs,
+        'per_source_purpose_chains_dfs': budget.per_source_purpose_chains_dfs,
         'home_locs_dict': home_locs_dict,
         'poi_data_flat': poi_data_flat,
         'poi_data_grouped': poi_data_grouped,
@@ -321,6 +334,12 @@ class ExperimentRunner:
                    for s in self._DEMAND_CACHE_SECTIONS}
         # LODES year/job_type change the underlying flows, so include them too.
         payload['lodes'] = strip_help(self.config.get('data', {}).get('lodes', {}))
+        # The surveys (files, weights, person files), the modelled day type and
+        # the survey months decide the demand budget, chains and times.
+        data_cfg = self.config.get('data', {})
+        payload['surveys'] = strip_help(data_cfg.get('surveys', []))
+        payload['day_type'] = data_cfg.get('day_type', 'weekday')
+        payload['survey_months'] = data_cfg.get('survey_months', 'regular')
 
         blob = _json.dumps(payload, sort_keys=True, default=str)
         return hashlib.sha256(blob.encode()).hexdigest()[:16]
@@ -1180,15 +1199,34 @@ class ExperimentRunner:
             logger.info(f"Scaling factor: {scaling_factor}")
             logger.info("")
 
+            # Track plan generation start time
+            self.runtime['plans_start'] = datetime.now()
+
+            # ==================================================================
+            # DEMAND BUDGET (before work plans: they need P(commute))
+            # ==================================================================
+            nonwork_purposes_config = self.config.get('nonwork_purposes', {})
+            enabled_purposes = [
+                purpose for purpose, cfg in nonwork_purposes_config.items()
+                if isinstance(cfg, dict) and cfg.get('enabled', False)
+            ]
+            shared_data = None
+            if enabled_purposes:
+                shared_data = load_shared_nonwork_data(self.config)
+                budget = shared_data['demand_budget']
+            else:
+                from models.demand_budget import compute_demand_budget
+                budget = compute_demand_budget(self.config, build_chains=False)
+            self.config['_demand_budget'] = budget.summary()
+            from models.demand_budget import write_budget_json
+            write_budget_json(budget, self.experiment_dir / 'demand_budget.json')
+
             # ==================================================================
             # GENERATE WORK PLANS
             # ==================================================================
             logger.info("-" * 60)
             logger.info("GENERATING WORK PLANS")
             logger.info("-" * 60)
-
-            # Track plan generation start time
-            self.runtime['plans_start'] = datetime.now()
 
             # Save updated config to temp file for PlanGenerator
             import json
@@ -1230,19 +1268,9 @@ class ExperimentRunner:
             # GENERATE NON-WORK PLANS
             # ==================================================================
             all_nonwork_plans = []
-            nonwork_purposes_config = self.config.get('nonwork_purposes', {})
 
-            # Check if any non-work purposes are enabled
-            enabled_purposes = [
-                purpose for purpose, cfg in nonwork_purposes_config.items()
-                if isinstance(cfg, dict) and cfg.get('enabled', False)
-            ]
-
-            # Load shared data ONCE if any non-work purposes are enabled
-            shared_data = None
+            # Shared data was loaded ONCE above, with the demand budget
             if enabled_purposes:
-                shared_data = load_shared_nonwork_data(self.config)
-
                 # Reuse GTFS stop data from work plan generator (avoids re-downloading)
                 gtfs_stop_data = self.plan_generator._serialize_gtfs_stop_data()
                 if gtfs_stop_data:

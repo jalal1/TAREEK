@@ -93,6 +93,48 @@ def _weights_for(df: pd.DataFrame, index, label: str) -> Optional[np.ndarray]:
     return values
 
 
+DEFAULT_TIME_BANDWIDTH_MINUTES = 10.0
+
+
+def _time_bandwidth_minutes(config: Optional[Dict]):
+    """Kernel width (minutes) for clock-time KDEs, or 'scott'.
+
+    time_models.departure_bandwidth_minutes; missing -> 10 min default.
+    Scott's rule assumes one Gaussian peak. Departure times have several
+    narrow peaks (early shift, 7-8 h, school start), so Scott gave kernels of
+    34-88 min and moved a quarter of the 7 h peak into 5-6 h. A fixed small
+    kernel keeps the peaks. It also undoes survey time rounding (NHTS reports
+    35% of first departures at :00), because a symmetric kernel spreads a
+    reported "7:00" over both sides of the hour. Measured on Twin Cities NHTS
+    first departures against the de-rounded survey: Scott L1 error 13.5, 10 min
+    2.0, 5 min 0.6 (10 is the default: safer for thin pairs).
+    """
+    value = (config or {}).get('time_models', {}).get('departure_bandwidth_minutes')
+    if value is None:
+        return DEFAULT_TIME_BANDWIDTH_MINUTES
+    if isinstance(value, str) and value.lower() == 'scott':
+        return 'scott'
+    value = float(value)
+    if value <= 0:
+        raise ValueError(f"time_models.departure_bandwidth_minutes must be > 0 or 'scott', got {value}")
+    return value
+
+
+def _fit_time_kde(minutes: pd.Series, weights: Optional[np.ndarray], bandwidth):
+    """Weighted 1-D KDE of clock minutes with a kernel std of ``bandwidth`` minutes.
+
+    gaussian_kde's kernel std is factor x (weighted) data std, so the factor
+    is bandwidth / data std. 'scott' keeps scipy's rule.
+    """
+    values = np.asarray(minutes, dtype=float)
+    if bandwidth == 'scott':
+        return gaussian_kde(values, bw_method='scott', weights=weights)
+    std = float(np.sqrt(np.cov(values, aweights=weights))) if len(values) > 1 else 0.0
+    if not np.isfinite(std) or std <= 0:
+        std = 1.0
+    return gaussian_kde(values, bw_method=bandwidth / std, weights=weights)
+
+
 class TripDurationModel:
     """
     Model departure and arrival time distributions by activity pair.
@@ -141,6 +183,10 @@ class TripDurationModel:
                 f"time_models.first_departure_source must be 'all_trips' or "
                 f"'first_of_day', got {self.first_departure_source!r}")
         self.first_depart_models = {}  # KDEs fitted on first-of-day trips only
+        self.time_bandwidth = _time_bandwidth_minutes(self.config)
+        if _is_main_process():
+            logger.info(f"Clock-time KDE bandwidth: "
+                        f"{self.time_bandwidth if self.time_bandwidth == 'scott' else f'{self.time_bandwidth:g} min'}")
 
         self._fit_distributions()
         if self.first_departure_source == 'first_of_day':
@@ -184,11 +230,8 @@ class TripDurationModel:
             # Fit KDE if we have enough samples
             if len(depart_min) > min_kde_samples:
                 try:
-                    self.depart_models[activity_key] = gaussian_kde(
-                        depart_min,
-                        bw_method='scott',
-                        weights=depart_w,
-                    )
+                    self.depart_models[activity_key] = _fit_time_kde(
+                        depart_min, depart_w, self.time_bandwidth)
                 except Exception:
                     if _is_main_process():
                         logger.warning(f"Could not fit KDE for depart {activity_key}")
@@ -200,11 +243,8 @@ class TripDurationModel:
 
             if len(arrive_min) > min_kde_samples:
                 try:
-                    self.arrive_models[activity_key] = gaussian_kde(
-                        arrive_min,
-                        bw_method='scott',
-                        weights=arrive_w,
-                    )
+                    self.arrive_models[activity_key] = _fit_time_kde(
+                        arrive_min, arrive_w, self.time_bandwidth)
                 except Exception:
                     if _is_main_process():
                         logger.warning(f"Could not fit KDE for arrive {activity_key}")
@@ -276,12 +316,10 @@ class TripDurationModel:
             if len(depart_min) <= min_kde_samples:
                 continue
             try:
-                self.first_depart_models[(origin, dest)] = gaussian_kde(
+                self.first_depart_models[(origin, dest)] = _fit_time_kde(
                     depart_min,
-                    bw_method='scott',
-                    weights=_weights_for(group, depart_min.index,
-                                         f"first depart {(origin, dest)}"),
-                )
+                    _weights_for(group, depart_min.index, f"first depart {(origin, dest)}"),
+                    self.time_bandwidth)
             except Exception:
                 if _is_main_process():
                     logger.warning(f"Could not fit first-of-day KDE for {(origin, dest)}")

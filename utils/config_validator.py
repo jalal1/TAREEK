@@ -118,6 +118,9 @@ class ConfigValidator:
         # Validate counts configuration
         self._validate_counts_config()
 
+        # Validate person-first demand settings (surveys, months, knobs)
+        self._validate_demand_config()
+
         # Validate the external binaries this config will need
         self._validate_external_tools()
 
@@ -454,6 +457,70 @@ class ConfigValidator:
 
         logger.info(f"Counts config: enabled={enabled}, "
                     f"custom={custom_config.get('enabled', False)}")
+
+    REGULAR_MONTHS = {3, 4, 5, 9, 10, 11}
+
+    def _validate_demand_config(self):
+        """Person-first demand: survey person files, survey months, knobs.
+
+        See docs/design/person_first_demand.md. The knobs act on top of the
+        survey values; a non-neutral value is allowed but reported, because
+        it changes what the surveys say.
+        """
+        data_cfg = self.config.get('data', {})
+        surveys = data_cfg.get('surveys', [])
+        active = [s for s in surveys if s.get('weight', 1.0) > 0]
+        if active and not any(s.get('person_file') for s in active):
+            raise ConfigValidationError(
+                "No active survey (weight > 0) has a 'person_file'. The demand model "
+                "needs survey person-days to know how often each segment travels. "
+                "NHTS: 'person_file': 'nhts/csv/perv2pub.csv'. TBI: 'person_file' and "
+                "'day_file'.")
+        for s in active:
+            if s.get('type') == 'tbi' and s.get('person_file') and not s.get('day_file'):
+                raise ConfigValidationError("TBI survey entry needs 'day_file' next to 'person_file'")
+
+        months_cfg = data_cfg.get('survey_months', 'regular')
+        if isinstance(months_cfg, str):
+            if months_cfg.lower() not in ('regular', 'all'):
+                raise ConfigValidationError(
+                    f"data.survey_months must be 'regular', 'all' or a list of months, got '{months_cfg}'")
+            months = self.REGULAR_MONTHS if months_cfg.lower() == 'regular' else set(range(1, 13))
+        else:
+            months = {int(m) for m in months_cfg}
+            if not months or not months <= set(range(1, 13)):
+                raise ConfigValidationError(f"data.survey_months list must hold months 1-12, got {months_cfg}")
+
+        bw = self.config.get('time_models', {}).get('departure_bandwidth_minutes')
+        if bw is not None and not (isinstance(bw, str) and bw.lower() == 'scott'):
+            if not isinstance(bw, (int, float)) or bw <= 0:
+                raise ConfigValidationError(
+                    f"time_models.departure_bandwidth_minutes must be a positive number of "
+                    f"minutes or 'scott', got {bw}")
+
+        count_month = self.config.get('counts', {}).get('fha', {}).get('month')
+        if self.config.get('counts', {}).get('enabled', False) and count_month and count_month not in months:
+            logger.warning(f"counts.fha.month={count_month} is not in data.survey_months "
+                           f"{sorted(months)}: the counts and the survey describe different "
+                           f"kinds of days")
+
+        knobs = {
+            'plan_generation.work_scaling_multiplier':
+                self.config.get('plan_generation', {}).get('work_scaling_multiplier', 1.0),
+            'nonwork_purposes.nonwork_trip_share':
+                self.config.get('nonwork_purposes', {}).get('nonwork_trip_share', 1.0),
+        }
+        for key, value in knobs.items():
+            if not isinstance(value, (int, float)) or value < 0:
+                raise ConfigValidationError(f"{key} must be a non-negative number, got {value}")
+            if value != 1.0:
+                logger.warning(f"{key} = {value} (neutral = 1.0): this scales the survey value")
+        for purpose, pcfg in self.config.get('nonwork_purposes', {}).items():
+            if isinstance(pcfg, dict) and pcfg.get('enabled', False):
+                w = pcfg.get('trip_generation', {}).get('blend_weight', 0) or 0
+                if w > 0:
+                    logger.warning(f"nonwork_purposes.{purpose}.trip_generation.blend_weight = {w} "
+                                   f"(neutral = 0): the {purpose} rate is blended toward config_rate")
 
     def get_network_spec(self) -> Tuple[Optional[List[str]], Optional[Dict]]:
         """

@@ -3,7 +3,9 @@
 This module creates origin-destination matrices for non-work trips using:
 1. Survey data (TBI survey filtered by purpose)
 2. Gravity model with singly-constrained IPF
-   - Origin constraint: non_employees at home blocks
+   - Origin constraint: the demand budget's expected travellers per home
+     block for this main purpose (``nw_origin_<P>``, see
+     models/demand_budget.py). Without a budget: non_employees x trip rate.
    - Destination attractiveness: POI density per block
 3. Alpha blending to combine survey and gravity model
 
@@ -11,7 +13,7 @@ Similar to od_matrix_v3.py but adapted for non-work trips.
 """
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 from utils.logger import setup_logger
 from data_sources.base_survey_trip import BaseSurveyTrip
 from models.od_matrix_v3 import (
@@ -36,8 +38,13 @@ def _aggregate_to_geo_level(
     home_locs_dict: Dict[str, Dict[str, Any]],
     poi_density_dict: Dict[str, int],
     geo_level: str = BaseSurveyTrip.GEO_BLOCK_GROUP,
+    origin_key: Optional[str] = None,
 ) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, int]]:
     """Pre-aggregate block-level data to the requested census geography level.
+
+    With ``origin_key`` (the demand budget's ``nw_origin_<P>`` block value),
+    each zone also gets ``origin`` = the sum of that value, and coordinates
+    are weighted by it instead of by non_employees.
 
     Reduces the dimensionality of the cdist call — e.g. from ~164K×31K blocks
     to ~4K×3K block groups, cutting memory from ~113 GB to < 100 MB.
@@ -63,12 +70,14 @@ def _aggregate_to_geo_level(
     for geoid, data in home_locs_dict.items():
         bg = geoid[:prefix_len]
         ne = data.get("non_employees", 0) or 0
+        w = (data.get(origin_key, 0.0) or 0.0) if origin_key else ne
         lat = data.get("lat", 0.0) or 0.0
         lon = data.get("lon", 0.0) or 0.0
         entry = bg_data[bg]
         entry["sum_ne"] += ne
-        entry["wlat"] += lat * ne
-        entry["wlon"] += lon * ne
+        entry["sum_w"] = entry.get("sum_w", 0.0) + w
+        entry["wlat"] += lat * w
+        entry["wlon"] += lon * w
         entry["ulat"] += lat
         entry["ulon"] += lon
         entry["n"] += 1
@@ -76,15 +85,16 @@ def _aggregate_to_geo_level(
     bg_home_dict = {}
     for bg, entry in bg_data.items():
         ne = entry["sum_ne"]
-        if ne > 0:
-            lat = entry["wlat"] / ne
-            lon = entry["wlon"] / ne
+        w = entry.get("sum_w", 0.0)
+        if w > 0:
+            lat = entry["wlat"] / w
+            lon = entry["wlon"] / w
         elif entry["n"] > 0:
             lat = entry["ulat"] / entry["n"]
             lon = entry["ulon"] / entry["n"]
         else:
             continue
-        bg_home_dict[bg] = {"lat": lat, "lon": lon, "non_employees": ne}
+        bg_home_dict[bg] = {"lat": lat, "lon": lon, "non_employees": ne, "origin": w}
 
     # --- Aggregate POI density ---
     bg_poi_dict: Dict[str, int] = defaultdict(int)
@@ -524,37 +534,35 @@ def create_gravity_od_matrix_nonwork(home_locs_dict: Dict[str, Dict[str, Any]],
     logger.info(f"SINGLY-CONSTRAINED GRAVITY MODEL - {purpose.upper()}")
     logger.info(f"=" * 70)
 
-    # Calculate trip generation rate (blend survey and config)
-    purpose_config = config.get('nonwork_purposes', {}).get(purpose, {})
-    trip_gen_config = purpose_config.get('trip_generation', {})
+    # Origins: the demand budget's travellers per block for this main purpose.
+    # The budget already holds the survey rate per segment, the knobs
+    # (nonwork_trip_share, config_rate/blend_weight) and the population split.
+    from models.demand_budget import origin_key as _budget_origin_key
+    okey = _budget_origin_key(purpose)
+    use_budget = any(okey in d for d in home_locs_dict.values())
 
-    # Get survey rate
-    survey_rate_config = trip_gen_config.get('survey_rate', 'auto')
-    if survey_rate_config == 'auto':
-        survey_rate = calculate_trip_rate_from_survey(survey_df, purpose, config)
+    final_trip_rate = None
+    if use_budget:
+        logger.info(f"Origins from the demand budget ('{okey}' per home block)")
     else:
-        survey_rate = float(survey_rate_config)
-        logger.info(f"Using configured survey rate: {survey_rate:.2%}")
-
-    # Get config rate
-    config_rate = trip_gen_config.get('config_rate', 0.30)
-
-    # Get blend weight
-    blend_weight = trip_gen_config.get('blend_weight', 0.5)
-
-    # Calculate final trip rate (blended from survey and config)
-    final_trip_rate = (1 - blend_weight) * survey_rate + blend_weight * config_rate
-
-    logger.info(f"")
-    logger.info(f"Trip Generation Rate Calculation:")
-    logger.info(f"  Survey rate: {survey_rate:.2%}")
-    logger.info(f"  Config rate: {config_rate:.2%}")
-    logger.info(f"  Blend weight: {blend_weight:.2f} (0=survey only, 1=config only)")
-    logger.info(f"  Final trip rate: {final_trip_rate:.2%}")
-    logger.info(f"")
+        # Legacy path (no budget): trip rate x non_employees.
+        purpose_config = config.get('nonwork_purposes', {}).get(purpose, {})
+        trip_gen_config = purpose_config.get('trip_generation', {})
+        survey_rate_config = trip_gen_config.get('survey_rate', 'auto')
+        if survey_rate_config == 'auto':
+            survey_rate = calculate_trip_rate_from_survey(survey_df, purpose, config)
+        else:
+            survey_rate = float(survey_rate_config)
+        config_rate = trip_gen_config.get('config_rate', 0.30)
+        blend_weight = trip_gen_config.get('blend_weight', 0.5)
+        final_trip_rate = (1 - blend_weight) * survey_rate + blend_weight * config_rate
+        logger.warning(f"No demand budget for {purpose}: using non_employees x trip rate "
+                       f"{final_trip_rate:.2%} (survey {survey_rate:.2%}, config {config_rate:.2%}, "
+                       f"blend {blend_weight:.2f})")
 
     # Pre-aggregate blocks → block groups to avoid OOM on large cdist matrices
-    bg_home, bg_poi = _aggregate_to_geo_level(home_locs_dict, poi_density_dict, geo_level=geo_level)
+    bg_home, bg_poi = _aggregate_to_geo_level(home_locs_dict, poi_density_dict, geo_level=geo_level,
+                                              origin_key=okey if use_budget else None)
 
     # Get sorted geoid lists at the aggregated geography level
     home_geoids = sorted(bg_home.keys())
@@ -568,15 +576,18 @@ def create_gravity_od_matrix_nonwork(home_locs_dict: Dict[str, Dict[str, Any]],
         logger.error("No destination block groups with POIs found!")
         return pd.DataFrame(), [], []
 
-    # Extract origin constraint (non-employees) and apply trip rate
+    # Extract origin constraint
     Oi_base = np.array([bg_home[geoid]['non_employees'] for geoid in home_geoids], dtype=np.float64)
-    Oi = Oi_base * final_trip_rate
+    if use_budget:
+        Oi = np.array([bg_home[geoid]['origin'] for geoid in home_geoids], dtype=np.float64)
+    else:
+        Oi = Oi_base * final_trip_rate
 
     # Extract destination attractiveness (POI count)
     Aj = np.array([bg_poi.get(geoid, 0) for geoid in dest_geoids], dtype=np.float64)
 
     logger.info(f"Total non-employees (base): {Oi_base.sum():,.0f}")
-    logger.info(f"Total travelers (after trip rate): {Oi.sum():,.0f}")
+    logger.info(f"Total travelers ({'demand budget' if use_budget else 'after trip rate'}): {Oi.sum():,.0f}")
     logger.info(f"Total POIs (destination): {Aj.sum():,.0f}")
 
     # Extract coordinates
@@ -766,9 +777,12 @@ def create_nonwork_od_matrix(config: Dict[str, Any],
         scale_to_total=None  # Use gravity model total
     )
 
-    # Step 6: Apply nonwork_trip_share (fraction of non-workers who travel on a given day)
+    # Step 6 (legacy path only): nonwork_trip_share. With a demand budget the
+    # knob is already inside the block origins, so it must not be applied twice.
+    from models.demand_budget import origin_key as _budget_origin_key
+    budget_used = any(_budget_origin_key(purpose) in d for d in home_locs_dict.values())
     nonwork_trip_share = config.get('nonwork_purposes', {}).get('nonwork_trip_share', 1.0)
-    if nonwork_trip_share < 1.0:
+    if not budget_used and nonwork_trip_share != 1.0:
         total_before = combined_od_matrix.sum().sum()
         combined_od_matrix = combined_od_matrix * nonwork_trip_share
         total_after = combined_od_matrix.sum().sum()

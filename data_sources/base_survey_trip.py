@@ -94,11 +94,63 @@ class BaseSurveyTrip(ABC):
 
     CANONICAL_MODES = CANONICAL_MODES
 
+    # ── Person-day table (canonical schema) ─────────────────────────────
+    # One row per surveyed person-day, including days with no trips. This
+    # is what the demand model needs to know how a person of each segment
+    # uses a day (commute / other travel / no travel); the trip table alone
+    # cannot say it, because a person who stayed home has no trips.
+    # A survey that has no person-level file returns None from
+    # load_person_days(); it still feeds chains and time models.
+    PD_PERSON_ID = 'person_id'  # same id as the trip table's PERSON_ID
+    PD_DATE = 'date'            # 'YYYY-MM-DD' as process_persons() keys days,
+                                # or None when the survey has one day per person
+    PD_WEIGHT = 'weight'        # person-day expansion weight
+    PD_SEGMENT = 'segment'      # one of the SEG_* values below
+    PD_MONTH = 'month'          # 1-12, or NaN when unknown
+    PD_WEEKDAY = 'weekday'      # Monday=0 .. Sunday=6, or NaN when unknown
+    PD_N_TRIPS = 'n_trips'      # trips reported that day (0 = no travel)
+
+    PERSON_DAY_COLUMNS = [PD_PERSON_ID, PD_DATE, PD_WEIGHT, PD_SEGMENT,
+                          PD_MONTH, PD_WEEKDAY, PD_N_TRIPS]
+
+    SEG_WORKER = 'worker'
+    SEG_STUDENT = 'student'            # age 5-17, not employed
+    SEG_NONWORKER_ADULT = 'nonworker_adult'
+    SEG_CHILD = 'child_0_4'            # has no plan of their own
+
     def __init__(self, config: Dict):
         self.config = config
         self.data: Optional[pd.DataFrame] = None
         self.persons: Optional[Dict] = None
         self.metadata: Dict[str, str] = {}  # populated by subclass (source_type, source_year)
+
+    def _survey_entry(self) -> Dict:
+        """This source's entry in config['data']['surveys'] (empty dict if none)."""
+        for entry in self.config.get('data', {}).get('surveys', []):
+            if (entry.get('type') == self.metadata.get('source_type')
+                    and str(entry.get('year', '')) == str(self.metadata.get('source_year', ''))):
+                return entry
+        return {}
+
+    def _resolve_data_path(self, relative: Optional[str]) -> Optional[str]:
+        """Resolve a survey file path against data.data_dir. None/'' stays None."""
+        if not relative:
+            return None
+        from pathlib import Path
+        path = Path(relative)
+        if not path.is_absolute():
+            path = Path(self.config['data']['data_dir']) / path
+        return str(path)
+
+    def load_person_days(self) -> Optional[pd.DataFrame]:
+        """Return the person-day table (PERSON_DAY_COLUMNS), or None.
+
+        The default is None: a survey with only a trip file cannot give
+        no-travel days or person segments. Subclasses with a person (and day)
+        file override this. The file names come from the survey's config
+        entry (``person_file``, and ``day_file`` for multi-day surveys).
+        """
+        return None
 
     # ── Abstract methods (subclasses must implement) ────────────────────
 

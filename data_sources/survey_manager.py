@@ -111,10 +111,21 @@ class SurveyManager:
             'nhts': NHTSSurveyTrip,
         }
 
+    # data.survey_months = "regular": no summer, no December/January holidays.
+    # Counts should come from one of these months too (counts.fha.month).
+    REGULAR_MONTHS = frozenset({3, 4, 5, 9, 10, 11})
+    # A source keeps its month filter only when every segment still has this
+    # many person-days inside the window; otherwise it falls back to all months.
+    MIN_SEGMENT_DAYS_IN_WINDOW = 200
+
     def __init__(self, config: Dict):
         self.config = config
         self.survey_configs: List[Dict] = config['data']['surveys']
         self.sources: Dict[str, BaseSurveyTrip] = {}
+        self._person_days: Optional[Dict[str, Optional[pd.DataFrame]]] = None
+        # Per source: ('person', set_of_ids) | ('person_date', set_of_pairs)
+        # | ('month', months) | None (no month filter).
+        self._month_filters: Dict[str, Optional[tuple]] = {}
         # Make sure every active survey is ingested into the DB before any
         # load_data() call. ensure_surveys() is idempotent: it inspects the
         # existing (source_type, source_year) pairs and only runs the ETL for
@@ -239,6 +250,116 @@ class SurveyManager:
             )
         return filtered
 
+    # ── Survey months and person-days ───────────────────────────────────
+
+    def survey_months(self) -> Optional[frozenset]:
+        """Months to use from the surveys (data.survey_months), or None = all.
+
+        "regular" (the default) = Mar, Apr, May, Sep, Oct, Nov; "all"; or a
+        list of month numbers.
+        """
+        value = self.config.get('data', {}).get('survey_months', 'regular')
+        if isinstance(value, str):
+            v = value.lower()
+            if v == 'all':
+                return None
+            if v == 'regular':
+                return self.REGULAR_MONTHS
+            raise ValueError(f"data.survey_months must be 'regular', 'all' or a list "
+                             f"of months, got '{value}'")
+        months = frozenset(int(m) for m in value)
+        if not months or not months <= set(range(1, 13)):
+            raise ValueError(f"data.survey_months list must hold months 1-12, got {value}")
+        return months
+
+    def get_person_days(self) -> Dict[str, Optional[pd.DataFrame]]:
+        """Person-day table per active source, filtered by day type and months.
+
+        A source without a person file maps to None. The month window of each
+        source is decided here, and the same window is later applied to its
+        trips (see _filter_months), so the day types, the chains and the time
+        models all describe the same days.
+        """
+        if self._person_days is not None:
+            return self._person_days
+
+        day_type = self._day_type()
+        months = self.survey_months()
+        result: Dict[str, Optional[pd.DataFrame]] = {}
+        for key, source in self.sources.items():
+            pd_df = source.load_person_days()
+            if pd_df is None or pd_df.empty:
+                result[key] = None
+                self._month_filters[key] = ('month', months) if months else None
+                continue
+
+            wd = pd_df[BaseSurveyTrip.PD_WEEKDAY]
+            if day_type == 'weekday':
+                pd_df = pd_df[wd < 5]
+            elif day_type == 'weekend':
+                pd_df = pd_df[wd >= 5]
+
+            if months:
+                in_window = pd_df[pd_df[BaseSurveyTrip.PD_MONTH].isin(months)]
+                counts = in_window.groupby(BaseSurveyTrip.PD_SEGMENT).size()
+                segments = [BaseSurveyTrip.SEG_WORKER, BaseSurveyTrip.SEG_STUDENT,
+                            BaseSurveyTrip.SEG_NONWORKER_ADULT]
+                thin = {s: int(counts.get(s, 0)) for s in segments
+                        if counts.get(s, 0) < self.MIN_SEGMENT_DAYS_IN_WINDOW}
+                if thin:
+                    logger.warning(
+                        f"Survey '{key}': too few person-days in months {sorted(months)} "
+                        f"for {thin} (need {self.MIN_SEGMENT_DAYS_IN_WINDOW}); "
+                        f"using ALL months for this source")
+                else:
+                    logger.info(f"Survey '{key}': month window {sorted(months)} keeps "
+                                f"{len(in_window):,}/{len(pd_df):,} {day_type} person-days")
+                    pd_df = in_window
+
+            has_dates = pd_df[BaseSurveyTrip.PD_DATE].notna().any()
+            if has_dates:
+                keys = set(zip(pd_df[BaseSurveyTrip.PD_PERSON_ID].astype(str),
+                               pd_df[BaseSurveyTrip.PD_DATE].astype(str)))
+                self._month_filters[key] = ('person_date', keys)
+            else:
+                self._month_filters[key] = ('person', set(pd_df[BaseSurveyTrip.PD_PERSON_ID].astype(str)))
+            result[key] = pd_df.reset_index(drop=True)
+
+        self._person_days = result
+        return result
+
+    def _filter_months(self, df: pd.DataFrame, source_key: str) -> pd.DataFrame:
+        """Keep only the trips of the person-days selected by get_person_days().
+
+        A source without person-days is filtered by the month of depart_time
+        when its dates carry real months; otherwise it is kept whole.
+        """
+        self.get_person_days()
+        rule = self._month_filters.get(source_key)
+        if rule is None or df.empty:
+            return df
+        kind, value = rule
+        pid = df[BaseSurveyTrip.PERSON_ID].astype(str)
+        if kind == 'person':
+            keep = pid.isin(value)
+        elif kind == 'person_date':
+            date = pd.to_datetime(df[BaseSurveyTrip.DEPART_TIME], errors='coerce').dt.strftime('%Y-%m-%d')
+            keep = pd.Series([k in value for k in zip(pid, date)], index=df.index)
+        else:  # 'month' — no person-days
+            month = pd.to_datetime(df[BaseSurveyTrip.DEPART_TIME], errors='coerce').dt.month
+            if month.nunique() <= 1:
+                logger.warning(f"Survey '{source_key}': no person-days and no real months "
+                               f"in its dates; the month filter is not applied")
+                return df
+            keep = month.isin(value)
+        filtered = df[keep]
+        logger.info(f"Survey '{source_key}': month/person-day filter kept "
+                    f"{len(filtered):,}/{len(df):,} trips")
+        if filtered.empty:
+            raise ValueError(f"Survey '{source_key}' has no trips left after the month filter. "
+                             f"Check data.survey_months or the person-day files.")
+        return filtered
+
     # ── Multi-source interface ──────────────────────────────────────────
 
     def load_data(self) -> Dict[str, pd.DataFrame]:
@@ -249,7 +370,8 @@ class SurveyManager:
         """
         result = {}
         for key, source in self.sources.items():
-            result[key] = self._filter_day_type(source.load_data(), key)
+            df = self._filter_day_type(source.load_data(), key)
+            result[key] = self._filter_months(df, key)
             logger.info(f"Loaded {len(result[key])} records for '{key}'")
         return result
 
@@ -275,7 +397,7 @@ class SurveyManager:
                 source.load_data()
             original = source.data
             try:
-                source.data = self._filter_day_type(original, key)
+                source.data = self._filter_months(self._filter_day_type(original, key), key)
                 result[key] = source.process_persons()
             finally:
                 source.data = original

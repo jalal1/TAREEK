@@ -4,8 +4,14 @@ MATSim Non-Work Plan Generator
 Generates synthetic non-work activity plans (Shopping, Recreation, etc.) in MATSim XML format.
 Integrates non-work OD matrices, POI weighting, time models, and chain sampling.
 
+One generator runs per purpose P. With a demand budget (models/demand_budget.py)
+it makes the travel days whose MAIN purpose is P, for all segments (workers on a
+non-commute day, students, non-worker adults): origins and home blocks come from
+the budget's ``nw_origin_<P>`` block values, and chains from the budget's
+P-main chain pool. So each travel day belongs to exactly one generator.
+
 Key Differences from Work Trip Generator:
-1. Uses non_employees instead of n_employees
+1. Origins from the demand budget (not n_employees)
 2. Samples actual POI coordinates (not centroid + jitter)
 3. Uses POI importance weighting
 4. Different time distributions (midday/afternoon vs morning rush)
@@ -45,6 +51,41 @@ from utils.poi_weighting import POIWeighting
 from utils.coordinates import CoordinateConverter
 
 logger = setup_logger(__name__)
+
+
+def build_budget_chain_model(shared_data: Optional[Dict], purpose: str, config: Dict):
+    """Chain model from the demand budget's P-main chain pool, or None.
+
+    Blends per source with the survey weights when more than one source has a
+    pool for this purpose. The chain length distribution (diagnostic only) is
+    learned from the unfiltered chains, as before.
+    """
+    if not shared_data or 'purpose_chains_dfs' not in shared_data:
+        return None
+    merged = shared_data['purpose_chains_dfs'].get(purpose)
+    if merged is None or merged.empty:
+        return None
+    home_boost = config.get('chains', {}).get('home_boost_factor', 2.0)
+    length_df = shared_data.get('chains_df')
+    per_source = shared_data.get('per_source_purpose_chains_dfs', {})
+    weights = shared_data.get('blend_weights', {})
+    models = {src: TripChainModel(d[purpose], home_boost_factor=home_boost,
+                                  length_distribution_df=length_df, required_activity=purpose)
+              for src, d in per_source.items()
+              if purpose in d and not d[purpose].empty and weights.get(src, 0) > 0}
+    if len(models) > 1:
+        logger.info(f"  {purpose}: blended budget chain model from {list(models)}")
+        return BlendedTripChainModel(models, {s: weights[s] for s in models})
+    logger.info(f"  {purpose}: budget chain model, {len(merged):,} main-purpose patterns")
+    return TripChainModel(merged, home_boost_factor=home_boost,
+                          length_distribution_df=length_df, required_activity=purpose)
+
+
+def _home_block_weight(block: Dict, purpose: str) -> float:
+    """Weight of a home block within its zone: budget origin, else non_employees."""
+    from models.demand_budget import origin_key
+    v = block.get(origin_key(purpose))
+    return float(v) if v is not None else float(block.get('non_employees', 0) or 0)
 
 
 def _filter_pois_by_bounds(poi_data: List[Dict], home_locs_dict: Dict, buffer_km: float = 5.0) -> List[Dict]:
@@ -308,6 +349,10 @@ class _WorkerNonWorkPlanGenerator:
                                               length_distribution_df=all_chains_df,
                                               required_activity=self.purpose)
 
+        budget_chain_model = build_budget_chain_model(shared_data, self.purpose, config)
+        if budget_chain_model is not None:
+            self.chain_model = budget_chain_model
+
         # Build spatial index for fast POI lookups
         self.poi_spatial_index = POISpatialIndex(self.poi_data_grouped)
 
@@ -450,14 +495,14 @@ class _WorkerNonWorkPlanGenerator:
         if not blocks_in_bg:
             return None
 
-        # Weight by non_employees
+        # Weight by the budget's travellers for this purpose (else non_employees)
         geoids = list(blocks_in_bg.keys())
-        weights = np.array([blocks_in_bg[gid]['non_employees'] for gid in geoids])
+        weights = np.array([_home_block_weight(blocks_in_bg[gid], self.purpose) for gid in geoids])
 
         if weights.sum() == 0:
             return None
 
-        # Sample block weighted by non_employees
+        # Sample block by that weight
         probs = weights / weights.sum()
         sampled_geoid = np.random.choice(geoids, p=probs)
 
@@ -1301,6 +1346,13 @@ class NonWorkPlanGenerator:
         """
         home_boost = self.config.get('chains', {}).get('home_boost_factor', 2.0)
 
+        budget_chain_model = build_budget_chain_model(self._shared_data, self.purpose, self.config)
+        if budget_chain_model is not None:
+            self.chain_model = budget_chain_model
+            return
+
+        logger.warning(f"  {self.purpose}: no demand-budget chain pool; using chains that "
+                       f"contain {self.purpose} (a day with several purposes can be counted twice)")
         if (self._shared_data is not None
                 and 'per_source_chains_dfs' in self._shared_data):
             # Multi-source: per-source purpose-filtered chain models
@@ -1497,14 +1549,14 @@ class NonWorkPlanGenerator:
         if not blocks_in_bg:
             return None
 
-        # Weight by non_employees
+        # Weight by the budget's travellers for this purpose (else non_employees)
         geoids = list(blocks_in_bg.keys())
-        weights = np.array([blocks_in_bg[gid]['non_employees'] for gid in geoids])
+        weights = np.array([_home_block_weight(blocks_in_bg[gid], self.purpose) for gid in geoids])
 
         if weights.sum() == 0:
             return None
 
-        # Sample block weighted by non_employees
+        # Sample block by that weight
         probs = weights / weights.sum()
         sampled_geoid = np.random.choice(geoids, p=probs)
 

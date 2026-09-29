@@ -1745,6 +1745,23 @@ class PlanGenerator(_BasePlanGenerator):
 
         return result
 
+    def _commute_probability(self) -> float:
+        """P(a worker commutes on the modelled day), from the demand budget.
+
+        run_experiment computes the budget once and passes it in
+        config['_demand_budget']. A standalone generator computes it here.
+        """
+        budget = self.config.get('_demand_budget')
+        if budget and 'p_commute_workers' in budget:
+            return float(budget['p_commute_workers'])
+        from models.demand_budget import compute_demand_budget
+        logger.info("No demand budget passed in — computing it for the work generator")
+        b = compute_demand_budget(self.config, survey_manager=self.survey_manager,
+                                  home_locs_dict=dict(self.blockid2homelocs),
+                                  build_chains=False)
+        self.config['_demand_budget'] = b.summary()
+        return b.p_commute
+
     def generate_plans(self, target_plans = None) -> Tuple[List[Plan], Dict]:
         """
         Generate plans using multiprocessing.
@@ -1798,11 +1815,19 @@ class PlanGenerator(_BasePlanGenerator):
         # Apply work-specific scaling multiplier (boosts work trips independently of non-work trips)
         # Default is 1.0 (no boost). Use values > 1.0 to increase work trips during peak hours.
         work_scaling_multiplier = self.config.get('plan_generation', {}).get('work_scaling_multiplier', 1.0)
-        effective_scaling = scaling_factor * work_scaling_multiplier
 
+        # A LODES flow is a job held, not a trip made today. Only the share of
+        # workers that commute on the modelled day (survey person-days, see
+        # models/demand_budget.py) gets a work plan. The multiplier is a user
+        # control on top of that survey value (neutral = 1.0).
+        p_commute = self._commute_probability()
+        effective_scaling = scaling_factor * p_commute * work_scaling_multiplier
+
+        logger.info(f"P(commute) of workers (survey): {p_commute:.3f}")
         if work_scaling_multiplier != 1.0:
             logger.info(f"Work scaling multiplier: {work_scaling_multiplier}")
-            logger.info(f"Effective scaling: {scaling_factor} × {work_scaling_multiplier} = {effective_scaling}")
+        logger.info(f"Effective work scaling: {scaling_factor} x {p_commute:.3f} x "
+                    f"{work_scaling_multiplier} = {effective_scaling:.4f}")
 
         expected_total = original_total * effective_scaling
 

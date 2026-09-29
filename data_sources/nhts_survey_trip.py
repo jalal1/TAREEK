@@ -164,11 +164,64 @@ class NHTSSurveyTrip(BaseSurveyTrip):
         21: MODE_OTHER,
     }
 
+    # ── Raw columns needed from the NHTS person file (perv2pub.csv) ──────
+    # WORKER: 1 = worker, 2 = not a worker, -1 = not asked (under 16).
+    # TRAVDAY: 1 = Sunday .. 7 = Saturday. TDAYDATE: YYYYMM.
+    # CNTTDTR: trips on the travel day (0 = the person did not travel).
+    # MSASIZE: 1 = MSA < 250k, 2 = 250-499k, 3 = 500-999k, 4 = 1-2.99 M,
+    # 5 = 3 M or more, 6 = not in an MSA. Optional survey config key
+    # ``msa_sizes`` (e.g. [4, 5]) keeps only persons from metros of that size,
+    # so a national survey describes a region of the study area's size. The
+    # trips follow, because SurveyManager filters trips to the kept persons.
+    PERSON_RAW_COLUMNS = ['HOUSEID', 'PERSONID', 'WTPERFIN', 'R_AGE',
+                          'WORKER', 'TRAVDAY', 'TDAYDATE', 'CNTTDTR', 'MSASIZE']
+
     def __init__(self, config: Dict):
         super().__init__(config)
         self.metadata = {
             'source_type': 'nhts',
         }
+
+    def load_person_days(self) -> Optional[pd.DataFrame]:
+        """Person-days from the NHTS person file (``person_file`` in config).
+
+        NHTS observes one travel day per person, so ``date`` is None and a
+        person-day is matched to its trips by person id alone. Persons are
+        age 5 and older (the survey does not cover younger children).
+        """
+        path = self._resolve_data_path(self._survey_entry().get('person_file'))
+        if path is None:
+            logger.warning("NHTS: no 'person_file' in the survey config entry — "
+                           "no person-days (no-travel share and segments unavailable)")
+            return None
+        if not Path(path).exists():
+            raise FileNotFoundError(f"NHTS person_file not found: {path}")
+
+        p = pd.read_csv(path, usecols=self.PERSON_RAW_COLUMNS, low_memory=False)
+        age = pd.to_numeric(p['R_AGE'], errors='coerce')
+        segment = np.select(
+            [p['WORKER'].eq(1), age.between(0, 4), age.between(5, 17), age >= 18],
+            [self.SEG_WORKER, self.SEG_CHILD, self.SEG_STUDENT, self.SEG_NONWORKER_ADULT],
+            default='unknown')
+        travday = pd.to_numeric(p['TRAVDAY'], errors='coerce')
+        out = pd.DataFrame({
+            self.PD_PERSON_ID: p['HOUSEID'].astype(str) + '_' + p['PERSONID'].astype(str),
+            self.PD_DATE: None,
+            self.PD_WEIGHT: pd.to_numeric(p['WTPERFIN'], errors='coerce').fillna(0.0),
+            self.PD_SEGMENT: segment,
+            self.PD_MONTH: pd.to_numeric(p['TDAYDATE'], errors='coerce') % 100,
+            # TRAVDAY 1=Sunday..7=Saturday -> Monday=0..Sunday=6
+            self.PD_WEEKDAY: ((travday + 5) % 7).where(travday.between(1, 7)),
+            self.PD_N_TRIPS: pd.to_numeric(p['CNTTDTR'], errors='coerce').fillna(0).clip(lower=0),
+        })
+        keep = (out[self.PD_WEIGHT] > 0) & (out[self.PD_SEGMENT] != 'unknown')
+        msa_sizes = self._survey_entry().get('msa_sizes')
+        if msa_sizes:
+            keep &= pd.to_numeric(p['MSASIZE'], errors='coerce').isin([int(m) for m in msa_sizes])
+            logger.info(f"NHTS: msa_sizes={list(msa_sizes)} keeps {int(keep.sum()):,} person-days")
+        out = out[keep]
+        logger.info(f"NHTS person-days: {len(out):,} from {path}")
+        return out.reset_index(drop=True)
 
     def extract_data(self, year: str, file_path: Optional[str] = None) -> pd.DataFrame:
         """Read NHTS trip CSV for the given year.
