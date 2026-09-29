@@ -463,7 +463,7 @@ class ConfigValidator:
     def _validate_demand_config(self):
         """Person-first demand: survey person files, survey months, knobs.
 
-        See docs/design/person_first_demand.md. The knobs act on top of the
+        See TECHNICAL_REPORT.md, section 5.2. The knobs act on top of the
         survey values; a non-neutral value is allowed but reported, because
         it changes what the surveys say.
         """

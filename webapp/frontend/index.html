@@ -706,8 +706,8 @@
             <div class="form-label">
               Work Scaling Multiplier
               <span class="info-icon" tabindex="0">?
-                <span class="info-popup">Multiplier applied on top of scaling_factor for work trips only. 1.0 = same as
-                  scaling_factor.</span>
+                <span class="info-popup">Multiplier on the survey commute share of workers: work plans = LODES
+                  work places × P(commute) × this value. 1.0 = the survey value.</span>
               </span>
             </div>
             <input type="number" class="form-input" id="demand-work_scaling_mult" value="1.0" step="0.1" min="0.1"
@@ -764,13 +764,14 @@
           <div class="form-label">
             Non-Work Trip Share
             <span class="info-icon" tabindex="0">?
-              <span class="info-popup">Share of non-workers who travel on a given day. Applied as a multiplier to all
-                non-work trip categories.</span>
+              <span class="info-popup">Multiplier on the survey share of persons who travel for non-work
+                purposes on a given day (person-first demand). 1.0 = the survey value; above 1.0 makes more
+                non-work travellers than the survey says.</span>
             </span>
           </div>
           <div class="slider-group" style="max-width: 400px;">
-            <input type="range" min="0.1" max="1.0" step="0.05" value="0.8" id="nonwork-trip_share">
-            <span class="slider-value" id="nonwork-trip_share_val">0.80</span>
+            <input type="range" min="0.5" max="2.5" step="0.05" value="1.0" id="nonwork-trip_share">
+            <span class="slider-value" id="nonwork-trip_share_val">1.00</span>
           </div>
         </div>
 

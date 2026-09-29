@@ -62,7 +62,8 @@ Shared resources (home locations, POIs, survey data, KDE time models, spatial in
 The configuration JSON is a declarative specification of the entire experiment. Key sections include:
 
 - **Region specification**: A list of 5-digit FIPS GEOIDs (2-digit state + 3-digit county). County boundaries are looked up automatically via OSMnx. Any US county can be simulated by specifying its FIPS code.
-- **Survey sources**: Multiple surveys with configurable weights. When a regional survey is unavailable (weight=0), the system falls back to the national NHTS, ensuring function for any US metro.
+- **Survey sources**: Multiple surveys with configurable weights. When a regional survey is unavailable (weight=0), the system falls back to the national NHTS, ensuring function for any US metro. At least one active survey must have a person file (`person_file`, and `day_file` for TBI), because the demand budget needs survey person-days (Section 5.2). `data.survey_months` (default `"regular"`) and `data.day_type` (default `"weekday"`) select the survey days.
+- **Demand knobs**: `plan_generation.work_scaling_multiplier` and `nonwork_purposes.nonwork_trip_share` scale the survey values (neutral = 1.0). See Section 5.2.
 - **Mode definitions**: A flat structure where each mode (car, bus, rail, walk, bike) has its own availability constraint:
   - *Universal*: car is always available.
   - *Distance-based*: walk and bike are available when origin-destination distance falls within configurable thresholds.
@@ -134,7 +135,7 @@ The coordinate system is auto-detected from the configured counties' centroids b
 
 ## 5. Synthetic Demand Generation
 
-Demand generation is the core of the system. It produces synthetic daily activity plans for every agent in the population. The pipeline has four stages: population synthesis, activity chain sampling, spatial assignment (OD matrix), and temporal assignment.
+Demand generation is the core of the system. It produces synthetic daily activity plans for every agent in the population. The pipeline has five stages: population synthesis, the demand budget (who travels on the modelled day, and why), activity chain sampling, spatial assignment (OD matrix), and temporal assignment.
 
 ### 5.1 Population Synthesis from Census Data
 
@@ -148,13 +149,44 @@ Non-employees (retirees, students, unemployed) are computed as `max(0, P_b - n_e
 
 **Block group aggregation**: A full block-level OD matrix would be prohibitively expensive at metropolitan scale (e.g., 50K x 50K for Twin Cities). The system aggregates to 12-digit block group GEOIDs, reducing each matrix to approximately 4K x 3K entries. Fine-grained spatial resolution is recovered when agents are assigned to individual blocks within those groups.
 
-### 5.2 Activity Chain Generation
+### 5.2 Demand Budget: Who Travels on the Modelled Day
+
+Census and LODES give the persons and workers of each block, but not how often they travel. A LODES job is a job held, not a trip made: if every job made one commute per day, a region would get far too many work trips (in the Twin Cities, 61% of all plans were work plans against 33.5% of survey person-days). The demand budget (`models/demand_budget.py`) is the single place that decides how many persons of each group travel, and for which main purpose. The work generator, the non-work generators and the demand estimator all read it, so the demand that is reported is the demand that is generated.
+
+Each source has one job:
+
+| Source | Gives |
+|---|---|
+| Census + LODES RAC | Persons and workers per block |
+| LODES OD | Where the workers of a block work |
+| ACS B01001 (county) | Age split of non-workers into children 0-4, students 5-17 and adults (a national split is used when the API is not available; the result is cached in `data/acs_cache/`) |
+| Survey person-days | For each person group: the share of days with a commute, with other travel only, and with no travel; and the main purpose of the other-travel days |
+
+**Person-days**: A trip table cannot show a person who stayed at home, because that person has no trips. So each survey class returns a person-day table from `load_person_days()`, one row per surveyed day including days with no trips (columns: person id, date, weight, segment, month, weekday, number of trips). NHTS reads its person file (`person_file`: `perv2pub.csv`, one day per person). TBI reads its Day and Person files (`day_file` and `person_file`, several days per person, so each row keeps its calendar date). A survey without a person file returns `None`; it still feeds chains and time models, but it cannot set day types.
+
+**Day types**: For each segment (worker, student, non-working adult), a day is a *commute* day if it has a trip to Work, an *other-travel* day if it has trips but none to Work, and a *no-travel* day otherwise. The *main purpose* of an other-travel day is the non-Home, non-Work stop with the longest dwell. Probabilities are weighted with the person-day weights and blended across surveys with `data.surveys[].weight`. Children 0-4 get no plan of their own; adult escort trips cover them.
+
+**Survey months**: `data.survey_months` selects the survey days that describe a regular weekday: `"regular"` (March-May and September-November, the default), `"all"`, or a list of months. The same person-days also select the trips, so day types, chains and time models describe the same days. A source keeps the month window only if every segment still has at least 200 person-days in it; otherwise that source uses all months. The counts month (`counts.fha.month`) should be inside the window; the validator warns when it is not.
+
+**Work plans**: `LODES OD × P(commute) of workers × work_scaling_multiplier`. P(commute) comes from the survey (0.525 on NHTS 2022 weekdays in regular months).
+
+**Non-work plans**: For each block and purpose P, the expected travellers are `sum over segments of persons × P(other travel) × share of P among other-travel days`, written to the block as `nw_origin_<P>`. One generator per main purpose uses these origins. Its chain pool holds only the survey days with that main purpose, re-weighted so that the segment mix of the pool matches the region.
+
+**Knobs**: The survey values are the default. Two knobs act on top of them, and 1.0 (or 0 for a blend weight) keeps the survey value:
+- `plan_generation.work_scaling_multiplier` scales P(commute).
+- `nonwork_purposes.nonwork_trip_share` scales every non-work purpose; `nonwork_purposes.<P>.trip_generation.config_rate` with `blend_weight` blends the rate of one purpose toward a configured rate.
+
+The validator reports each non-neutral knob, because it makes more (or less) demand than the survey describes. A knob can close a count gap for the wrong reason; for example, a count shortfall at midday is often a time-of-day problem, and a level knob then also raises the morning peak.
+
+**Outputs**: `experiments/<id>/demand_budget.json` holds the segment populations, day-type probabilities per segment and per source, P(commute), the purpose mix, the travellers per purpose and the knob factors. The experiment report shows it in the *Demand budget* section, before the count validation.
+
+### 5.3 Activity Chain Generation
 
 Each agent requires a daily activity chain — an ordered sequence of activities such as Home -> Work -> Shopping -> Home. The system models chains as a second-order Markov process over seven activity types: Home, Work, Shopping, School, Dining, Social, and Other.
 
 **Transition estimation**: From survey trip records, the system extracts per-respondent daily trip chains and estimates second-order transition probabilities `P(a_t | a_{t-2}, a_{t-1})`. When a particular second-order context is unobserved, the system falls back to first-order transitions.
 
-**Work and non-work chain separation**: Survey chains are partitioned into work chains (containing at least one Work activity) and non-work chains (no Work activity). Worker agents draw from the work pool; non-worker agents from the non-work pool.
+**Work and non-work chain separation**: Survey chains are partitioned into work chains (containing at least one Work activity) and non-work chains (no Work activity). Work plans draw from the work pool. Non-work plans draw from one pool per main purpose (Section 5.2): the Shopping generator samples only survey days whose main purpose is Shopping, re-weighted to the segment mix of the region.
 
 **Home-Work-Home dominance handling**: The Markov transition model is trained on filtered work chains to learn realistic activity transitions conditional on Work being present, while the chain-length distribution is estimated from the full unfiltered survey corpus. This ensures realistic chain lengths even though transition structure is constrained to work-relevant sequences.
 
@@ -162,7 +194,7 @@ Each agent requires a daily activity chain — an ordered sequence of activities
 
 **Multi-source blending**: At sampling time, a source is selected proportionally to its weight, and a chain is drawn from that source's model.
 
-### 5.3 Spatial Assignment: OD Matrix Generation
+### 5.4 Spatial Assignment: OD Matrix Generation
 
 **Work trips** use a doubly-constrained gravity model that distributes workers from residential block groups to employment block groups. The trip probability between origin `i` and destination `j` is:
 
@@ -183,7 +215,7 @@ T_combined = T_gravity                                     (otherwise)
 
 **POI discovery**: Points of interest are fetched from OpenStreetMap via the Overpass API using a three-strategy fallback: (1) FIPS code boundary relation, (2) Wikipedia/Wikidata tag query, (3) bounding box query with post-hoc spatial filtering. POIs are categorized into activity types using a curated mapping of OSM tags.
 
-### 5.4 Temporal Assignment: KDE-Based Time Modeling
+### 5.5 Temporal Assignment: KDE-Based Time Modeling
 
 Departure times and activity durations are modeled using Gaussian kernel density estimation (KDE) fitted to survey trip records.
 
@@ -193,7 +225,11 @@ Departure times and activity durations are modeled using Gaussian kernel density
 
 **Duration blending**: Sampled durations can be blended with a configurable target distribution (e.g., Gaussian with configurable mean and standard deviation for Work activities).
 
-### 5.5 Feasibility Enforcement and Retry Mechanism
+**Survey days used**: The time models use only the survey days selected for the demand budget: the configured day type (`data.day_type`, weekday by default) and the survey months (Section 5.2). All KDEs use the survey expansion weights.
+
+**Kernel width**: Departure-time KDEs use a fixed kernel of `time_models.departure_bandwidth_minutes` (10 min by default; `"scott"` gives Scott's rule). Scott's rule assumes one Gaussian peak. Departure times have several narrow peaks (early shift, 7-8 h, school start), and on Twin Cities NHTS first departures Scott's rule gave 34-88 min kernels that moved a quarter of the 7 h peak into 5-6 h. A small fixed kernel keeps the peaks, and it also spreads the survey's rounding to the full hour over both sides of the hour.
+
+### 5.6 Feasibility Enforcement and Retry Mechanism
 
 The complete daily plan must satisfy three constraints:
 1. The sum of all activity durations and inter-activity travel times must not exceed 1440 minutes.
@@ -245,6 +281,13 @@ The MATSim orchestrator executes the agent-based simulation using either the QSi
 
 The output includes event files, link volume data, and agent plan evolution across iterations. These outputs feed into the evaluation pipeline.
 
+**QSim or Hermes**: `matsim.configurable_params."controller.mobsim"` selects the engine. Hermes is a simplified queue model; on the three example regions it made MATSim about 2 times faster per agent than QSim. Notes for Hermes:
+- It reads its own `hermes` module, so the configuration manager copies `qsim.flowCapacityFactor` and `qsim.storageCapacityFactor` into it.
+- `hermes.endTime` can be set as a configurable parameter (the examples use `36:00:00`, like QSim). Without it Hermes stops at 30:00:00; it cannot hang, because it uses a fixed number of time steps. QSim must always have `endTime`: without it, one agent that never finishes keeps QSim running indefinitely.
+- The `hermes` module rejects unknown parameters as a fatal error. QSim-only parameters such as `vehiclesSource` are therefore written to `qsim` only; Hermes still applies PCE through the scenario vehicle types.
+- `hermes.stuckTime` is an integer (default 10 s).
+- MATSim warns that Hermes should run with `eventsManager.oneThreadPerHandler`; the base template does not set this yet.
+
 ---
 
 ## 9. Traffic Counts and Validation
@@ -267,6 +310,8 @@ The multi-metric evaluator:
 3. Computes GEH statistics, RMSE, MAE, percentage of hours with GEH < 5, and Pearson correlation.
 4. Generates per-station validation reports including spatial match maps, 24-hour volume comparison plots, and hourly GEH bar charts.
 5. Records all metrics to a comparison CSV for systematic cross-run analysis.
+
+The experiment report (`scripts/experiment_report.py`) puts the demand checks before the counts: first the demand against the household survey, then the demand budget (Section 5.2), then the count validation by time block. The count comparison that MATSim writes is the average of the iterations given by `averageCountsOverIterations` (all iterations of a 10-iteration run). The final iteration alone can differ, because at the innovation cutoff the walk and pt plans made during innovation are dropped and more trips go by car.
 
 ### Vehicle-Class Metrics
 
@@ -343,17 +388,21 @@ Three parameters have a measured path. `truck_share` and `vehicle_mix` are resol
 
 ### Supported Surveys
 
-**NHTS (National Household Travel Survey)**: The NHTS 2022 trip file is included in the repo at `data/nhts/csv/tripv2pub.csv`. It is a national survey that works as a default for any US region.
+**NHTS (National Household Travel Survey)**: The pipeline reads the NHTS 2022 trip file (`data/nhts/csv/tripv2pub.csv`) and person file (`data/nhts/csv/perv2pub.csv`). It is a national survey that works as a default for any US region. The optional survey key `msa_sizes` (for example `[4, 5]`) keeps only persons from metros of that size.
 
-**Regional surveys**: Region-specific surveys produce better results. The system provides an extensible survey framework (see Section 12.1).
+**TBI (Twin Cities Travel Behavior Inventory 2023)**: The loader reads the trip file for chains and times, and the Day and Person files for person-days. TBI is set to weight 0 in the current configs. Before it can replace NHTS in the demand budget, the trip cleaning needs work: it drops work trips whose origin purpose is missing or "Change mode", so commute days become other-travel days (worker P(commute) 0.37 against 0.42 in the raw data); the broad "Work" purpose includes business trips; and trips between 0:00 and 3:00 get the next calendar date and do not match their Day row.
+
+**Regional surveys**: Region-specific surveys produce better results. The system provides an extensible survey framework (see Section 13.1).
+
+Trips are stored in the DuckDB table `survey_trips`. The ETL runs only when a `(source_type, source_year)` pair is missing from the table, so a change to a trip loader has no effect until the rows of that source are deleted. Person-days are read from the survey files at run time and need no ETL.
 
 ### Multi-Survey Blending
 
-The system supports blending multiple survey sources with configurable weights. Weights are normalized automatically. A blended trip chain model wraps per-source Markov models. At sampling time, a source is selected proportionally to its weight, and a chain is drawn from that source's model. Setting a regional weight to zero causes automatic fallback to NHTS-only chains.
+The system supports blending multiple survey sources with configurable weights. Weights are normalized automatically. A blended trip chain model wraps per-source Markov models. At sampling time, a source is selected proportionally to its weight, and a chain is drawn from that source's model. Setting a regional weight to zero causes automatic fallback to NHTS-only chains. The demand budget blends the day-type probabilities and purpose mixes of the sources with the same weights.
 
 ### Demand Estimation
 
-An optional pre-run estimation tool calibrates trip generation and transit mode parameters before plan generation begins. It queries the database for population counts and survey statistics to compute benchmarks (trips per capita, average legs per chain, travel-day participation rate), then adjusts non-work trip shares, per-purpose generation rates, blend weights, and the scaling factor. It also fetches Census ACS B08301 commute-mode data at the county level to compute region-specific `config_rate`, `blend_weight`, and `access_buffer_meters` for bus and rail modes.
+An optional pre-run estimation tool (`estimators/demand_estimator.py`) calibrates trip generation and transit mode parameters before plan generation begins. It computes benchmarks from the database and the survey person-days (trips per capita, average legs per chain, and the travel-day share, which now comes directly from the person-days instead of a config proxy), and it computes the demand budget of Section 5.2. It then proposes non-work trip shares, per-purpose generation rates, blend weights, and the scaling factor. It also fetches Census ACS B08301 commute-mode data at the county level to compute region-specific `config_rate`, `blend_weight`, and `access_buffer_meters` for bus and rail modes. A Census API key is required.
 
 ---
 
@@ -371,7 +420,7 @@ A population scaling factor (e.g., `scaling_factor=0.1` for a 10% sample) provid
 
 ## 13. Extending the System
 
-### 12.1 Adding a New Survey Source
+### 13.1 Adding a New Survey Source
 
 Create a new file in `data_sources/` that subclasses `BaseSurveyTrip` (see `data_sources/tbi_survey.py` as an example):
 
@@ -410,10 +459,13 @@ cls.SURVEY_REGISTRY['my_survey'] = MySurveyTrip
 Use it in your config:
 
 ```json
-{ "type": "my_survey", "year": "2024", "file": "path/to/data.csv", "weight": 1 }
+{ "type": "my_survey", "year": "2024", "file": "path/to/data.csv", "weight": 1,
+  "person_file": "path/to/persons.csv" }
 ```
 
-### 12.2 Adding a New Activity Purpose
+To let the survey set day types in the demand budget (Section 5.2), also override `load_person_days()`. It returns one row per surveyed person-day, including days with no trips, with the columns of `BaseSurveyTrip.PERSON_DAY_COLUMNS` (`person_id`, `date`, `weight`, `segment`, `month`, `weekday`, `n_trips`). Use `self._survey_entry()` and `self._resolve_data_path()` to read the file names from the survey config entry. `person_id` must match the trip table. For a survey with several days per person, set `date` (`YYYY-MM-DD`) so that each day matches its trips; for one day per person, leave it `None`. See `NHTSSurveyTrip.load_person_days()` and `TBISurveyTrip.load_person_days()`.
+
+### 13.2 Adding a New Activity Purpose
 
 To add a new non-work activity purpose (e.g., "Medical"):
 
@@ -422,7 +474,7 @@ To add a new non-work activity purpose (e.g., "Medical"):
 3. Enable the purpose in the configuration JSON under the non-work purposes section.
 4. The plan generator, gravity model, and mode choice will automatically handle the new purpose since they operate generically over configured purposes.
 
-### 12.3 Adding Custom Traffic Count Sources
+### 13.3 Adding Custom Traffic Count Sources
 
 Provide two CSV files in `data/evaluation/`:
 
@@ -446,7 +498,7 @@ Enable custom counts in the configuration:
 }
 ```
 
-### 12.4 Key Extension Points
+### 13.4 Key Extension Points
 
 | What You Want To Do | Where To Look |
 |---|---|
@@ -459,7 +511,7 @@ Enable custom counts in the configuration:
 | Extend the web UI | `webapp/` — Flask application |
 | Add new data sources to the DB | `utils/` — DB manager |
 
-### 12.5 Forking and Contributing
+### 13.5 Forking and Contributing
 
 1. **Fork** the repository on GitHub.
 2. **Clone** your fork and create a feature branch.

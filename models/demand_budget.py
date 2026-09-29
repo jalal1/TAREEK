@@ -3,7 +3,7 @@
 One place that decides how many persons of each segment travel on the modelled
 day, and what they do. The work generator, the non-work generators and the
 recommender read it, so the demand they report is the same demand that is
-generated. Design: docs/design/person_first_demand.md.
+generated. Design: TECHNICAL_REPORT.md, section 5.2.
 
 Roles of the sources:
   * Census + LODES RAC (home_locations): persons and workers per home block.

@@ -713,7 +713,7 @@ function collectFormData() {
   };
 
   const nonworkPurposes = {
-    nonwork_trip_share: val('nonwork-trip_share', 0.8),
+    nonwork_trip_share: val('nonwork-trip_share', 1.0),
   };
 
   purposes.forEach(purpose => {
