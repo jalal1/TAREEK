@@ -18,7 +18,8 @@
         "type": "nhts",
         "year": "2022",
         "file": "nhts/csv/tripv2pub.csv",
-        "weight": 1
+        "weight": 1,
+        "person_file": "nhts/csv/perv2pub.csv"
       }
     ]
   },
@@ -45,7 +46,7 @@
       "share_adjustment": 0.0
     },
     "bike": {
-      "enabled": true,
+      "enabled": false,
       "matsim_mode": "bike",
       "availability": {
         "type": "distance",

@@ -19,6 +19,10 @@ DuckDB / Java stays green.
   Includes `test_fha_perdirection.py`: link-bearing math, bearing-based
   travel_dir→link assignment (antiparallel pairing + missing-antiparallel
   drop), and the evaluator's countscompare.txt reader.
+  Includes `test_person_first_demand.py`: the survey person-day loaders (NHTS,
+  TBI), the survey-month window and trip filter, the demand budget helpers and
+  `compute_demand_budget()` end to end (no DB, no ACS), and the validator
+  rules for `person_file`, `survey_months` and the demand knobs.
 - **`e2e/`** — runs the real `ExperimentRunner` on `fixtures/config_smoke.json`
   (one county, tiny scaling, `--skip-simulation`) and asserts `plans.xml` /
   `network.xml` are valid and non-trivial.
