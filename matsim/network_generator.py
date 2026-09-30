@@ -22,6 +22,42 @@ from data_sources.gtfs_manager import resolve_gtfs_file
 logger = logging.getLogger(__name__)
 
 
+def _read_gtfs_rows(path):
+    """Rows and field names of a GTFS table, tolerant of spaces after commas.
+
+    Some feeds write ``stop_id, stop_name, stop_lat`` (Chicago Metra). A plain
+    DictReader gives keys such as ``' stop_lat'``, so every stop fails the
+    bbox test and the feed is dropped. Leading spaces are removed from values
+    and field names.
+    """
+    import csv
+    with open(path, 'r', encoding='utf-8-sig', newline='') as f:
+        reader = csv.DictReader(f, skipinitialspace=True)
+        fieldnames = [str(n).strip() for n in (reader.fieldnames or [])]
+        reader.fieldnames = fieldnames
+        rows = list(reader)
+    return rows, fieldnames
+
+
+def _copy_gtfs_table_clean(src, dst):
+    """Copy a GTFS table row by row with the header and values left-stripped.
+
+    Bytes that are not UTF-8 (a Windows-1252 quote in a Pace Bus table) pass
+    through unchanged, as they did with a plain file copy.
+    """
+    import csv
+    with open(src, 'r', encoding='utf-8-sig', errors='surrogateescape', newline='') as fin, \
+            open(dst, 'w', encoding='utf-8', errors='surrogateescape', newline='') as fout:
+        reader = csv.reader(fin, skipinitialspace=True)
+        writer = csv.writer(fout)
+        header = next(reader, None)
+        if header is None:
+            return
+        writer.writerow([h.strip() for h in header])
+        for row in reader:
+            writer.writerow(row)
+
+
 class NetworkGenerator:
     """Generate MATSim network.xml from OpenStreetMap data using MATSim-native tools"""
 
@@ -306,10 +342,7 @@ class NetworkGenerator:
 
         retained_stop_ids = set()
         original_stop_count = 0
-        with open(stops_file, 'r', encoding='utf-8-sig') as f:
-            reader = csv.DictReader(f)
-            rows = list(reader)
-            fieldnames = reader.fieldnames
+        rows, fieldnames = _read_gtfs_rows(stops_file)
 
         original_stop_count = len(rows)
         filtered_stops = []
@@ -338,10 +371,7 @@ class NetworkGenerator:
         retained_trip_ids = set()
         stop_times_file = resolve_gtfs_file(feed_dir, 'stop_times')
         if stop_times_file and stop_times_file.exists():
-            with open(stop_times_file, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                st_rows = list(reader)
-                st_fieldnames = reader.fieldnames
+            st_rows, st_fieldnames = _read_gtfs_rows(stop_times_file)
 
             filtered_stop_times = []
             for row in st_rows:
@@ -358,10 +388,7 @@ class NetworkGenerator:
         retained_route_ids = set()
         trips_file = resolve_gtfs_file(feed_dir, 'trips')
         if trips_file and trips_file.exists():
-            with open(trips_file, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                trip_rows = list(reader)
-                trip_fieldnames = reader.fieldnames
+            trip_rows, trip_fieldnames = _read_gtfs_rows(trips_file)
 
             original_trip_count = len(trip_rows)
             filtered_trips = []
@@ -381,10 +408,7 @@ class NetworkGenerator:
         routes_file = resolve_gtfs_file(feed_dir, 'routes')
         original_route_count = 0
         if routes_file and routes_file.exists():
-            with open(routes_file, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                route_rows = list(reader)
-                route_fieldnames = reader.fieldnames
+            route_rows, route_fieldnames = _read_gtfs_rows(routes_file)
 
             original_route_count = len(route_rows)
             filtered_routes = [r for r in route_rows if r.get('route_id') in retained_route_ids]
@@ -414,7 +438,11 @@ class NetworkGenerator:
                 out_name = out_name[:-4] + '.txt'
             if out_name in filtered_files:
                 continue  # already written by the filter steps above
-            shutil.copy2(src_file, filtered_dir / out_name)
+            if out_name.endswith('.txt'):
+                # Also removes spaces after commas, which pt2matsim cannot read.
+                _copy_gtfs_table_clean(src_file, filtered_dir / out_name)
+            else:
+                shutil.copy2(src_file, filtered_dir / out_name)
 
         # --- Log results ---
         stop_reduction = (1 - len(filtered_stops) / original_stop_count) * 100 if original_stop_count else 0
@@ -468,10 +496,7 @@ class NetworkGenerator:
             return None
 
         # --- Filter routes.txt ---
-        with open(routes_file, 'r', encoding='utf-8-sig') as f:
-            reader = csv.DictReader(f)
-            route_rows = list(reader)
-            route_fieldnames = reader.fieldnames
+        route_rows, route_fieldnames = _read_gtfs_rows(routes_file)
 
         original_route_count = len(route_rows)
         kept_routes = []
@@ -506,10 +531,7 @@ class NetworkGenerator:
         trips_file = feed_dir / 'trips.txt'
         kept_trip_ids = set()
         if trips_file and trips_file.exists():
-            with open(trips_file, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                trip_rows = list(reader)
-                trip_fieldnames = reader.fieldnames
+            trip_rows, trip_fieldnames = _read_gtfs_rows(trips_file)
 
             original_trip_count = len(trip_rows)
             kept_trips = []
@@ -529,10 +551,7 @@ class NetworkGenerator:
         stop_times_file = feed_dir / 'stop_times.txt'
         kept_stop_ids = set()
         if stop_times_file and stop_times_file.exists():
-            with open(stop_times_file, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                st_rows = list(reader)
-                st_fieldnames = reader.fieldnames
+            st_rows, st_fieldnames = _read_gtfs_rows(stop_times_file)
 
             kept_stop_times = []
             for row in st_rows:
@@ -548,10 +567,7 @@ class NetworkGenerator:
         # --- Cascade to stops.txt ---
         stops_file = feed_dir / 'stops.txt'
         if stops_file and stops_file.exists() and kept_stop_ids:
-            with open(stops_file, 'r', encoding='utf-8-sig') as f:
-                reader = csv.DictReader(f)
-                stop_rows = list(reader)
-                stop_fieldnames = reader.fieldnames
+            stop_rows, stop_fieldnames = _read_gtfs_rows(stops_file)
 
             original_stop_count = len(stop_rows)
             kept_stops = [r for r in stop_rows if r.get('stop_id') in kept_stop_ids]

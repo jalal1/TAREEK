@@ -112,11 +112,20 @@ class DBManager:
                     logger.warning(
                         f"Could not add column {table_name}.{column.name}: {exc}")
 
-    def _make_engine(self, read_only=False):
-        """Create a short-lived engine."""
+    def _make_engine(self, read_only=False, threads=None):
+        """Create a short-lived engine.
+
+        ``threads`` limits DuckDB's worker threads for this connection. A
+        large single transaction (the Chicago CTA GTFS feed, 5.9 M
+        stop_times) segfaulted DuckDB 1.2.2 at commit with the default thread
+        count, twice in a row; with one thread it committed in 30 s.
+        """
+        connect_args = {'read_only': read_only}
+        if threads is not None:
+            connect_args['config'] = {'threads': int(threads)}
         return create_engine(
             f'duckdb:///{self.db_path}',
-            connect_args={'read_only': read_only},
+            connect_args=connect_args,
             poolclass=NullPool,
         )
 
@@ -182,14 +191,15 @@ class DBManager:
                 engine.dispose()
 
     @contextmanager
-    def write_session_scope(self):
+    def write_session_scope(self, threads=None):
         """Provide a write transactional scope protected by a file lock.
 
         Acquires an exclusive file lock, opens a read-write engine,
         yields a session, commits, then disposes the engine and releases the lock.
+        ``threads`` is passed to the engine (see ``_make_engine``).
         """
         with self._file_lock:
-            write_engine = self._make_engine(read_only=False)
+            write_engine = self._make_engine(read_only=False, threads=threads)
             WriteSession = sessionmaker(bind=write_engine)
             session = WriteSession()
             try:

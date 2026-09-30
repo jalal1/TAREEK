@@ -83,6 +83,29 @@ def resolve_gtfs_file(feed_path: Path, name: str) -> Optional[Path]:
     return None
 
 
+def read_gtfs_csv(path, **kwargs):
+    """Read a GTFS table as strings, tolerant of spaces after the commas.
+
+    Some feeds write ``stop_id, stop_name, stop_lat`` (Chicago Metra,
+    mdb-2854). A plain read gives columns such as ``' stop_lat'``, and every
+    lookup by name fails, so the feed loads with no stops. Leading spaces are
+    removed from values and column names. With ``chunksize`` the chunks are
+    cleaned the same way.
+    """
+    kwargs.setdefault('dtype', str)
+    kwargs.setdefault('skipinitialspace', True)
+    usecols = kwargs.pop('usecols', None)
+    if 'chunksize' in kwargs:
+        def _chunks():
+            for chunk in pd.read_csv(path, **kwargs):
+                chunk.columns = [str(c).strip() for c in chunk.columns]
+                yield chunk[usecols] if usecols else chunk
+        return _chunks()
+    df = pd.read_csv(path, **kwargs)
+    df.columns = [str(c).strip() for c in df.columns]
+    return df[usecols] if usecols else df
+
+
 @dataclass
 class BBox:
     """Bounding box with min/max lat/lon."""
@@ -153,6 +176,10 @@ class GTFSManager:
         # Internal tracking flag set by load_feed_to_db
         self._feed_was_already_loaded = False
 
+        # State names of the region, set by compute_region_bbox. Used to find
+        # catalog feeds that have no bounding box (see _bbox_from_feed_stops).
+        self._region_states = set()
+
     # ── Region Bounding Box ──────────────────────────────────────────────
 
     def compute_region_bbox(self) -> BBox:
@@ -187,6 +214,7 @@ class GTFSManager:
                     continue
 
                 county_obj, state_obj = result
+                self._region_states.add(str(state_obj.state_name).strip().lower())
                 county_full = county_obj.county_name_full or (county_obj.county_name + " County")
                 query = f"{county_full}, {state_obj.state_name}, USA"
 
@@ -310,6 +338,16 @@ class GTFSManager:
                 continue
 
             feed_bbox = self._parse_feed_bbox(row, bbox_cols) if bbox_cols else None
+
+            # Some catalog rows have no bounding box (Chicago Metra, mdb-2854).
+            # When the feed's state is a state of the region, download it and
+            # take the bounding box from its stops.
+            if feed_bbox is None and bbox_cols and subdiv_col:
+                subdiv = str(row.get(subdiv_col, '')).strip().lower()
+                if subdiv and subdiv in self._region_states:
+                    fid = str(row.get(id_col, '')) if id_col else ''
+                    if fid and fid != 'nan':
+                        feed_bbox = self._bbox_from_feed_stops(fid, download_url)
 
             # Skip feeds with no bbox data or that don't intersect our region
             if feed_bbox is None or not feed_bbox.intersects(region_bbox):
@@ -541,6 +579,40 @@ class GTFSManager:
                 return c
         return None
 
+    def _bbox_from_feed_stops(self, feed_id: str, download_url: str) -> Optional[BBox]:
+        """Bounding box of a feed's stops, for a catalog row without one.
+
+        Downloads the feed into the normal cache (so a later download_feed
+        finds it fresh). Stops at (0, 0) and the outer 0.1% on each side are
+        ignored, so one bad coordinate cannot make the box cover the country.
+        Returns None when the feed cannot be downloaded or has no stops.
+        """
+        probe = FeedInfo(feed_id=feed_id, provider='', country_code=self.country_filter,
+                         subdivision='', municipality='', download_url=download_url,
+                         bbox=None, status='')
+        feed_dir = self.download_feed(probe)
+        if feed_dir is None:
+            return None
+        stops_path = resolve_gtfs_file(feed_dir, 'stops')
+        if stops_path is None:
+            return None
+        try:
+            stops = read_gtfs_csv(stops_path, usecols=['stop_lat', 'stop_lon'])
+        except (ValueError, OSError, KeyError) as e:
+            logger.warning(f"  Feed {feed_id}: cannot read stops for a bounding box: {e}")
+            return None
+        lat = pd.to_numeric(stops['stop_lat'], errors='coerce')
+        lon = pd.to_numeric(stops['stop_lon'], errors='coerce')
+        ok = lat.notna() & lon.notna() & ~((lat == 0) & (lon == 0))
+        lat, lon = lat[ok], lon[ok]
+        if lat.empty:
+            return None
+        bbox = BBox(min_lat=float(lat.quantile(0.001)), max_lat=float(lat.quantile(0.999)),
+                    min_lon=float(lon.quantile(0.001)), max_lon=float(lon.quantile(0.999)))
+        logger.info(f"  Feed {feed_id} has no catalog bounding box; from {int(ok.sum())} stops: "
+                    f"({bbox.min_lon:.4f}, {bbox.min_lat:.4f}, {bbox.max_lon:.4f}, {bbox.max_lat:.4f})")
+        return bbox
+
     def _parse_feed_bbox(self, row: pd.Series, bbox_cols: Dict[str, str]) -> Optional[BBox]:
         """Parse bounding box from a catalog row. Returns None if any value is missing/NaN."""
         import math
@@ -741,7 +813,9 @@ class GTFSManager:
         logger.info(f"Loading feed {feed_id} into database...")
 
         try:
-            with self.db_manager.write_session_scope() as session:
+            # One DuckDB thread: a big feed is one large transaction, and
+            # DuckDB 1.2.2 segfaulted at its commit with the default threads.
+            with self.db_manager.write_session_scope(threads=1) as session:
                 # 1. Insert feed metadata
                 feed_obj = GTFSFeed(**self.db_manager.handle_binary_data(GTFSFeed, {
                     'feed_id': feed_id,
@@ -800,7 +874,7 @@ class GTFSManager:
         if fi_path is None or not fi_path.exists():
             return None
         try:
-            df = pd.read_csv(fi_path, dtype=str)
+            df = read_gtfs_csv(fi_path)
             if 'feed_version' in df.columns and len(df) > 0:
                 return str(df['feed_version'].iloc[0])
         except Exception:
@@ -813,7 +887,7 @@ class GTFSManager:
         if agency_path is None or not agency_path.exists():
             return {}
         try:
-            df = pd.read_csv(agency_path, dtype=str)
+            df = read_gtfs_csv(agency_path)
             if 'agency_id' in df.columns and 'agency_name' in df.columns:
                 return dict(zip(df['agency_id'], df['agency_name']))
             elif 'agency_name' in df.columns:
@@ -836,7 +910,7 @@ class GTFSManager:
             logger.warning(f"No routes.txt in {feed_path}")
             return {}
 
-        df = pd.read_csv(routes_path, dtype=str)
+        df = read_gtfs_csv(routes_path)
         records = []
         next_id = self._next_id(GTFSRoute)
 
@@ -883,7 +957,7 @@ class GTFSManager:
             logger.warning(f"No stops.txt in {feed_path}")
             return {}
 
-        df = pd.read_csv(stops_path, dtype=str)
+        df = read_gtfs_csv(stops_path)
         records = []
         next_id = self._next_id(GTFSStop)
 
@@ -939,7 +1013,7 @@ class GTFSManager:
             logger.warning(f"No trips.txt in {feed_path}")
             return {}
 
-        df = pd.read_csv(trips_path, dtype=str)
+        df = read_gtfs_csv(trips_path)
         records = []
         next_id = self._next_id(GTFSTrip)
 
@@ -998,7 +1072,7 @@ class GTFSManager:
         chunk_size = 50_000
         next_id = self._next_id(GTFSStopTime)
 
-        for chunk in pd.read_csv(st_path, dtype=str, chunksize=chunk_size):
+        for chunk in read_gtfs_csv(st_path, chunksize=chunk_size):
             records = []
             for _, row in chunk.iterrows():
                 trip_id = str(row.get('trip_id', ''))
@@ -1082,7 +1156,7 @@ class GTFSManager:
             logger.warning(f"No routes.txt in {feed_path}")
             return {}
 
-        df = pd.read_csv(routes_path, dtype=str)
+        df = read_gtfs_csv(routes_path)
         next_id = self._next_id_from_session(session, GTFSRoute)
         pk_map = {}
 
@@ -1123,7 +1197,7 @@ class GTFSManager:
             logger.warning(f"No stops.txt in {feed_path}")
             return {}
 
-        df = pd.read_csv(stops_path, dtype=str)
+        df = read_gtfs_csv(stops_path)
         next_id = self._next_id_from_session(session, GTFSStop)
         pk_map = {}
 
@@ -1172,7 +1246,7 @@ class GTFSManager:
             logger.warning(f"No trips.txt in {feed_path}")
             return {}
 
-        df = pd.read_csv(trips_path, dtype=str)
+        df = read_gtfs_csv(trips_path)
         next_id = self._next_id_from_session(session, GTFSTrip)
         pk_map = {}
 
@@ -1237,7 +1311,7 @@ class GTFSManager:
         # the rest of the feed on failure).
         duck_conn = session.connection().connection.driver_connection
 
-        for chunk_num, chunk in enumerate(pd.read_csv(st_path, dtype=str, chunksize=chunk_size), start=1):
+        for chunk_num, chunk in enumerate(read_gtfs_csv(st_path, chunksize=chunk_size), start=1):
             # Map foreign keys vectorized; rows with an unmapped trip/stop drop out.
             chunk['trip_pk'] = chunk['trip_id'].astype(str).map(trip_pk_map)
             chunk['stop_pk'] = chunk['stop_id'].astype(str).map(stop_pk_map)
