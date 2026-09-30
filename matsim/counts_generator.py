@@ -82,6 +82,23 @@ FSYSTEM_MIN_LINK = {
 # reaching an unrelated parallel road.
 CLASS_MATCH_RADIUS_M = 60.0
 
+# Parallel roadways of one direction. Some freeways carry one direction on two
+# separate roadways, e.g. local and express lanes (Chicago Dan Ryan: 3 local +
+# 3-4 express lanes, 25-60 m apart). A TMAS station counts the whole
+# direction, but matching binds it to one roadway, so the simulated volume can
+# never reach the count (10,000 veh/h observed on a 6,000 veh/h link). A link
+# is a parallel roadway of the matched link when it is a car link of the same
+# facility class, within PARALLEL_RADIUS_M of the station, within
+# PARALLEL_MAX_BEARING_DIFF of the matched link's bearing, and beside it: the
+# station projects inside the link (not onto an end, as it does for the next
+# link of the same roadway), and the link is at least PARALLEL_MIN_OFFSET_M
+# to the side of the matched link. Only freeway classes (functional system 1
+# and 2) are checked; they are the roads with separate roadways.
+PARALLEL_RADIUS_M = 80.0
+PARALLEL_MAX_BEARING_DIFF = 15.0
+PARALLEL_MIN_OFFSET_M = 5.0
+PARALLEL_FSYSTEMS = (1, 2)
+
 
 def parse_f_system(f_system) -> Optional[int]:
     """Leading functional-system digit of an HPMS f_system code.
@@ -326,6 +343,7 @@ class CountsGenerator:
         links_data = []
         link_geometries = {}
         link_attributes = {}
+        link_modes = {}
 
         for link in root.findall('.//link'):
             link_id = link.get('id')
@@ -347,6 +365,7 @@ class CountsGenerator:
                 })
 
                 link_geometries[link_id] = LineString([(from_x, from_y), (to_x, to_y)])
+                link_modes[link_id] = set((link.get('modes') or 'car').split(','))
                 # Capacity/freespeed drive facility-class matching; missing or
                 # malformed values become 0 so the link fails any class floor.
                 try:
@@ -369,6 +388,9 @@ class CountsGenerator:
         self.spatial_index = spatial_idx
         self.link_geometries = link_geometries
         self._link_attributes = link_attributes
+        self._link_modes = link_modes
+        self._link_nodes = {r['link_id']: (r['from_node'], r['to_node'])
+                            for _, r in links_df.iterrows()}
         # link_id -> {from_x, from_y, to_x, to_y} for O(1) bearing lookups.
         self._link_endpoints = {
             r['link_id']: (r['from_x'], r['from_y'], r['to_x'], r['to_y'])
@@ -867,7 +889,94 @@ class CountsGenerator:
 
         if not results:
             return pd.DataFrame()
-        return pd.DataFrame(results)
+        return self.split_parallel_roadways(pd.DataFrame(results))
+
+    def _parallel_roadways(self, link_id: str, x: float, y: float,
+                           fsys: Optional[int]) -> List[str]:
+        """Car links that carry the same direction as *link_id* on a separate
+        roadway of the same facility near the station at (x, y)."""
+        endpoints = self._link_endpoints.get(link_id)
+        if endpoints is None:
+            return []
+        ref_bearing = self._link_bearing(*endpoints)
+        if ref_bearing is None:
+            return []
+        link_nodes = getattr(self, '_link_nodes', {})
+        link_modes = getattr(self, '_link_modes', {})
+        ref_nodes = set(link_nodes.get(link_id, ()))
+        if fsys not in PARALLEL_FSYSTEMS:
+            return []
+        point = Point(x, y)
+        ref_line = self.link_geometries.get(link_id)
+        found = []
+        for lid in self._nearby_link_ids(x, y, buffer_m=PARALLEL_RADIUS_M):
+            if lid == link_id or 'car' not in link_modes.get(lid, {'car'}):
+                continue
+            if point.distance(self.link_geometries[lid]) > PARALLEL_RADIUS_M:
+                continue
+            if ref_nodes & set(link_nodes.get(lid, ())):
+                continue  # connected: same roadway, upstream or downstream
+            line = self.link_geometries[lid]
+            along = line.project(point, normalized=True)
+            if not 0.0 < along < 1.0:
+                continue  # the station is past an end: next link of a roadway
+            if ref_line is not None and ref_line.distance(line) < PARALLEL_MIN_OFFSET_M:
+                continue  # not beside the matched link
+            if not self.link_matches_fsystem(lid, fsys):
+                continue
+            b = self._link_bearing(*self._link_endpoints[lid])
+            if b is None or self._angular_diff(b, ref_bearing) > PARALLEL_MAX_BEARING_DIFF:
+                continue
+            found.append(lid)
+        return found
+
+    def split_parallel_roadways(self, matched: pd.DataFrame) -> pd.DataFrame:
+        """Split a directional count over the parallel roadways of its direction.
+
+        For each matched row, find the parallel roadways of its link (see
+        PARALLEL_RADIUS_M). The observed volume is split over the matched link
+        and its parallel roadways in proportion to link capacity, one row per
+        link. The extra rows get the id ``<station>-p<k>_<dir>``, so the
+        evaluator sees them as separate count stations. A parallel roadway
+        that another station is matched to is not used, because that station
+        already measures it.
+        """
+        if (matched.empty or 'matched_link_id' not in matched.columns
+                or 'utm_x' not in matched.columns
+                or getattr(self, 'spatial_index', None) is None):
+            return matched
+        primary_links = set(matched['matched_link_id'].astype(str))
+        out = []
+        n_split = 0
+        for _, row in matched.iterrows():
+            link = str(row['matched_link_id'])
+            fsys = parse_f_system(row.get('f_system'))
+            parallels = [l for l in self._parallel_roadways(link, row['utm_x'], row['utm_y'], fsys)
+                         if l not in primary_links]
+            if not parallels:
+                out.append(row.to_dict())
+                continue
+            group = [link] + parallels
+            caps = [max(self._link_attrs(l)[0], 1.0) for l in group]
+            total = sum(caps)
+            base, _, direction = str(row['LOCAL_ID']).rpartition('_')
+            for k, (lid, cap) in enumerate(zip(group, caps)):
+                rec = row.to_dict()
+                share = cap / total
+                for h in HOUR_COLS_UPPER:
+                    if h in rec:
+                        rec[h] = float(rec[h]) * share
+                if k > 0:
+                    rec['LOCAL_ID'] = f"{base}-p{k + 1}_{direction}"
+                    rec['matched_link_id'] = lid
+                    rec['match_method'] = f"{row.get('match_method', '')}_parallel"
+                out.append(rec)
+            n_split += 1
+            logger.info(f"FHA: station {row['LOCAL_ID']} split over {len(group)} parallel "
+                        f"roadways {group} by capacity {[round(c) for c in caps]}")
+        if n_split:
+            logger.info(f"FHA: {n_split} directional counts split over parallel roadways")
+        return pd.DataFrame(out)
 
     # ── Blending ─────────────────────────────────────────────────────────────
 
