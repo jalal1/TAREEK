@@ -1,0 +1,6980 @@
+{
+  "enabled": true,
+  "n_trips": 12831,
+  "demand": {
+    "total_trips": 12831,
+    "trips_by_class": {
+      "external_to_internal": 4491,
+      "internal_to_external": 4491,
+      "through": 3849
+    },
+    "source": "hpms_cordon",
+    "gross_crossings": 370673.6,
+    "crossing_factor": 0.7692,
+    "demand_scale": 0.3,
+    "scaling_factor": 0.15,
+    "unscaled_trips": 285133.5,
+    "detail": {
+      "demand_source": "hpms_cordon",
+      "n_cordons": 347,
+      "gross_crossings": 370673.6,
+      "crossing_factor": 0.7692,
+      "crossing_factor_note": "trips = crossings / (1 + through_share); a flat 0.5 would be correct only if every trip were a through trip",
+      "vehicle_mix": {
+        "single_unit": 0.400242297085462,
+        "combination": 0.5997577029145381
+      },
+      "truck_share_source": "hpms_cache",
+      "class_shares": {
+        "external_to_internal": 0.35,
+        "internal_to_external": 0.35,
+        "through": 0.3
+      }
+    }
+  },
+  "truck_share": {
+    "single_unit": 0.02465,
+    "combination": 0.03694,
+    "total": 0.06158,
+    "mix": {
+      "single_unit": 0.4002,
+      "combination": 0.5998
+    },
+    "source": "hpms_cache",
+    "f_system": 1,
+    "is_rural": false,
+    "detail": {
+      "method": "hpms_feature_service",
+      "service_url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/hpms_v2_view/FeatureServer/0",
+      "n_segments": 13207,
+      "total_aadt": 556096467.0,
+      "where": "State_Code = 27 AND F_SYSTEM = 1 AND URBAN_CODE <> 99999 AND AADT > 0",
+      "functional_class": {
+        "method": "tmas_sta_f_system",
+        "state": "MN",
+        "counties": [
+          "003",
+          "019",
+          "025",
+          "037",
+          "053",
+          "059",
+          "079",
+          "095",
+          "123",
+          "139",
+          "141",
+          "163",
+          "171"
+        ],
+        "n_stations": 288,
+        "n_dominant": 153,
+        "distribution": {
+          "1U": 153,
+          "1R": 35,
+          "2U": 56,
+          "3U": 20,
+          "3R": 18,
+          "4U": 4,
+          "4R": 2
+        }
+      },
+      "cache_age_days": 45.4
+    }
+  },
+  "cordons": {
+    "n_cordons": 347,
+    "n_entry": 177,
+    "n_exit": 170,
+    "by_compass": {
+      "E": 49,
+      "N": 10,
+      "NE": 46,
+      "NW": 44,
+      "S": 57,
+      "SE": 61,
+      "SW": 47,
+      "W": 33
+    },
+    "by_direction": {
+      "inbound": 177,
+      "outbound": 170
+    },
+    "total_capacity": 1140300.0,
+    "detector": {
+      "min_freespeed_ms": 22.0,
+      "min_capacity_vph": 1500.0,
+      "min_peripherality": 0.6,
+      "dedupe_radius_m": 1500.0
+    },
+    "anchoring": {
+      "n_cordons": 347,
+      "anchor_distance_m": {
+        "min": 84.4,
+        "median": 6364.8,
+        "max": 84033.5
+      }
+    },
+    "weighting": {
+      "n_observed": 174,
+      "n_fallback": 173,
+      "total_weight": 370673.6,
+      "capacity_to_daily": 8.0,
+      "weight_by": "hpms_truck_aadt",
+      "hpms_match": {
+        "n_segments": 54436,
+        "n_cordons": 347,
+        "n_cordons_matched": 174,
+        "n_links_matched": 265,
+        "match_rate": 0.501,
+        "radius_m": 150.0,
+        "bearing_tolerance_deg": 45.0,
+        "matched_cordon_ids": [
+          "cordon_inb_102316",
+          "cordon_inb_104480",
+          "cordon_inb_105519",
+          "cordon_inb_1084",
+          "cordon_inb_11035",
+          "cordon_inb_118017",
+          "cordon_inb_119515",
+          "cordon_inb_121629",
+          "cordon_inb_130238",
+          "cordon_inb_137899",
+          "cordon_inb_139795",
+          "cordon_inb_144092",
+          "cordon_inb_157474",
+          "cordon_inb_172919",
+          "cordon_inb_1743",
+          "cordon_inb_177419",
+          "cordon_inb_182236",
+          "cordon_inb_19606",
+          "cordon_inb_208861",
+          "cordon_inb_210538",
+          "cordon_inb_225094",
+          "cordon_inb_225122",
+          "cordon_inb_225131",
+          "cordon_inb_229728",
+          "cordon_inb_242662",
+          "cordon_inb_256209",
+          "cordon_inb_257440",
+          "cordon_inb_258628",
+          "cordon_inb_261536",
+          "cordon_inb_262970",
+          "cordon_inb_282033",
+          "cordon_inb_287751",
+          "cordon_inb_287855",
+          "cordon_inb_287941",
+          "cordon_inb_289474",
+          "cordon_inb_292475",
+          "cordon_inb_293945",
+          "cordon_inb_294825",
+          "cordon_inb_295503",
+          "cordon_inb_295945",
+          "cordon_inb_297625",
+          "cordon_inb_300636",
+          "cordon_inb_305648",
+          "cordon_inb_305808",
+          "cordon_inb_306234",
+          "cordon_inb_307478",
+          "cordon_inb_307944",
+          "cordon_inb_311217",
+          "cordon_inb_313608",
+          "cordon_inb_326601",
+          "cordon_inb_328719",
+          "cordon_inb_331433",
+          "cordon_inb_334459",
+          "cordon_inb_334510",
+          "cordon_inb_344334",
+          "cordon_inb_361089",
+          "cordon_inb_366522",
+          "cordon_inb_392721",
+          "cordon_inb_403356",
+          "cordon_inb_406117",
+          "cordon_inb_431663",
+          "cordon_inb_431688",
+          "cordon_inb_431845",
+          "cordon_inb_448231",
+          "cordon_inb_458804",
+          "cordon_inb_461077",
+          "cordon_inb_474362",
+          "cordon_inb_477545",
+          "cordon_inb_492661",
+          "cordon_inb_493170",
+          "cordon_inb_505591",
+          "cordon_inb_513862",
+          "cordon_inb_521721",
+          "cordon_inb_533627",
+          "cordon_inb_540558",
+          "cordon_inb_550277",
+          "cordon_inb_550312",
+          "cordon_inb_552337",
+          "cordon_inb_566901",
+          "cordon_inb_592771",
+          "cordon_inb_607814",
+          "cordon_inb_617978",
+          "cordon_inb_628994",
+          "cordon_inb_632834",
+          "cordon_inb_73952",
+          "cordon_inb_81415",
+          "cordon_inb_81755",
+          "cordon_inb_90339",
+          "cordon_inb_91408",
+          "cordon_out_102316",
+          "cordon_out_1085",
+          "cordon_out_11034",
+          "cordon_out_116476",
+          "cordon_out_117022",
+          "cordon_out_118014",
+          "cordon_out_119516",
+          "cordon_out_121630",
+          "cordon_out_127756",
+          "cordon_out_130031",
+          "cordon_out_130237",
+          "cordon_out_137898",
+          "cordon_out_139794",
+          "cordon_out_144091",
+          "cordon_out_151668",
+          "cordon_out_157475",
+          "cordon_out_172918",
+          "cordon_out_1742",
+          "cordon_out_177418",
+          "cordon_out_208860",
+          "cordon_out_211550",
+          "cordon_out_225097",
+          "cordon_out_225123",
+          "cordon_out_225130",
+          "cordon_out_229727",
+          "cordon_out_242661",
+          "cordon_out_257439",
+          "cordon_out_258793",
+          "cordon_out_261535",
+          "cordon_out_268475",
+          "cordon_out_273688",
+          "cordon_out_280871",
+          "cordon_out_282033",
+          "cordon_out_287946",
+          "cordon_out_289475",
+          "cordon_out_293944",
+          "cordon_out_294826",
+          "cordon_out_295946",
+          "cordon_out_300637",
+          "cordon_out_305809",
+          "cordon_out_306235",
+          "cordon_out_317352",
+          "cordon_out_318608",
+          "cordon_out_327820",
+          "cordon_out_328718",
+          "cordon_out_331876",
+          "cordon_out_334458",
+          "cordon_out_334511",
+          "cordon_out_340425",
+          "cordon_out_35309",
+          "cordon_out_361090",
+          "cordon_out_366523",
+          "cordon_out_366815",
+          "cordon_out_372438",
+          "cordon_out_392722",
+          "cordon_out_406061",
+          "cordon_out_431664",
+          "cordon_out_431687",
+          "cordon_out_431846",
+          "cordon_out_448232",
+          "cordon_out_458482",
+          "cordon_out_458556",
+          "cordon_out_477544",
+          "cordon_out_488147",
+          "cordon_out_492660",
+          "cordon_out_500513",
+          "cordon_out_505556",
+          "cordon_out_505593",
+          "cordon_out_513861",
+          "cordon_out_533625",
+          "cordon_out_550278",
+          "cordon_out_550311",
+          "cordon_out_552337",
+          "cordon_out_557935",
+          "cordon_out_566900",
+          "cordon_out_592901",
+          "cordon_out_593536",
+          "cordon_out_617978",
+          "cordon_out_632833",
+          "cordon_out_66337",
+          "cordon_out_73952",
+          "cordon_out_79410",
+          "cordon_out_81755",
+          "cordon_out_90340",
+          "cordon_out_91403"
+        ],
+        "observed_link_ids": [
+          "102316",
+          "105519",
+          "1084",
+          "1085",
+          "11034",
+          "11035",
+          "116476",
+          "117022",
+          "117023",
+          "118014",
+          "118017",
+          "119515",
+          "119516",
+          "121629",
+          "121630",
+          "127756",
+          "130031",
+          "130237",
+          "130238",
+          "132487",
+          "135727",
+          "135732",
+          "136762",
+          "137898",
+          "137899",
+          "139794",
+          "139795",
+          "144091",
+          "144092",
+          "157474",
+          "157475",
+          "172918",
+          "172919",
+          "1742",
+          "1743",
+          "176974",
+          "176982",
+          "177418",
+          "177419",
+          "182236",
+          "19606",
+          "197963",
+          "197964",
+          "198241",
+          "198242",
+          "208860",
+          "208861",
+          "210538",
+          "211103",
+          "211550",
+          "212666",
+          "213168",
+          "225094",
+          "225095",
+          "225097",
+          "225098",
+          "225122",
+          "225123",
+          "225130",
+          "225131",
+          "225134",
+          "225135",
+          "229727",
+          "229728",
+          "242661",
+          "242662",
+          "243908",
+          "255406",
+          "255407",
+          "257314",
+          "257439",
+          "257440",
+          "258806",
+          "258809",
+          "261535",
+          "261536",
+          "262969",
+          "262970",
+          "268475",
+          "270",
+          "273688",
+          "273689",
+          "273690",
+          "273691",
+          "273719",
+          "273720",
+          "280871",
+          "282033",
+          "287751",
+          "287941",
+          "287946",
+          "288543",
+          "289474",
+          "289475",
+          "292475",
+          "293944",
+          "293945",
+          "294825",
+          "294826",
+          "295503",
+          "295945",
+          "295946",
+          "297625",
+          "300636",
+          "300637",
+          "305627",
+          "305648",
+          "305661",
+          "305662",
+          "305808",
+          "305809",
+          "306234",
+          "306235",
+          "307653",
+          "311217",
+          "313608",
+          "317352",
+          "317526",
+          "318608",
+          "321585",
+          "326601",
+          "328654",
+          "328718",
+          "328719",
+          "329143",
+          "329144",
+          "331945",
+          "333928",
+          "333929",
+          "334458",
+          "334459",
+          "334462",
+          "334463",
+          "334510",
+          "334511",
+          "340425",
+          "340737",
+          "344331",
+          "344334",
+          "35309",
+          "361089",
+          "361090",
+          "366522",
+          "366523",
+          "366815",
+          "387653",
+          "390324",
+          "390325",
+          "390330",
+          "390331",
+          "390469",
+          "392721",
+          "392722",
+          "393776",
+          "393777",
+          "403356",
+          "406061",
+          "406117",
+          "411981",
+          "428657",
+          "431663",
+          "431664",
+          "431687",
+          "431688",
+          "431845",
+          "431846",
+          "438128",
+          "440095",
+          "440096",
+          "448231",
+          "448232",
+          "458482",
+          "458554",
+          "458556",
+          "458804",
+          "461077",
+          "474362",
+          "47441",
+          "47442",
+          "477544",
+          "477545",
+          "480797",
+          "488147",
+          "492660",
+          "492661",
+          "493170",
+          "500513",
+          "505556",
+          "505591",
+          "505593",
+          "509370",
+          "512898",
+          "513861",
+          "513862",
+          "513863",
+          "513864",
+          "516493",
+          "517379",
+          "517381",
+          "520260",
+          "521721",
+          "521951",
+          "521954",
+          "529412",
+          "533625",
+          "533627",
+          "540558",
+          "543679",
+          "550277",
+          "550278",
+          "550311",
+          "550312",
+          "552337",
+          "552338",
+          "557935",
+          "557936",
+          "56355",
+          "566900",
+          "566901",
+          "58342",
+          "592314",
+          "592315",
+          "592324",
+          "592325",
+          "592771",
+          "592890",
+          "592901",
+          "592966",
+          "593536",
+          "604671",
+          "604674",
+          "606127",
+          "606128",
+          "607814",
+          "61504",
+          "61505",
+          "61506",
+          "616058",
+          "617978",
+          "617979",
+          "619113",
+          "622155",
+          "628994",
+          "632833",
+          "632834",
+          "65705",
+          "65709",
+          "66274",
+          "66275",
+          "66337",
+          "76755",
+          "79410",
+          "81415",
+          "81755",
+          "86106",
+          "86107",
+          "90339",
+          "90340",
+          "90895",
+          "90896",
+          "91403",
+          "91408",
+          "95445",
+          "95446",
+          "95760"
+        ],
+        "match_distance_m": {
+          "median": 7.2,
+          "max": 146.4
+        },
+        "bearing_difference_deg": {
+          "median": 1.0,
+          "max": 45.0
+        },
+        "bbox": [
+          -94.4176,
+          44.0571,
+          -91.9745,
+          46.3972
+        ]
+      }
+    },
+    "detail": [
+      {
+        "cordon_id": "cordon_inb_102316",
+        "x": 423108.07,
+        "y": 4907029.64,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "102316",
+          "517381"
+        ],
+        "capacity": 9000.0,
+        "weight": 726.0,
+        "peripherality": 0.853,
+        "zone_id": "270799506001007",
+        "anchor_distance_m": 1025.5
+      },
+      {
+        "cordon_id": "cordon_inb_104009",
+        "x": 570411.35,
+        "y": 4977969.47,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "104009"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.036,
+        "zone_id": "551091207003045",
+        "anchor_distance_m": 3485.2
+      },
+      {
+        "cordon_id": "cordon_inb_104480",
+        "x": 534761.26,
+        "y": 4978651.92,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 7,
+        "link_ids": [
+          "104480",
+          "258783",
+          "258786",
+          "258790",
+          "258806",
+          "258809",
+          "482420"
+        ],
+        "capacity": 6000.0,
+        "weight": 6506.0,
+        "peripherality": 0.603,
+        "zone_id": "551091210002044",
+        "anchor_distance_m": 721.8
+      },
+      {
+        "cordon_id": "cordon_inb_105519",
+        "x": 537365.21,
+        "y": 4935079.63,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 6,
+        "link_ids": [
+          "105519",
+          "273689",
+          "273690",
+          "273719",
+          "521951",
+          "604671"
+        ],
+        "capacity": 8000.0,
+        "weight": 2125.0,
+        "peripherality": 0.642,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 1315.8
+      },
+      {
+        "cordon_id": "cordon_inb_1084",
+        "x": 517150.25,
+        "y": 4893627.98,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "1084"
+        ],
+        "capacity": 1500.0,
+        "weight": 147.0,
+        "peripherality": 0.962,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 38091.9
+      },
+      {
+        "cordon_id": "cordon_inb_11035",
+        "x": 549279.4,
+        "y": 4980799.52,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "11035",
+          "128287"
+        ],
+        "capacity": 2000.0,
+        "weight": 1202.0,
+        "peripherality": 0.794,
+        "zone_id": "551091208012005",
+        "anchor_distance_m": 404.3
+      },
+      {
+        "cordon_id": "cordon_inb_110456",
+        "x": 487775.87,
+        "y": 4924418.17,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "110456",
+          "145921"
+        ],
+        "capacity": 2000.0,
+        "weight": 985.336611,
+        "peripherality": 0.69,
+        "zone_id": "270370615021074",
+        "anchor_distance_m": 339.1
+      },
+      {
+        "cordon_id": "cordon_inb_115019",
+        "x": 510314.78,
+        "y": 5122346.14,
+        "direction": "inbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "115019"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.001,
+        "zone_id": "270959701002000",
+        "anchor_distance_m": 45156.6
+      },
+      {
+        "cordon_id": "cordon_inb_118017",
+        "x": 534700.49,
+        "y": 4997418.2,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "118017"
+        ],
+        "capacity": 8000.0,
+        "weight": 441.0,
+        "peripherality": 0.631,
+        "zone_id": "551091205013027",
+        "anchor_distance_m": 339.2
+      },
+      {
+        "cordon_id": "cordon_inb_119515",
+        "x": 547990.82,
+        "y": 5027099.56,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "119515"
+        ],
+        "capacity": 2000.0,
+        "weight": 1510.0,
+        "peripherality": 0.797,
+        "zone_id": "270251107003013",
+        "anchor_distance_m": 20808.9
+      },
+      {
+        "cordon_id": "cordon_inb_120916",
+        "x": 510302.89,
+        "y": 5116452.84,
+        "direction": "inbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "120916"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.959,
+        "zone_id": "270959701001025",
+        "anchor_distance_m": 44938.8
+      },
+      {
+        "cordon_id": "cordon_inb_121629",
+        "x": 427026.88,
+        "y": 4990593.35,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "121629"
+        ],
+        "capacity": 4500.0,
+        "weight": 849.0,
+        "peripherality": 0.664,
+        "zone_id": "271711011011052",
+        "anchor_distance_m": 507.7
+      },
+      {
+        "cordon_id": "cordon_inb_130238",
+        "x": 568082.6,
+        "y": 5030641.14,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "130238"
+        ],
+        "capacity": 2000.0,
+        "weight": 663.0,
+        "peripherality": 0.995,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 25079.0
+      },
+      {
+        "cordon_id": "cordon_inb_13152",
+        "x": 497720.44,
+        "y": 4924288.95,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "13152",
+          "184949"
+        ],
+        "capacity": 6000.0,
+        "weight": 2956.009832,
+        "peripherality": 0.681,
+        "zone_id": "270370615021063",
+        "anchor_distance_m": 4295.2
+      },
+      {
+        "cordon_id": "cordon_inb_137899",
+        "x": 416153.65,
+        "y": 4990305.58,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 2,
+        "link_ids": [
+          "137899",
+          "197963"
+        ],
+        "capacity": 2000.0,
+        "weight": 719.0,
+        "peripherality": 0.801,
+        "zone_id": "271711012002007",
+        "anchor_distance_m": 263.7
+      },
+      {
+        "cordon_id": "cordon_inb_139795",
+        "x": 428666.47,
+        "y": 4990556.5,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "139795"
+        ],
+        "capacity": 2000.0,
+        "weight": 889.0,
+        "peripherality": 0.643,
+        "zone_id": "271711011011042",
+        "anchor_distance_m": 156.6
+      },
+      {
+        "cordon_id": "cordon_inb_144092",
+        "x": 424366.23,
+        "y": 4990756.05,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 2,
+        "link_ids": [
+          "144092",
+          "198242"
+        ],
+        "capacity": 4500.0,
+        "weight": 709.0,
+        "peripherality": 0.698,
+        "zone_id": "271711011012035",
+        "anchor_distance_m": 294.2
+      },
+      {
+        "cordon_id": "cordon_inb_152055",
+        "x": 568825.79,
+        "y": 5045600.23,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "152055"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.0,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 40041.9
+      },
+      {
+        "cordon_id": "cordon_inb_157474",
+        "x": 480306.42,
+        "y": 4904281.56,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "157474"
+        ],
+        "capacity": 1500.0,
+        "weight": 188.0,
+        "peripherality": 0.899,
+        "zone_id": "270370615022009",
+        "anchor_distance_m": 20711.7
+      },
+      {
+        "cordon_id": "cordon_inb_158214",
+        "x": 547852.4,
+        "y": 4911443.49,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "158214",
+          "587645"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.84,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 22723.5
+      },
+      {
+        "cordon_id": "cordon_inb_158299",
+        "x": 546209.74,
+        "y": 4893630.34,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "158299"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.993,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 40166.1
+      },
+      {
+        "cordon_id": "cordon_inb_168221",
+        "x": 509906.17,
+        "y": 4928706.73,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "168221"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.632,
+        "zone_id": "270370614022071",
+        "anchor_distance_m": 4293.6
+      },
+      {
+        "cordon_id": "cordon_inb_168250",
+        "x": 402615.89,
+        "y": 4935330.45,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "168250",
+          "478019"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.931,
+        "zone_id": "270799502001027",
+        "anchor_distance_m": 26903.4
+      },
+      {
+        "cordon_id": "cordon_inb_168287",
+        "x": 402554.85,
+        "y": 4946494.1,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "168287",
+          "535696"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.963,
+        "zone_id": "270190912014030",
+        "anchor_distance_m": 21173.7
+      },
+      {
+        "cordon_id": "cordon_inb_172919",
+        "x": 397897.1,
+        "y": 4992764.58,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "172919"
+        ],
+        "capacity": 2000.0,
+        "weight": 704.0,
+        "peripherality": 1.032,
+        "zone_id": "271711013001029",
+        "anchor_distance_m": 5488.1
+      },
+      {
+        "cordon_id": "cordon_inb_1743",
+        "x": 559897.36,
+        "y": 4919528.24,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "1743"
+        ],
+        "capacity": 2000.0,
+        "weight": 347.0,
+        "peripherality": 0.864,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 13362.1
+      },
+      {
+        "cordon_id": "cordon_inb_177419",
+        "x": 421356.39,
+        "y": 5009226.25,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 2,
+        "link_ids": [
+          "177419",
+          "182525"
+        ],
+        "capacity": 1500.0,
+        "weight": 496.0,
+        "peripherality": 0.75,
+        "zone_id": "271711007071017",
+        "anchor_distance_m": 144.7
+      },
+      {
+        "cordon_id": "cordon_inb_178049",
+        "x": 484035.65,
+        "y": 4932240.72,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 5,
+        "link_ids": [
+          "178049",
+          "310369",
+          "310372",
+          "310373",
+          "310377"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.603,
+        "zone_id": "270370615023003",
+        "anchor_distance_m": 839.1
+      },
+      {
+        "cordon_id": "cordon_inb_179331",
+        "x": 484022.47,
+        "y": 4925965.27,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "179331",
+          "514701"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.67,
+        "zone_id": "270370615022009",
+        "anchor_distance_m": 1335.8
+      },
+      {
+        "cordon_id": "cordon_inb_182236",
+        "x": 510992.01,
+        "y": 5114028.36,
+        "direction": "inbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "182236"
+        ],
+        "capacity": 1500.0,
+        "weight": 1996.5,
+        "peripherality": 0.943,
+        "zone_id": "270959701001025",
+        "anchor_distance_m": 45279.6
+      },
+      {
+        "cordon_id": "cordon_inb_190246",
+        "x": 572290.53,
+        "y": 4920972.68,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "190246"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.029,
+        "zone_id": "550939608004042",
+        "anchor_distance_m": 17440.7
+      },
+      {
+        "cordon_id": "cordon_inb_19606",
+        "x": 410243.58,
+        "y": 5050029.58,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "19606",
+          "623270"
+        ],
+        "capacity": 1500.0,
+        "weight": 666.0,
+        "peripherality": 0.83,
+        "zone_id": "271410315002002",
+        "anchor_distance_m": 4458.4
+      },
+      {
+        "cordon_id": "cordon_inb_208861",
+        "x": 436648.4,
+        "y": 5124815.52,
+        "direction": "inbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "208861"
+        ],
+        "capacity": 2000.0,
+        "weight": 198.0,
+        "peripherality": 1.027,
+        "zone_id": "270959702002079",
+        "anchor_distance_m": 5836.8
+      },
+      {
+        "cordon_id": "cordon_inb_210538",
+        "x": 410272.64,
+        "y": 5047847.76,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "210538"
+        ],
+        "capacity": 1500.0,
+        "weight": 666.0,
+        "peripherality": 0.817,
+        "zone_id": "271410315002016",
+        "anchor_distance_m": 2328.5
+      },
+      {
+        "cordon_id": "cordon_inb_225094",
+        "x": 567370.44,
+        "y": 5027806.1,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 3,
+        "link_ids": [
+          "225094",
+          "225098",
+          "428657"
+        ],
+        "capacity": 2000.0,
+        "weight": 1221.0,
+        "peripherality": 0.976,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 22188.5
+      },
+      {
+        "cordon_id": "cordon_inb_225122",
+        "x": 536361.86,
+        "y": 5068833.3,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "225122",
+          "225135"
+        ],
+        "capacity": 2000.0,
+        "weight": 628.0,
+        "peripherality": 0.637,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 29447.2
+      },
+      {
+        "cordon_id": "cordon_inb_225131",
+        "x": 533584.75,
+        "y": 5068820.39,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "225131",
+          "390330"
+        ],
+        "capacity": 2000.0,
+        "weight": 744.0,
+        "peripherality": 0.627,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 26733.1
+      },
+      {
+        "cordon_id": "cordon_inb_229728",
+        "x": 549738.52,
+        "y": 5027119.96,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "229728"
+        ],
+        "capacity": 2000.0,
+        "weight": 1448.0,
+        "peripherality": 0.813,
+        "zone_id": "270251107003013",
+        "anchor_distance_m": 22554.0
+      },
+      {
+        "cordon_id": "cordon_inb_242662",
+        "x": 399459.39,
+        "y": 4964197.82,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "242662"
+        ],
+        "capacity": 1500.0,
+        "weight": 426.0,
+        "peripherality": 1.013,
+        "zone_id": "271711013004025",
+        "anchor_distance_m": 21245.0
+      },
+      {
+        "cordon_id": "cordon_inb_243863",
+        "x": 538553.09,
+        "y": 4932953.4,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "243863"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.661,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 3641.7
+      },
+      {
+        "cordon_id": "cordon_inb_245867",
+        "x": 539521.15,
+        "y": 4957835.31,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "245867",
+          "270229"
+        ],
+        "capacity": 2000.0,
+        "weight": 985.336611,
+        "peripherality": 0.678,
+        "zone_id": "550939607003010",
+        "anchor_distance_m": 336.8
+      },
+      {
+        "cordon_id": "cordon_inb_256209",
+        "x": 411823.15,
+        "y": 5035202.59,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "256209",
+          "257314"
+        ],
+        "capacity": 1500.0,
+        "weight": 156.0,
+        "peripherality": 0.837,
+        "zone_id": "271410303021016",
+        "anchor_distance_m": 2917.9
+      },
+      {
+        "cordon_id": "cordon_inb_257440",
+        "x": 549341.57,
+        "y": 4975296.62,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "257440",
+          "61506"
+        ],
+        "capacity": 2000.0,
+        "weight": 438.0,
+        "peripherality": 0.764,
+        "zone_id": "551091208024054",
+        "anchor_distance_m": 751.2
+      },
+      {
+        "cordon_id": "cordon_inb_258628",
+        "x": 536658.33,
+        "y": 4998144.48,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 4,
+        "link_ids": [
+          "258628",
+          "258678",
+          "313986",
+          "333929"
+        ],
+        "capacity": 13500.0,
+        "weight": 1210.0,
+        "peripherality": 0.654,
+        "zone_id": "551091205023015",
+        "anchor_distance_m": 141.1
+      },
+      {
+        "cordon_id": "cordon_inb_260535",
+        "x": 500158.74,
+        "y": 4932232.14,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "260535"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.612,
+        "zone_id": "270370614022007",
+        "anchor_distance_m": 1089.8
+      },
+      {
+        "cordon_id": "cordon_inb_261508",
+        "x": 401697.32,
+        "y": 5051266.95,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "261508",
+          "261510"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 1.017,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 10651.7
+      },
+      {
+        "cordon_id": "cordon_inb_261536",
+        "x": 403233.21,
+        "y": 5048947.3,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "261536"
+        ],
+        "capacity": 4000.0,
+        "weight": 281.0,
+        "peripherality": 0.99,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 8177.8
+      },
+      {
+        "cordon_id": "cordon_inb_261769",
+        "x": 550233.1,
+        "y": 4979512.86,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "261769"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.806,
+        "zone_id": "551091208012021",
+        "anchor_distance_m": 232.7
+      },
+      {
+        "cordon_id": "cordon_inb_262970",
+        "x": 565238.33,
+        "y": 5027231.94,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "262970",
+          "328654"
+        ],
+        "capacity": 2000.0,
+        "weight": 712.0,
+        "peripherality": 0.954,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 21531.1
+      },
+      {
+        "cordon_id": "cordon_inb_267673",
+        "x": 576275.17,
+        "y": 4943812.53,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "267673"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.072,
+        "zone_id": "550939608004002",
+        "anchor_distance_m": 8641.0
+      },
+      {
+        "cordon_id": "cordon_inb_270203",
+        "x": 570463.78,
+        "y": 4958934.04,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "270203"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.029,
+        "zone_id": "550939601003038",
+        "anchor_distance_m": 2496.7
+      },
+      {
+        "cordon_id": "cordon_inb_279151",
+        "x": 397427.52,
+        "y": 5091854.49,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "279151"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.923,
+        "zone_id": "270959702003053",
+        "anchor_distance_m": 45533.1
+      },
+      {
+        "cordon_id": "cordon_inb_280746",
+        "x": 559196.2,
+        "y": 4925487.99,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 4,
+        "link_ids": [
+          "280746",
+          "394915",
+          "595757",
+          "595762"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.911,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 7466.0
+      },
+      {
+        "cordon_id": "cordon_inb_282033",
+        "x": 410701.58,
+        "y": 5046266.41,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "282033",
+          "387653"
+        ],
+        "capacity": 8000.0,
+        "weight": 823.0,
+        "peripherality": 0.914,
+        "zone_id": "271410315002016",
+        "anchor_distance_m": 690.2
+      },
+      {
+        "cordon_id": "cordon_inb_283087",
+        "x": 498484.12,
+        "y": 4932238.35,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "283087",
+          "283088"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.606,
+        "zone_id": "270370614022007",
+        "anchor_distance_m": 796.2
+      },
+      {
+        "cordon_id": "cordon_inb_284880",
+        "x": 476365.09,
+        "y": 4902943.93,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "284880",
+          "382582"
+        ],
+        "capacity": 8000.0,
+        "weight": 3941.346443,
+        "peripherality": 0.92,
+        "zone_id": "270799504003009",
+        "anchor_distance_m": 20634.1
+      },
+      {
+        "cordon_id": "cordon_inb_287287",
+        "x": 571027.63,
+        "y": 4969603.68,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "287287"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.005,
+        "zone_id": "551091207004023",
+        "anchor_distance_m": 5128.8
+      },
+      {
+        "cordon_id": "cordon_inb_287751",
+        "x": 401047.86,
+        "y": 5073515.68,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "287751"
+        ],
+        "capacity": 8000.0,
+        "weight": 935.0,
+        "peripherality": 1.036,
+        "zone_id": "271410315002016",
+        "anchor_distance_m": 29595.3
+      },
+      {
+        "cordon_id": "cordon_inb_287855",
+        "x": 505387.34,
+        "y": 4928326.06,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 3,
+        "link_ids": [
+          "287855",
+          "516493",
+          "543678"
+        ],
+        "capacity": 1500.0,
+        "weight": 1015.5,
+        "peripherality": 0.617,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 1621.9
+      },
+      {
+        "cordon_id": "cordon_inb_287941",
+        "x": 507468.95,
+        "y": 4925426.79,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "287941",
+          "288543"
+        ],
+        "capacity": 1500.0,
+        "weight": 1124.0,
+        "peripherality": 0.65,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 5174.4
+      },
+      {
+        "cordon_id": "cordon_inb_289474",
+        "x": 564939.9,
+        "y": 5020461.81,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "289474",
+          "592325"
+        ],
+        "capacity": 2000.0,
+        "weight": 1178.0,
+        "peripherality": 0.925,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 14768.5
+      },
+      {
+        "cordon_id": "cordon_inb_289538",
+        "x": 541918.89,
+        "y": 5057412.86,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 4,
+        "link_ids": [
+          "289538",
+          "295587",
+          "547672",
+          "547673"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.699,
+        "zone_id": "270251107001014",
+        "anchor_distance_m": 27750.2
+      },
+      {
+        "cordon_id": "cordon_inb_292475",
+        "x": 411698.74,
+        "y": 4895799.2,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "292475"
+        ],
+        "capacity": 8000.0,
+        "weight": 473.5,
+        "peripherality": 0.989,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 8590.9
+      },
+      {
+        "cordon_id": "cordon_inb_293945",
+        "x": 532663.18,
+        "y": 5027177.01,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "293945"
+        ],
+        "capacity": 8000.0,
+        "weight": 2534.0,
+        "peripherality": 0.619,
+        "zone_id": "270251107003013",
+        "anchor_distance_m": 5530.3
+      },
+      {
+        "cordon_id": "cordon_inb_294112",
+        "x": 475478.06,
+        "y": 4908633.23,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "294112"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.86,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 16895.9
+      },
+      {
+        "cordon_id": "cordon_inb_294825",
+        "x": 483661.96,
+        "y": 4923384.71,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "294825"
+        ],
+        "capacity": 6000.0,
+        "weight": 794.0,
+        "peripherality": 0.697,
+        "zone_id": "270370615022009",
+        "anchor_distance_m": 1339.3
+      },
+      {
+        "cordon_id": "cordon_inb_295503",
+        "x": 402095.82,
+        "y": 5043833.78,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 4,
+        "link_ids": [
+          "243908",
+          "295503",
+          "344331",
+          "512898"
+        ],
+        "capacity": 18000.0,
+        "weight": 646.5,
+        "peripherality": 0.968,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 8699.6
+      },
+      {
+        "cordon_id": "cordon_inb_295588",
+        "x": 540813.4,
+        "y": 5056347.17,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 3,
+        "link_ids": [
+          "295588",
+          "295589",
+          "528176"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.688,
+        "zone_id": "270251107001014",
+        "anchor_distance_m": 26229.1
+      },
+      {
+        "cordon_id": "cordon_inb_295945",
+        "x": 543579.36,
+        "y": 4953378.71,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "295945",
+          "329144"
+        ],
+        "capacity": 2000.0,
+        "weight": 789.0,
+        "peripherality": 0.735,
+        "zone_id": "550939607001002",
+        "anchor_distance_m": 742.1
+      },
+      {
+        "cordon_id": "cordon_inb_297396",
+        "x": 501542.32,
+        "y": 4917049.8,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "297396"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.763,
+        "zone_id": "270370615021063",
+        "anchor_distance_m": 12478.5
+      },
+      {
+        "cordon_id": "cordon_inb_297625",
+        "x": 529212.8,
+        "y": 4894695.18,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "297625"
+        ],
+        "capacity": 1500.0,
+        "weight": 1401.5,
+        "peripherality": 1.0,
+        "zone_id": "270370614021029",
+        "anchor_distance_m": 41523.0
+      },
+      {
+        "cordon_id": "cordon_inb_300636",
+        "x": 550844.29,
+        "y": 4928894.08,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "300636",
+          "90896"
+        ],
+        "capacity": 2000.0,
+        "weight": 446.0,
+        "peripherality": 0.758,
+        "zone_id": "550939608003053",
+        "anchor_distance_m": 6421.3
+      },
+      {
+        "cordon_id": "cordon_inb_305648",
+        "x": 548427.24,
+        "y": 4998320.55,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 3,
+        "link_ids": [
+          "305648",
+          "305661",
+          "305662"
+        ],
+        "capacity": 8000.0,
+        "weight": 594.5,
+        "peripherality": 0.786,
+        "zone_id": "551091206024049",
+        "anchor_distance_m": 590.1
+      },
+      {
+        "cordon_id": "cordon_inb_305808",
+        "x": 548023.06,
+        "y": 5071622.33,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 3,
+        "link_ids": [
+          "255407",
+          "305808",
+          "393777"
+        ],
+        "capacity": 8000.0,
+        "weight": 1377.0,
+        "peripherality": 0.698,
+        "zone_id": "270251107001004",
+        "anchor_distance_m": 41403.1
+      },
+      {
+        "cordon_id": "cordon_inb_306234",
+        "x": 564296.47,
+        "y": 5073128.49,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "306234",
+          "390325"
+        ],
+        "capacity": 2000.0,
+        "weight": 580.0,
+        "peripherality": 0.902,
+        "zone_id": "270251107001014",
+        "anchor_distance_m": 55091.8
+      },
+      {
+        "cordon_id": "cordon_inb_307478",
+        "x": 474878.71,
+        "y": 4904077.32,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 5,
+        "link_ids": [
+          "132488",
+          "307478",
+          "52511",
+          "76737",
+          "76755"
+        ],
+        "capacity": 6000.0,
+        "weight": 2398.0,
+        "peripherality": 0.909,
+        "zone_id": "270799504003009",
+        "anchor_distance_m": 19246.6
+      },
+      {
+        "cordon_id": "cordon_inb_307944",
+        "x": 528762.88,
+        "y": 4901644.05,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 4,
+        "link_ids": [
+          "307944",
+          "307959",
+          "338676",
+          "520260"
+        ],
+        "capacity": 4000.0,
+        "weight": 1348.5,
+        "peripherality": 0.94,
+        "zone_id": "270370614021029",
+        "anchor_distance_m": 34905.8
+      },
+      {
+        "cordon_id": "cordon_inb_311217",
+        "x": 423700.84,
+        "y": 4896096.08,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 4,
+        "link_ids": [
+          "117023",
+          "270",
+          "311217",
+          "569470"
+        ],
+        "capacity": 6000.0,
+        "weight": 153.0,
+        "peripherality": 0.929,
+        "zone_id": "270799506001054",
+        "anchor_distance_m": 3956.7
+      },
+      {
+        "cordon_id": "cordon_inb_313608",
+        "x": 544542.63,
+        "y": 4976601.16,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "313608",
+          "616058"
+        ],
+        "capacity": 1500.0,
+        "weight": 6092.0,
+        "peripherality": 0.711,
+        "zone_id": "551091210003048",
+        "anchor_distance_m": 1728.9
+      },
+      {
+        "cordon_id": "cordon_inb_314920",
+        "x": 569285.57,
+        "y": 4998260.24,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "314920"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.02,
+        "zone_id": "551091207001076",
+        "anchor_distance_m": 5863.5
+      },
+      {
+        "cordon_id": "cordon_inb_323761",
+        "x": 507279.39,
+        "y": 4928180.45,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 4,
+        "link_ids": [
+          "323761",
+          "507692",
+          "523766",
+          "562323"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.626,
+        "zone_id": "270370614022071",
+        "anchor_distance_m": 2927.3
+      },
+      {
+        "cordon_id": "cordon_inb_326601",
+        "x": 540282.28,
+        "y": 4953149.44,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "326601",
+          "327819"
+        ],
+        "capacity": 2000.0,
+        "weight": 1073.0,
+        "peripherality": 0.63,
+        "zone_id": "550939607002035",
+        "anchor_distance_m": 84.4
+      },
+      {
+        "cordon_id": "cordon_inb_328719",
+        "x": 555657.75,
+        "y": 5027143.77,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "328719",
+          "86106"
+        ],
+        "capacity": 2000.0,
+        "weight": 1097.0,
+        "peripherality": 0.866,
+        "zone_id": "551091207001004",
+        "anchor_distance_m": 21809.3
+      },
+      {
+        "cordon_id": "cordon_inb_331401",
+        "x": 568680.46,
+        "y": 5098392.96,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "331401"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.917,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 70761.3
+      },
+      {
+        "cordon_id": "cordon_inb_331433",
+        "x": 409063.56,
+        "y": 5052132.4,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 3,
+        "link_ids": [
+          "331433",
+          "331945",
+          "58343"
+        ],
+        "capacity": 1500.0,
+        "weight": 666.0,
+        "peripherality": 0.851,
+        "zone_id": "271410315002016",
+        "anchor_distance_m": 6780.2
+      },
+      {
+        "cordon_id": "cordon_inb_334459",
+        "x": 402544.22,
+        "y": 5034243.13,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "334459",
+          "334462"
+        ],
+        "capacity": 2000.0,
+        "weight": 659.0,
+        "peripherality": 0.911,
+        "zone_id": "271410303021016",
+        "anchor_distance_m": 10569.4
+      },
+      {
+        "cordon_id": "cordon_inb_334510",
+        "x": 398298.3,
+        "y": 5019264.51,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "334510"
+        ],
+        "capacity": 2000.0,
+        "weight": 564.0,
+        "peripherality": 0.997,
+        "zone_id": "271711005003000",
+        "anchor_distance_m": 5271.4
+      },
+      {
+        "cordon_id": "cordon_inb_338585",
+        "x": 476968.46,
+        "y": 4919556.58,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "338585"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.742,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 5988.4
+      },
+      {
+        "cordon_id": "cordon_inb_344334",
+        "x": 405951.82,
+        "y": 5044726.74,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 7,
+        "link_ids": [
+          "135727",
+          "136762",
+          "321585",
+          "344334",
+          "390469",
+          "440095",
+          "440096"
+        ],
+        "capacity": 13500.0,
+        "weight": 851.5,
+        "peripherality": 0.942,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 4746.6
+      },
+      {
+        "cordon_id": "cordon_inb_350577",
+        "x": 545253.41,
+        "y": 4980650.99,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "350577",
+          "487925"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.749,
+        "zone_id": "551091210001005",
+        "anchor_distance_m": 248.2
+      },
+      {
+        "cordon_id": "cordon_inb_361089",
+        "x": 573105.42,
+        "y": 4917149.78,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "361089"
+        ],
+        "capacity": 2000.0,
+        "weight": 331.0,
+        "peripherality": 1.056,
+        "zone_id": "550939608003068",
+        "anchor_distance_m": 20925.0
+      },
+      {
+        "cordon_id": "cordon_inb_366522",
+        "x": 523310.96,
+        "y": 5068872.59,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "366522",
+          "395060"
+        ],
+        "capacity": 2000.0,
+        "weight": 701.0,
+        "peripherality": 0.631,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 16907.7
+      },
+      {
+        "cordon_id": "cordon_inb_373399",
+        "x": 507044.89,
+        "y": 4930123.34,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "373399"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.608,
+        "zone_id": "270370614022071",
+        "anchor_distance_m": 1139.0
+      },
+      {
+        "cordon_id": "cordon_inb_374058",
+        "x": 499925.55,
+        "y": 4902155.01,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "374058"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.906,
+        "zone_id": "270370615021082",
+        "anchor_distance_m": 24633.4
+      },
+      {
+        "cordon_id": "cordon_inb_382580",
+        "x": 476862.27,
+        "y": 4905428.36,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "382580"
+        ],
+        "capacity": 8000.0,
+        "weight": 3941.346443,
+        "peripherality": 0.894,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 19824.2
+      },
+      {
+        "cordon_id": "cordon_inb_391959",
+        "x": 546801.45,
+        "y": 5095574.84,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "391959"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.82,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 51165.8
+      },
+      {
+        "cordon_id": "cordon_inb_392721",
+        "x": 395634.56,
+        "y": 4954054.09,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "392721"
+        ],
+        "capacity": 2000.0,
+        "weight": 661.0,
+        "peripherality": 0.996,
+        "zone_id": "270190912014030",
+        "anchor_distance_m": 25710.9
+      },
+      {
+        "cordon_id": "cordon_inb_403356",
+        "x": 534784.08,
+        "y": 4934527.11,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "403356",
+          "604674"
+        ],
+        "capacity": 8000.0,
+        "weight": 456.5,
+        "peripherality": 0.63,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 1919.0
+      },
+      {
+        "cordon_id": "cordon_inb_404479",
+        "x": 392445.05,
+        "y": 4933085.59,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "404479"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.028,
+        "zone_id": "270799502003008",
+        "anchor_distance_m": 35856.5
+      },
+      {
+        "cordon_id": "cordon_inb_404510",
+        "x": 402571.48,
+        "y": 4933668.43,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "404510",
+          "48829"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.941,
+        "zone_id": "270799502001027",
+        "anchor_distance_m": 26327.5
+      },
+      {
+        "cordon_id": "cordon_inb_405072",
+        "x": 404898.55,
+        "y": 4934604.76,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "405072"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.917,
+        "zone_id": "270799502001027",
+        "anchor_distance_m": 24521.8
+      },
+      {
+        "cordon_id": "cordon_inb_406117",
+        "x": 404281.32,
+        "y": 5045169.07,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "406117"
+        ],
+        "capacity": 8000.0,
+        "weight": 317.0,
+        "peripherality": 0.958,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 6364.8
+      },
+      {
+        "cordon_id": "cordon_inb_407455",
+        "x": 420688.28,
+        "y": 4947634.45,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "407455",
+          "81937"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.714,
+        "zone_id": "270190912014047",
+        "anchor_distance_m": 6594.6
+      },
+      {
+        "cordon_id": "cordon_inb_408185",
+        "x": 405525.49,
+        "y": 4902382.56,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 7,
+        "link_ids": [
+          "120191",
+          "395339",
+          "408185",
+          "408186",
+          "408209",
+          "556185",
+          "556188"
+        ],
+        "capacity": 5400.0,
+        "weight": 2660.408849,
+        "peripherality": 0.985,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 14435.4
+      },
+      {
+        "cordon_id": "cordon_inb_416255",
+        "x": 476391.44,
+        "y": 4924317.74,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "416255",
+          "525433"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.691,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 2917.5
+      },
+      {
+        "cordon_id": "cordon_inb_420856",
+        "x": 546093.32,
+        "y": 4903474.27,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 4,
+        "link_ids": [
+          "420856",
+          "420857",
+          "587616",
+          "587647"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.925,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 30794.2
+      },
+      {
+        "cordon_id": "cordon_inb_426395",
+        "x": 393102.47,
+        "y": 4900117.73,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "426395"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.072,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 26513.9
+      },
+      {
+        "cordon_id": "cordon_inb_426476",
+        "x": 413424.98,
+        "y": 4889450.04,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "426476"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.025,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 11517.7
+      },
+      {
+        "cordon_id": "cordon_inb_431663",
+        "x": 399411.96,
+        "y": 4971808.11,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "431663"
+        ],
+        "capacity": 1500.0,
+        "weight": 517.0,
+        "peripherality": 0.99,
+        "zone_id": "271711013004025",
+        "anchor_distance_m": 14312.9
+      },
+      {
+        "cordon_id": "cordon_inb_431688",
+        "x": 404494.6,
+        "y": 4973047.89,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 2,
+        "link_ids": [
+          "431688",
+          "47441"
+        ],
+        "capacity": 1500.0,
+        "weight": 500.0,
+        "peripherality": 0.927,
+        "zone_id": "271711013004025",
+        "anchor_distance_m": 11372.1
+      },
+      {
+        "cordon_id": "cordon_inb_431845",
+        "x": 407871.7,
+        "y": 4958274.77,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "431845",
+          "66275"
+        ],
+        "capacity": 1500.0,
+        "weight": 450.0,
+        "peripherality": 0.854,
+        "zone_id": "270190912014030",
+        "anchor_distance_m": 13481.6
+      },
+      {
+        "cordon_id": "cordon_inb_433003",
+        "x": 435998.26,
+        "y": 4894755.47,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "433003"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.99,
+        "zone_id": "270799505003123",
+        "anchor_distance_m": 5024.2
+      },
+      {
+        "cordon_id": "cordon_inb_440243",
+        "x": 539883.93,
+        "y": 5047416.1,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 5,
+        "link_ids": [
+          "440243",
+          "476163",
+          "522978",
+          "528241",
+          "546667"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.634,
+        "zone_id": "270251107003008",
+        "anchor_distance_m": 20982.1
+      },
+      {
+        "cordon_id": "cordon_inb_440772",
+        "x": 565134.84,
+        "y": 5123954.88,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "440772"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.039,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 84033.5
+      },
+      {
+        "cordon_id": "cordon_inb_448019",
+        "x": 479683.52,
+        "y": 5121650.75,
+        "direction": "inbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "448019"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.0,
+        "zone_id": "270959701002000",
+        "anchor_distance_m": 14536.3
+      },
+      {
+        "cordon_id": "cordon_inb_448231",
+        "x": 556779.83,
+        "y": 4923558.83,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "448231"
+        ],
+        "capacity": 2000.0,
+        "weight": 518.0,
+        "peripherality": 0.823,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 8898.9
+      },
+      {
+        "cordon_id": "cordon_inb_457077",
+        "x": 395229.24,
+        "y": 5055466.11,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "457077"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 1.095,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 18363.4
+      },
+      {
+        "cordon_id": "cordon_inb_458804",
+        "x": 406137.47,
+        "y": 5047794.86,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "458804"
+        ],
+        "capacity": 8000.0,
+        "weight": 731.0,
+        "peripherality": 0.96,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 5062.5
+      },
+      {
+        "cordon_id": "cordon_inb_459864",
+        "x": 488835.2,
+        "y": 4925689.36,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "459864"
+        ],
+        "capacity": 2000.0,
+        "weight": 985.336611,
+        "peripherality": 0.678,
+        "zone_id": "270370615021086",
+        "anchor_distance_m": 373.1
+      },
+      {
+        "cordon_id": "cordon_inb_461077",
+        "x": 424358.88,
+        "y": 4909372.26,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "461077"
+        ],
+        "capacity": 8000.0,
+        "weight": 861.0,
+        "peripherality": 0.83,
+        "zone_id": "270799506002019",
+        "anchor_distance_m": 1722.6
+      },
+      {
+        "cordon_id": "cordon_inb_465669",
+        "x": 445103.58,
+        "y": 4894156.98,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "465669"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.962,
+        "zone_id": "270799504001060",
+        "anchor_distance_m": 269.9
+      },
+      {
+        "cordon_id": "cordon_inb_466179",
+        "x": 560870.94,
+        "y": 4965754.57,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "466179"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.909,
+        "zone_id": "550939601002019",
+        "anchor_distance_m": 640.9
+      },
+      {
+        "cordon_id": "cordon_inb_467266",
+        "x": 446814.76,
+        "y": 4894205.18,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "467266"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.002,
+        "zone_id": "270799504001045",
+        "anchor_distance_m": 472.9
+      },
+      {
+        "cordon_id": "cordon_inb_474362",
+        "x": 431358.07,
+        "y": 5004869.2,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "474362"
+        ],
+        "capacity": 1500.0,
+        "weight": 324.0,
+        "peripherality": 0.618,
+        "zone_id": "271711007051002",
+        "anchor_distance_m": 254.1
+      },
+      {
+        "cordon_id": "cordon_inb_474367",
+        "x": 459394.79,
+        "y": 4883339.07,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "474367"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.075,
+        "zone_id": "270799504003048",
+        "anchor_distance_m": 11598.5
+      },
+      {
+        "cordon_id": "cordon_inb_474418",
+        "x": 455400.08,
+        "y": 4895719.56,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "474418",
+          "570699"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.963,
+        "zone_id": "270799504003044",
+        "anchor_distance_m": 327.8
+      },
+      {
+        "cordon_id": "cordon_inb_477545",
+        "x": 525527.51,
+        "y": 5068868.39,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "477545"
+        ],
+        "capacity": 2000.0,
+        "weight": 784.0,
+        "peripherality": 0.638,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 18989.7
+      },
+      {
+        "cordon_id": "cordon_inb_479004",
+        "x": 549392.66,
+        "y": 5073952.4,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "479004"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.715,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 43316.1
+      },
+      {
+        "cordon_id": "cordon_inb_492661",
+        "x": 421372.97,
+        "y": 5032443.11,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "492661"
+        ],
+        "capacity": 1500.0,
+        "weight": 1070.0,
+        "peripherality": 0.742,
+        "zone_id": "271410303022044",
+        "anchor_distance_m": 375.5
+      },
+      {
+        "cordon_id": "cordon_inb_493170",
+        "x": 425804.48,
+        "y": 4923922.39,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "493170"
+        ],
+        "capacity": 1500.0,
+        "weight": 752.0,
+        "peripherality": 0.723,
+        "zone_id": "270799502003018",
+        "anchor_distance_m": 1362.2
+      },
+      {
+        "cordon_id": "cordon_inb_493306",
+        "x": 534807.16,
+        "y": 4982208.91,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "493306",
+          "493413"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.629,
+        "zone_id": "551091210004015",
+        "anchor_distance_m": 303.2
+      },
+      {
+        "cordon_id": "cordon_inb_499118",
+        "x": 453426.74,
+        "y": 4920067.31,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "499118"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.702,
+        "zone_id": "270799503002045",
+        "anchor_distance_m": 286.1
+      },
+      {
+        "cordon_id": "cordon_inb_499119",
+        "x": 453439.3,
+        "y": 4921896.39,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "499119"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.685,
+        "zone_id": "270799503002007",
+        "anchor_distance_m": 283.2
+      },
+      {
+        "cordon_id": "cordon_inb_505591",
+        "x": 408080.09,
+        "y": 5044466.16,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "505591"
+        ],
+        "capacity": 6000.0,
+        "weight": 387.0,
+        "peripherality": 0.923,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 2751.3
+      },
+      {
+        "cordon_id": "cordon_inb_508109",
+        "x": 516027.04,
+        "y": 4912552.95,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "508109"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.794,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 20617.6
+      },
+      {
+        "cordon_id": "cordon_inb_509375",
+        "x": 433760.37,
+        "y": 4890739.43,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "509375"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.034,
+        "zone_id": "270799506004038",
+        "anchor_distance_m": 9049.2
+      },
+      {
+        "cordon_id": "cordon_inb_509390",
+        "x": 434267.68,
+        "y": 4894497.61,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "509390"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.999,
+        "zone_id": "270799506004038",
+        "anchor_distance_m": 5266.8
+      },
+      {
+        "cordon_id": "cordon_inb_512093",
+        "x": 400263.56,
+        "y": 5017065.37,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "512093"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.022,
+        "zone_id": "271711005003025",
+        "anchor_distance_m": 2599.7
+      },
+      {
+        "cordon_id": "cordon_inb_513862",
+        "x": 547459.88,
+        "y": 4964158.13,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "513862",
+          "513863"
+        ],
+        "capacity": 2000.0,
+        "weight": 512.0,
+        "peripherality": 0.776,
+        "zone_id": "550939602003064",
+        "anchor_distance_m": 402.0
+      },
+      {
+        "cordon_id": "cordon_inb_51425",
+        "x": 516688.62,
+        "y": 4906471.56,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "51425"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.848,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 26149.0
+      },
+      {
+        "cordon_id": "cordon_inb_521381",
+        "x": 485538.05,
+        "y": 4925849.16,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "521381"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.672,
+        "zone_id": "270370615022007",
+        "anchor_distance_m": 1167.0
+      },
+      {
+        "cordon_id": "cordon_inb_521721",
+        "x": 409915.27,
+        "y": 5038024.24,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "521721"
+        ],
+        "capacity": 1500.0,
+        "weight": 1738.5,
+        "peripherality": 0.869,
+        "zone_id": "271410303021016",
+        "anchor_distance_m": 2484.3
+      },
+      {
+        "cordon_id": "cordon_inb_52289",
+        "x": 417718.98,
+        "y": 5097544.17,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "52289"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.832,
+        "zone_id": "270959702003053",
+        "anchor_distance_m": 25627.0
+      },
+      {
+        "cordon_id": "cordon_inb_533627",
+        "x": 418400.61,
+        "y": 4894521.0,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "533627"
+        ],
+        "capacity": 8000.0,
+        "weight": 726.0,
+        "peripherality": 0.965,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 4803.8
+      },
+      {
+        "cordon_id": "cordon_inb_537185",
+        "x": 559427.38,
+        "y": 4965082.15,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "537185"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.896,
+        "zone_id": "550939601001033",
+        "anchor_distance_m": 219.3
+      },
+      {
+        "cordon_id": "cordon_inb_540558",
+        "x": 485860.63,
+        "y": 4921138.37,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "540558"
+        ],
+        "capacity": 8000.0,
+        "weight": 684.5,
+        "peripherality": 0.722,
+        "zone_id": "270370615022012",
+        "anchor_distance_m": 3250.5
+      },
+      {
+        "cordon_id": "cordon_inb_550277",
+        "x": 557449.24,
+        "y": 5011741.56,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "550277",
+          "606128"
+        ],
+        "capacity": 2000.0,
+        "weight": 1402.0,
+        "peripherality": 0.883,
+        "zone_id": "551091207001004",
+        "anchor_distance_m": 6321.2
+      },
+      {
+        "cordon_id": "cordon_inb_550312",
+        "x": 562551.13,
+        "y": 5018563.83,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "550312",
+          "592314"
+        ],
+        "capacity": 2000.0,
+        "weight": 1146.0,
+        "peripherality": 0.959,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 13182.4
+      },
+      {
+        "cordon_id": "cordon_inb_552337",
+        "x": 486933.56,
+        "y": 4922434.34,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 4,
+        "link_ids": [
+          "552337",
+          "552338",
+          "552349",
+          "589914"
+        ],
+        "capacity": 6000.0,
+        "weight": 924.0,
+        "peripherality": 0.71,
+        "zone_id": "270370615021074",
+        "anchor_distance_m": 2055.1
+      },
+      {
+        "cordon_id": "cordon_inb_557855",
+        "x": 532240.48,
+        "y": 4996790.95,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "557855",
+          "557934"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.602,
+        "zone_id": "551091205013025",
+        "anchor_distance_m": 772.1
+      },
+      {
+        "cordon_id": "cordon_inb_56361",
+        "x": 501520.01,
+        "y": 4901683.98,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "56361"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.914,
+        "zone_id": "270370615021082",
+        "anchor_distance_m": 25693.1
+      },
+      {
+        "cordon_id": "cordon_inb_566901",
+        "x": 417784.94,
+        "y": 5029600.32,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "566901",
+          "95445"
+        ],
+        "capacity": 1500.0,
+        "weight": 1437.0,
+        "peripherality": 0.755,
+        "zone_id": "271711003001033",
+        "anchor_distance_m": 88.5
+      },
+      {
+        "cordon_id": "cordon_inb_569465",
+        "x": 422426.59,
+        "y": 4894715.31,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "569465"
+        ],
+        "capacity": 2250.0,
+        "weight": 1108.503687,
+        "peripherality": 0.945,
+        "zone_id": "270799506001054",
+        "anchor_distance_m": 5165.4
+      },
+      {
+        "cordon_id": "cordon_inb_582223",
+        "x": 431631.83,
+        "y": 4993636.01,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 6,
+        "link_ids": [
+          "582223",
+          "582228",
+          "582295",
+          "582296",
+          "582303",
+          "582308"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.609,
+        "zone_id": "271711010013006",
+        "anchor_distance_m": 1277.1
+      },
+      {
+        "cordon_id": "cordon_inb_582311",
+        "x": 431647.47,
+        "y": 4995225.66,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 3,
+        "link_ids": [
+          "582311",
+          "582317",
+          "582364"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.611,
+        "zone_id": "271711009005033",
+        "anchor_distance_m": 724.6
+      },
+      {
+        "cordon_id": "cordon_inb_582365",
+        "x": 431706.02,
+        "y": 4996872.71,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "582365"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.614,
+        "zone_id": "271711009005023",
+        "anchor_distance_m": 900.4
+      },
+      {
+        "cordon_id": "cordon_inb_587649",
+        "x": 557225.01,
+        "y": 4920753.42,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "587649"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.841,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 11722.0
+      },
+      {
+        "cordon_id": "cordon_inb_592771",
+        "x": 404343.93,
+        "y": 5040960.59,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "592771",
+          "592890"
+        ],
+        "capacity": 1500.0,
+        "weight": 808.0,
+        "peripherality": 0.933,
+        "zone_id": "271410315001008",
+        "anchor_distance_m": 6998.3
+      },
+      {
+        "cordon_id": "cordon_inb_607814",
+        "x": 409078.03,
+        "y": 5042824.43,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "607814"
+        ],
+        "capacity": 6000.0,
+        "weight": 278.5,
+        "peripherality": 0.905,
+        "zone_id": "271410315001010",
+        "anchor_distance_m": 1966.7
+      },
+      {
+        "cordon_id": "cordon_inb_612168",
+        "x": 411007.74,
+        "y": 5133824.18,
+        "direction": "inbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "612168"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.066,
+        "zone_id": "270959702002031",
+        "anchor_distance_m": 30487.4
+      },
+      {
+        "cordon_id": "cordon_inb_613247",
+        "x": 536387.76,
+        "y": 4993697.61,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "613247"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.644,
+        "zone_id": "551091205021032",
+        "anchor_distance_m": 688.4
+      },
+      {
+        "cordon_id": "cordon_inb_615204",
+        "x": 555514.94,
+        "y": 4933496.34,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "615204"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.841,
+        "zone_id": "550939608003053",
+        "anchor_distance_m": 249.8
+      },
+      {
+        "cordon_id": "cordon_inb_617978",
+        "x": 433836.02,
+        "y": 4914879.06,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "617978",
+          "617979"
+        ],
+        "capacity": 4000.0,
+        "weight": 59.0,
+        "peripherality": 0.746,
+        "zone_id": "270799501023092",
+        "anchor_distance_m": 1191.1
+      },
+      {
+        "cordon_id": "cordon_inb_625907",
+        "x": 526524.71,
+        "y": 4905460.12,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "625907"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.899,
+        "zone_id": "270370614021029",
+        "anchor_distance_m": 30517.8
+      },
+      {
+        "cordon_id": "cordon_inb_628994",
+        "x": 431946.81,
+        "y": 5002948.75,
+        "direction": "inbound",
+        "compass": "W",
+        "n_links": 3,
+        "link_ids": [
+          "170206",
+          "424414",
+          "628994"
+        ],
+        "capacity": 6000.0,
+        "weight": 297.0,
+        "peripherality": 0.604,
+        "zone_id": "271711007042018",
+        "anchor_distance_m": 126.3
+      },
+      {
+        "cordon_id": "cordon_inb_632834",
+        "x": 568363.11,
+        "y": 5073965.12,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "632834"
+        ],
+        "capacity": 2000.0,
+        "weight": 576.0,
+        "peripherality": 0.928,
+        "zone_id": "270251107001014",
+        "anchor_distance_m": 58906.8
+      },
+      {
+        "cordon_id": "cordon_inb_73952",
+        "x": 563388.43,
+        "y": 4976204.02,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 4,
+        "link_ids": [
+          "211103",
+          "73952",
+          "73953",
+          "95760"
+        ],
+        "capacity": 2250.0,
+        "weight": 6473.5,
+        "peripherality": 0.959,
+        "zone_id": "551091207003076",
+        "anchor_distance_m": 869.6
+      },
+      {
+        "cordon_id": "cordon_inb_80453",
+        "x": 549255.95,
+        "y": 5095027.9,
+        "direction": "inbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "80453"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.825,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 52735.6
+      },
+      {
+        "cordon_id": "cordon_inb_81415",
+        "x": 424125.61,
+        "y": 4894099.69,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "81415"
+        ],
+        "capacity": 6000.0,
+        "weight": 153.0,
+        "peripherality": 0.942,
+        "zone_id": "270799506001054",
+        "anchor_distance_m": 5992.6
+      },
+      {
+        "cordon_id": "cordon_inb_81747",
+        "x": 528616.99,
+        "y": 4916153.96,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 3,
+        "link_ids": [
+          "81747",
+          "81752",
+          "81814"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.749,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 21047.9
+      },
+      {
+        "cordon_id": "cordon_inb_81755",
+        "x": 530174.87,
+        "y": 4916143.4,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "81755"
+        ],
+        "capacity": 4000.0,
+        "weight": 202.0,
+        "peripherality": 0.756,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 20544.7
+      },
+      {
+        "cordon_id": "cordon_inb_84094",
+        "x": 554462.91,
+        "y": 4934710.59,
+        "direction": "inbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "84094"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.827,
+        "zone_id": "550939608003042",
+        "anchor_distance_m": 1074.3
+      },
+      {
+        "cordon_id": "cordon_inb_90339",
+        "x": 478637.59,
+        "y": 4908427.7,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "90339"
+        ],
+        "capacity": 2000.0,
+        "weight": 387.0,
+        "peripherality": 0.861,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 16696.2
+      },
+      {
+        "cordon_id": "cordon_inb_90389",
+        "x": 507365.07,
+        "y": 4891713.74,
+        "direction": "inbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "90389"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.028,
+        "zone_id": "270370615021082",
+        "anchor_distance_m": 37209.5
+      },
+      {
+        "cordon_id": "cordon_inb_91408",
+        "x": 400142.3,
+        "y": 4902651.59,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "91408"
+        ],
+        "capacity": 8000.0,
+        "weight": 565.5,
+        "peripherality": 1.014,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 19765.8
+      },
+      {
+        "cordon_id": "cordon_inb_95919",
+        "x": 405013.78,
+        "y": 4904007.74,
+        "direction": "inbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "95919"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.977,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 15366.3
+      },
+      {
+        "cordon_id": "cordon_inb_98037",
+        "x": 534853.94,
+        "y": 4980623.05,
+        "direction": "inbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "157064",
+          "98037"
+        ],
+        "capacity": 6000.0,
+        "weight": 2956.009832,
+        "peripherality": 0.632,
+        "zone_id": "551091210004041",
+        "anchor_distance_m": 109.5
+      },
+      {
+        "cordon_id": "cordon_out_102316",
+        "x": 422990.11,
+        "y": 4907179.08,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 3,
+        "link_ids": [
+          "102316",
+          "124080",
+          "517379"
+        ],
+        "capacity": 9000.0,
+        "weight": 814.5,
+        "peripherality": 0.853,
+        "zone_id": "270799506001007",
+        "anchor_distance_m": 1212.8
+      },
+      {
+        "cordon_id": "cordon_out_104010",
+        "x": 570411.35,
+        "y": 4977969.47,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "104010"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.036,
+        "zone_id": "551091207003045",
+        "anchor_distance_m": 3485.2
+      },
+      {
+        "cordon_id": "cordon_out_1085",
+        "x": 517150.25,
+        "y": 4893627.98,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "1085"
+        ],
+        "capacity": 1500.0,
+        "weight": 147.0,
+        "peripherality": 0.962,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 38091.9
+      },
+      {
+        "cordon_id": "cordon_out_11034",
+        "x": 549279.4,
+        "y": 4980799.52,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "11034",
+          "128286"
+        ],
+        "capacity": 2000.0,
+        "weight": 1202.0,
+        "peripherality": 0.794,
+        "zone_id": "551091208012005",
+        "anchor_distance_m": 404.3
+      },
+      {
+        "cordon_id": "cordon_out_110457",
+        "x": 487775.87,
+        "y": 4924418.17,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "110457",
+          "145922"
+        ],
+        "capacity": 2000.0,
+        "weight": 985.336611,
+        "peripherality": 0.69,
+        "zone_id": "270370615021074",
+        "anchor_distance_m": 339.1
+      },
+      {
+        "cordon_id": "cordon_out_115020",
+        "x": 510314.78,
+        "y": 5122346.14,
+        "direction": "outbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "115020"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.001,
+        "zone_id": "270959701002000",
+        "anchor_distance_m": 45156.6
+      },
+      {
+        "cordon_id": "cordon_out_116476",
+        "x": 424099.54,
+        "y": 4894100.06,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "116476"
+        ],
+        "capacity": 24000.0,
+        "weight": 153.0,
+        "peripherality": 0.942,
+        "zone_id": "270799506001054",
+        "anchor_distance_m": 5985.5
+      },
+      {
+        "cordon_id": "cordon_out_117022",
+        "x": 424392.41,
+        "y": 4909561.73,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "117022"
+        ],
+        "capacity": 8000.0,
+        "weight": 861.0,
+        "peripherality": 0.829,
+        "zone_id": "270799506002019",
+        "anchor_distance_m": 1676.1
+      },
+      {
+        "cordon_id": "cordon_out_118014",
+        "x": 534709.82,
+        "y": 4997405.44,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "118014"
+        ],
+        "capacity": 8000.0,
+        "weight": 441.0,
+        "peripherality": 0.631,
+        "zone_id": "551091205013027",
+        "anchor_distance_m": 349.8
+      },
+      {
+        "cordon_id": "cordon_out_119516",
+        "x": 547990.82,
+        "y": 5027099.56,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "119516"
+        ],
+        "capacity": 2000.0,
+        "weight": 1510.0,
+        "peripherality": 0.797,
+        "zone_id": "270251107003013",
+        "anchor_distance_m": 20808.9
+      },
+      {
+        "cordon_id": "cordon_out_120915",
+        "x": 510302.89,
+        "y": 5116452.84,
+        "direction": "outbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "120915"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.959,
+        "zone_id": "270959701001025",
+        "anchor_distance_m": 44938.8
+      },
+      {
+        "cordon_id": "cordon_out_121630",
+        "x": 427026.88,
+        "y": 4990593.35,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "121630"
+        ],
+        "capacity": 4500.0,
+        "weight": 849.0,
+        "peripherality": 0.664,
+        "zone_id": "271711011011052",
+        "anchor_distance_m": 507.7
+      },
+      {
+        "cordon_id": "cordon_out_127756",
+        "x": 506550.09,
+        "y": 4928183.96,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 6,
+        "link_ids": [
+          "127756",
+          "287856",
+          "323760",
+          "507691",
+          "523765",
+          "543679"
+        ],
+        "capacity": 1500.0,
+        "weight": 1124.0,
+        "peripherality": 0.623,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 2649.3
+      },
+      {
+        "cordon_id": "cordon_out_130031",
+        "x": 548441.31,
+        "y": 4998235.98,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 3,
+        "link_ids": [
+          "130031",
+          "305627",
+          "307653"
+        ],
+        "capacity": 2000.0,
+        "weight": 1189.0,
+        "peripherality": 0.786,
+        "zone_id": "551091206024049",
+        "anchor_distance_m": 538.0
+      },
+      {
+        "cordon_id": "cordon_out_130237",
+        "x": 568082.6,
+        "y": 5030641.14,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "130237"
+        ],
+        "capacity": 2000.0,
+        "weight": 663.0,
+        "peripherality": 0.995,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 25079.0
+      },
+      {
+        "cordon_id": "cordon_out_13153",
+        "x": 497720.44,
+        "y": 4924288.95,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "13153",
+          "184948"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.681,
+        "zone_id": "270370615021063",
+        "anchor_distance_m": 4295.2
+      },
+      {
+        "cordon_id": "cordon_out_137898",
+        "x": 416153.65,
+        "y": 4990305.58,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 2,
+        "link_ids": [
+          "137898",
+          "197964"
+        ],
+        "capacity": 2000.0,
+        "weight": 719.0,
+        "peripherality": 0.801,
+        "zone_id": "271711012002007",
+        "anchor_distance_m": 263.7
+      },
+      {
+        "cordon_id": "cordon_out_139794",
+        "x": 428666.47,
+        "y": 4990556.5,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "139794"
+        ],
+        "capacity": 2000.0,
+        "weight": 889.0,
+        "peripherality": 0.643,
+        "zone_id": "271711011011042",
+        "anchor_distance_m": 156.6
+      },
+      {
+        "cordon_id": "cordon_out_144091",
+        "x": 424366.23,
+        "y": 4990756.05,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 2,
+        "link_ids": [
+          "144091",
+          "198241"
+        ],
+        "capacity": 4500.0,
+        "weight": 709.0,
+        "peripherality": 0.698,
+        "zone_id": "271711011012035",
+        "anchor_distance_m": 294.2
+      },
+      {
+        "cordon_id": "cordon_out_151668",
+        "x": 476754.47,
+        "y": 4903891.42,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 4,
+        "link_ids": [
+          "132487",
+          "151668",
+          "52511",
+          "587131"
+        ],
+        "capacity": 8000.0,
+        "weight": 2398.0,
+        "peripherality": 0.91,
+        "zone_id": "270799504003009",
+        "anchor_distance_m": 21092.5
+      },
+      {
+        "cordon_id": "cordon_out_152056",
+        "x": 568825.79,
+        "y": 5045600.23,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "152056"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.0,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 40041.9
+      },
+      {
+        "cordon_id": "cordon_out_157475",
+        "x": 480306.42,
+        "y": 4904281.56,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "157475"
+        ],
+        "capacity": 1500.0,
+        "weight": 188.0,
+        "peripherality": 0.899,
+        "zone_id": "270370615022009",
+        "anchor_distance_m": 20711.7
+      },
+      {
+        "cordon_id": "cordon_out_158215",
+        "x": 547852.4,
+        "y": 4911443.49,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "158215",
+          "587644"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.84,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 22723.5
+      },
+      {
+        "cordon_id": "cordon_out_158298",
+        "x": 546209.74,
+        "y": 4893630.34,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "158298"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.993,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 40166.1
+      },
+      {
+        "cordon_id": "cordon_out_168220",
+        "x": 509906.17,
+        "y": 4928706.73,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "168220"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.632,
+        "zone_id": "270370614022071",
+        "anchor_distance_m": 4293.6
+      },
+      {
+        "cordon_id": "cordon_out_168251",
+        "x": 402615.89,
+        "y": 4935330.45,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "168251",
+          "478020"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.931,
+        "zone_id": "270799502001027",
+        "anchor_distance_m": 26903.4
+      },
+      {
+        "cordon_id": "cordon_out_168286",
+        "x": 402554.85,
+        "y": 4946494.1,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "168286",
+          "535697"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.963,
+        "zone_id": "270190912014030",
+        "anchor_distance_m": 21173.7
+      },
+      {
+        "cordon_id": "cordon_out_172918",
+        "x": 397897.1,
+        "y": 4992764.58,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "172918"
+        ],
+        "capacity": 2000.0,
+        "weight": 704.0,
+        "peripherality": 1.032,
+        "zone_id": "271711013001029",
+        "anchor_distance_m": 5488.1
+      },
+      {
+        "cordon_id": "cordon_out_1742",
+        "x": 559897.36,
+        "y": 4919528.24,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "1742"
+        ],
+        "capacity": 2000.0,
+        "weight": 347.0,
+        "peripherality": 0.864,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 13362.1
+      },
+      {
+        "cordon_id": "cordon_out_177418",
+        "x": 421356.39,
+        "y": 5009226.25,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 2,
+        "link_ids": [
+          "177418",
+          "182526"
+        ],
+        "capacity": 13500.0,
+        "weight": 496.0,
+        "peripherality": 0.75,
+        "zone_id": "271711007071017",
+        "anchor_distance_m": 144.7
+      },
+      {
+        "cordon_id": "cordon_out_178049",
+        "x": 484035.94,
+        "y": 4932296.11,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 5,
+        "link_ids": [
+          "178049",
+          "310369",
+          "310372",
+          "310373",
+          "310377"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.602,
+        "zone_id": "270370615023003",
+        "anchor_distance_m": 888.2
+      },
+      {
+        "cordon_id": "cordon_out_179331",
+        "x": 484022.35,
+        "y": 4925873.95,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "179331",
+          "514701"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.671,
+        "zone_id": "270370615022009",
+        "anchor_distance_m": 1244.9
+      },
+      {
+        "cordon_id": "cordon_out_190247",
+        "x": 572290.53,
+        "y": 4920972.68,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "190247"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.029,
+        "zone_id": "550939608004042",
+        "anchor_distance_m": 17440.7
+      },
+      {
+        "cordon_id": "cordon_out_208860",
+        "x": 436648.4,
+        "y": 5124815.52,
+        "direction": "outbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "208860"
+        ],
+        "capacity": 2000.0,
+        "weight": 198.0,
+        "peripherality": 1.027,
+        "zone_id": "270959702002079",
+        "anchor_distance_m": 5836.8
+      },
+      {
+        "cordon_id": "cordon_out_211550",
+        "x": 404852.09,
+        "y": 5045157.39,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 8,
+        "link_ids": [
+          "135732",
+          "136762",
+          "211550",
+          "213168",
+          "340737",
+          "344334",
+          "440095",
+          "440096"
+        ],
+        "capacity": 18000.0,
+        "weight": 851.5,
+        "peripherality": 0.954,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 5795.4
+      },
+      {
+        "cordon_id": "cordon_out_225097",
+        "x": 567769.32,
+        "y": 5027887.84,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 3,
+        "link_ids": [
+          "212666",
+          "225095",
+          "225097"
+        ],
+        "capacity": 8000.0,
+        "weight": 1221.0,
+        "peripherality": 0.981,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 22308.0
+      },
+      {
+        "cordon_id": "cordon_out_225123",
+        "x": 536361.86,
+        "y": 5068833.3,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "225123",
+          "225134"
+        ],
+        "capacity": 2000.0,
+        "weight": 628.0,
+        "peripherality": 0.637,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 29447.2
+      },
+      {
+        "cordon_id": "cordon_out_225130",
+        "x": 533584.75,
+        "y": 5068820.39,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "225130",
+          "390331"
+        ],
+        "capacity": 2000.0,
+        "weight": 744.0,
+        "peripherality": 0.627,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 26733.1
+      },
+      {
+        "cordon_id": "cordon_out_229727",
+        "x": 549738.52,
+        "y": 5027119.96,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "229727"
+        ],
+        "capacity": 2000.0,
+        "weight": 1448.0,
+        "peripherality": 0.813,
+        "zone_id": "270251107003013",
+        "anchor_distance_m": 22554.0
+      },
+      {
+        "cordon_id": "cordon_out_233648",
+        "x": 474892.74,
+        "y": 4904065.51,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 3,
+        "link_ids": [
+          "233648",
+          "52740",
+          "76737"
+        ],
+        "capacity": 6000.0,
+        "weight": 2956.009832,
+        "peripherality": 0.909,
+        "zone_id": "270799504003009",
+        "anchor_distance_m": 19259.2
+      },
+      {
+        "cordon_id": "cordon_out_242661",
+        "x": 399459.39,
+        "y": 4964197.82,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "242661"
+        ],
+        "capacity": 1500.0,
+        "weight": 426.0,
+        "peripherality": 1.013,
+        "zone_id": "271711013004025",
+        "anchor_distance_m": 21245.0
+      },
+      {
+        "cordon_id": "cordon_out_245866",
+        "x": 539521.15,
+        "y": 4957835.31,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "245866",
+          "270230"
+        ],
+        "capacity": 2000.0,
+        "weight": 985.336611,
+        "peripherality": 0.678,
+        "zone_id": "550939607003010",
+        "anchor_distance_m": 336.8
+      },
+      {
+        "cordon_id": "cordon_out_257439",
+        "x": 549341.57,
+        "y": 4975296.62,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 3,
+        "link_ids": [
+          "257439",
+          "61504",
+          "61505"
+        ],
+        "capacity": 2000.0,
+        "weight": 6092.0,
+        "peripherality": 0.764,
+        "zone_id": "551091208024054",
+        "anchor_distance_m": 751.2
+      },
+      {
+        "cordon_id": "cordon_out_258793",
+        "x": 534746.21,
+        "y": 4978704.33,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 7,
+        "link_ids": [
+          "258784",
+          "258793",
+          "411981",
+          "480797",
+          "508806",
+          "618169",
+          "92319"
+        ],
+        "capacity": 6000.0,
+        "weight": 6506.0,
+        "peripherality": 0.603,
+        "zone_id": "551091210002044",
+        "anchor_distance_m": 696.6
+      },
+      {
+        "cordon_id": "cordon_out_261512",
+        "x": 401712.76,
+        "y": 5051227.46,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "261512",
+          "261562"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 1.017,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 10617.4
+      },
+      {
+        "cordon_id": "cordon_out_261535",
+        "x": 403233.21,
+        "y": 5048947.3,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "261535"
+        ],
+        "capacity": 4000.0,
+        "weight": 281.0,
+        "peripherality": 0.99,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 8177.8
+      },
+      {
+        "cordon_id": "cordon_out_261768",
+        "x": 550233.1,
+        "y": 4979512.86,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "261768"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.806,
+        "zone_id": "551091208012021",
+        "anchor_distance_m": 232.7
+      },
+      {
+        "cordon_id": "cordon_out_267674",
+        "x": 576275.17,
+        "y": 4943812.53,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "267674"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.072,
+        "zone_id": "550939608004002",
+        "anchor_distance_m": 8641.0
+      },
+      {
+        "cordon_id": "cordon_out_268475",
+        "x": 485871.33,
+        "y": 4921127.84,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "268475"
+        ],
+        "capacity": 8000.0,
+        "weight": 684.5,
+        "peripherality": 0.723,
+        "zone_id": "270370615022012",
+        "anchor_distance_m": 3261.4
+      },
+      {
+        "cordon_id": "cordon_out_270204",
+        "x": 570463.78,
+        "y": 4958934.04,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "270204"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.029,
+        "zone_id": "550939601003038",
+        "anchor_distance_m": 2496.7
+      },
+      {
+        "cordon_id": "cordon_out_273688",
+        "x": 537192.65,
+        "y": 4935078.77,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 6,
+        "link_ids": [
+          "273688",
+          "273691",
+          "273720",
+          "521951",
+          "521954",
+          "604671"
+        ],
+        "capacity": 8000.0,
+        "weight": 2125.0,
+        "peripherality": 0.641,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 1172.9
+      },
+      {
+        "cordon_id": "cordon_out_279150",
+        "x": 397427.52,
+        "y": 5091854.49,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "279150"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.923,
+        "zone_id": "270959702003053",
+        "anchor_distance_m": 45533.1
+      },
+      {
+        "cordon_id": "cordon_out_280745",
+        "x": 559196.2,
+        "y": 4925487.99,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 4,
+        "link_ids": [
+          "280745",
+          "394916",
+          "595758",
+          "595761"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.911,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 7466.0
+      },
+      {
+        "cordon_id": "cordon_out_280871",
+        "x": 409091.69,
+        "y": 5042826.28,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "280871"
+        ],
+        "capacity": 6000.0,
+        "weight": 278.5,
+        "peripherality": 0.905,
+        "zone_id": "271410315001010",
+        "anchor_distance_m": 1953.0
+      },
+      {
+        "cordon_id": "cordon_out_282033",
+        "x": 410716.13,
+        "y": 5046272.82,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 3,
+        "link_ids": [
+          "17134",
+          "282033",
+          "529412"
+        ],
+        "capacity": 8000.0,
+        "weight": 823.0,
+        "peripherality": 0.914,
+        "zone_id": "271410315002016",
+        "anchor_distance_m": 693.2
+      },
+      {
+        "cordon_id": "cordon_out_283087",
+        "x": 498407.7,
+        "y": 4932238.75,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "283087",
+          "283088"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.606,
+        "zone_id": "270370614022007",
+        "anchor_distance_m": 861.7
+      },
+      {
+        "cordon_id": "cordon_out_287286",
+        "x": 571027.63,
+        "y": 4969603.68,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "287286"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.005,
+        "zone_id": "551091207004023",
+        "anchor_distance_m": 5128.8
+      },
+      {
+        "cordon_id": "cordon_out_287946",
+        "x": 507252.94,
+        "y": 4925460.63,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "287946",
+          "56355"
+        ],
+        "capacity": 1500.0,
+        "weight": 1124.0,
+        "peripherality": 0.649,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 5014.9
+      },
+      {
+        "cordon_id": "cordon_out_289475",
+        "x": 564939.9,
+        "y": 5020461.81,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "289475",
+          "592324"
+        ],
+        "capacity": 2000.0,
+        "weight": 1178.0,
+        "peripherality": 0.925,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 14768.5
+      },
+      {
+        "cordon_id": "cordon_out_289539",
+        "x": 541918.89,
+        "y": 5057412.86,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 4,
+        "link_ids": [
+          "289539",
+          "295588",
+          "547672",
+          "547673"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.699,
+        "zone_id": "270251107001014",
+        "anchor_distance_m": 27750.2
+      },
+      {
+        "cordon_id": "cordon_out_293944",
+        "x": 532663.18,
+        "y": 5027177.01,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "293944"
+        ],
+        "capacity": 8000.0,
+        "weight": 2534.0,
+        "peripherality": 0.619,
+        "zone_id": "270251107003013",
+        "anchor_distance_m": 5530.3
+      },
+      {
+        "cordon_id": "cordon_out_294826",
+        "x": 483661.96,
+        "y": 4923384.71,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "294826"
+        ],
+        "capacity": 1500.0,
+        "weight": 794.0,
+        "peripherality": 0.697,
+        "zone_id": "270370615022009",
+        "anchor_distance_m": 1339.3
+      },
+      {
+        "cordon_id": "cordon_out_295587",
+        "x": 540813.4,
+        "y": 5056347.17,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 3,
+        "link_ids": [
+          "295587",
+          "295590",
+          "528177"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.688,
+        "zone_id": "270251107001014",
+        "anchor_distance_m": 26229.1
+      },
+      {
+        "cordon_id": "cordon_out_295946",
+        "x": 543579.36,
+        "y": 4953378.71,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "295946",
+          "329143"
+        ],
+        "capacity": 2000.0,
+        "weight": 789.0,
+        "peripherality": 0.735,
+        "zone_id": "550939607001002",
+        "anchor_distance_m": 742.1
+      },
+      {
+        "cordon_id": "cordon_out_300637",
+        "x": 550844.29,
+        "y": 4928894.08,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "300637",
+          "90895"
+        ],
+        "capacity": 2000.0,
+        "weight": 446.0,
+        "peripherality": 0.758,
+        "zone_id": "550939608003053",
+        "anchor_distance_m": 6421.3
+      },
+      {
+        "cordon_id": "cordon_out_305809",
+        "x": 548023.06,
+        "y": 5071622.33,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 3,
+        "link_ids": [
+          "255406",
+          "305809",
+          "393776"
+        ],
+        "capacity": 8000.0,
+        "weight": 1377.0,
+        "peripherality": 0.698,
+        "zone_id": "270251107001004",
+        "anchor_distance_m": 41403.1
+      },
+      {
+        "cordon_id": "cordon_out_306235",
+        "x": 564296.47,
+        "y": 5073128.49,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "306235",
+          "390324"
+        ],
+        "capacity": 2000.0,
+        "weight": 580.0,
+        "peripherality": 0.902,
+        "zone_id": "270251107001014",
+        "anchor_distance_m": 55091.8
+      },
+      {
+        "cordon_id": "cordon_out_307944",
+        "x": 528670.09,
+        "y": 4901641.24,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 4,
+        "link_ids": [
+          "307944",
+          "307959",
+          "371638",
+          "480343"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.94,
+        "zone_id": "270370614021029",
+        "anchor_distance_m": 34871.4
+      },
+      {
+        "cordon_id": "cordon_out_314921",
+        "x": 569285.57,
+        "y": 4998260.24,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "314921"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.02,
+        "zone_id": "551091207001076",
+        "anchor_distance_m": 5863.5
+      },
+      {
+        "cordon_id": "cordon_out_317352",
+        "x": 544504.68,
+        "y": 4976607.89,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "317352",
+          "317526"
+        ],
+        "capacity": 1500.0,
+        "weight": 6092.0,
+        "peripherality": 0.71,
+        "zone_id": "551091210003048",
+        "anchor_distance_m": 1702.2
+      },
+      {
+        "cordon_id": "cordon_out_318608",
+        "x": 410243.55,
+        "y": 5050069.58,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "318608",
+          "622155"
+        ],
+        "capacity": 1500.0,
+        "weight": 666.0,
+        "peripherality": 0.831,
+        "zone_id": "271410315002002",
+        "anchor_distance_m": 4497.5
+      },
+      {
+        "cordon_id": "cordon_out_327820",
+        "x": 540610.52,
+        "y": 4954511.53,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "327820",
+          "438128"
+        ],
+        "capacity": 2000.0,
+        "weight": 1073.0,
+        "peripherality": 0.703,
+        "zone_id": "550939607002007",
+        "anchor_distance_m": 149.9
+      },
+      {
+        "cordon_id": "cordon_out_328718",
+        "x": 555657.75,
+        "y": 5027143.77,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "328718",
+          "86107"
+        ],
+        "capacity": 2000.0,
+        "weight": 1097.0,
+        "peripherality": 0.866,
+        "zone_id": "551091207001004",
+        "anchor_distance_m": 21809.3
+      },
+      {
+        "cordon_id": "cordon_out_331400",
+        "x": 568680.46,
+        "y": 5098392.96,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "331400"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.917,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 70761.3
+      },
+      {
+        "cordon_id": "cordon_out_331876",
+        "x": 408775.52,
+        "y": 5051967.87,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 3,
+        "link_ids": [
+          "331876",
+          "58342",
+          "73094"
+        ],
+        "capacity": 1500.0,
+        "weight": 361.0,
+        "peripherality": 0.852,
+        "zone_id": "271410315002016",
+        "anchor_distance_m": 6705.7
+      },
+      {
+        "cordon_id": "cordon_out_334458",
+        "x": 402544.22,
+        "y": 5034243.13,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "334458",
+          "334463"
+        ],
+        "capacity": 2000.0,
+        "weight": 659.0,
+        "peripherality": 0.911,
+        "zone_id": "271410303021016",
+        "anchor_distance_m": 10569.4
+      },
+      {
+        "cordon_id": "cordon_out_334511",
+        "x": 398298.3,
+        "y": 5019264.51,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "334511"
+        ],
+        "capacity": 2000.0,
+        "weight": 564.0,
+        "peripherality": 0.997,
+        "zone_id": "271711005003000",
+        "anchor_distance_m": 5271.4
+      },
+      {
+        "cordon_id": "cordon_out_340425",
+        "x": 535744.81,
+        "y": 4934386.03,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "340425",
+          "604674"
+        ],
+        "capacity": 8000.0,
+        "weight": 456.5,
+        "peripherality": 0.636,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 1472.5
+      },
+      {
+        "cordon_id": "cordon_out_350578",
+        "x": 545253.41,
+        "y": 4980650.99,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "350578",
+          "487926"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.749,
+        "zone_id": "551091210001005",
+        "anchor_distance_m": 248.2
+      },
+      {
+        "cordon_id": "cordon_out_35309",
+        "x": 406110.73,
+        "y": 5047801.76,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "35309"
+        ],
+        "capacity": 8000.0,
+        "weight": 731.0,
+        "peripherality": 0.96,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 5089.4
+      },
+      {
+        "cordon_id": "cordon_out_361090",
+        "x": 573105.42,
+        "y": 4917149.78,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "361090"
+        ],
+        "capacity": 2000.0,
+        "weight": 331.0,
+        "peripherality": 1.056,
+        "zone_id": "550939608003068",
+        "anchor_distance_m": 20925.0
+      },
+      {
+        "cordon_id": "cordon_out_366523",
+        "x": 523310.96,
+        "y": 5068872.59,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 2,
+        "link_ids": [
+          "366523",
+          "395059"
+        ],
+        "capacity": 2000.0,
+        "weight": 701.0,
+        "peripherality": 0.631,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 16907.7
+      },
+      {
+        "cordon_id": "cordon_out_366815",
+        "x": 401073.84,
+        "y": 5073522.91,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "366815"
+        ],
+        "capacity": 8000.0,
+        "weight": 935.0,
+        "peripherality": 1.036,
+        "zone_id": "271410315002016",
+        "anchor_distance_m": 29593.6
+      },
+      {
+        "cordon_id": "cordon_out_367404",
+        "x": 409869.04,
+        "y": 5037805.09,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "367404"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.868,
+        "zone_id": "271410303021016",
+        "anchor_distance_m": 2543.3
+      },
+      {
+        "cordon_id": "cordon_out_372438",
+        "x": 536642.78,
+        "y": 4998139.57,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 4,
+        "link_ids": [
+          "313987",
+          "333928",
+          "372438",
+          "538901"
+        ],
+        "capacity": 6000.0,
+        "weight": 1210.0,
+        "peripherality": 0.654,
+        "zone_id": "551091205023015",
+        "anchor_distance_m": 145.2
+      },
+      {
+        "cordon_id": "cordon_out_373400",
+        "x": 507044.89,
+        "y": 4930123.34,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 2,
+        "link_ids": [
+          "373400",
+          "562324"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.608,
+        "zone_id": "270370614022071",
+        "anchor_distance_m": 1139.0
+      },
+      {
+        "cordon_id": "cordon_out_374059",
+        "x": 499925.55,
+        "y": 4902155.01,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "374059"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.906,
+        "zone_id": "270370615021082",
+        "anchor_distance_m": 24633.4
+      },
+      {
+        "cordon_id": "cordon_out_382587",
+        "x": 475491.35,
+        "y": 4908646.02,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "382587"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.86,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 16880.5
+      },
+      {
+        "cordon_id": "cordon_out_382593",
+        "x": 476852.24,
+        "y": 4905428.28,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "382593"
+        ],
+        "capacity": 8000.0,
+        "weight": 3941.346443,
+        "peripherality": 0.894,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 19825.5
+      },
+      {
+        "cordon_id": "cordon_out_391960",
+        "x": 546801.45,
+        "y": 5095574.84,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "391960"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.82,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 51165.8
+      },
+      {
+        "cordon_id": "cordon_out_392722",
+        "x": 395634.56,
+        "y": 4954054.09,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "392722"
+        ],
+        "capacity": 2000.0,
+        "weight": 661.0,
+        "peripherality": 0.996,
+        "zone_id": "270190912014030",
+        "anchor_distance_m": 25710.9
+      },
+      {
+        "cordon_id": "cordon_out_402673",
+        "x": 538568.2,
+        "y": 4932953.01,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "402673"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.661,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 3651.6
+      },
+      {
+        "cordon_id": "cordon_out_404480",
+        "x": 392445.05,
+        "y": 4933085.59,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "404480"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.028,
+        "zone_id": "270799502003008",
+        "anchor_distance_m": 35856.5
+      },
+      {
+        "cordon_id": "cordon_out_404509",
+        "x": 402571.48,
+        "y": 4933668.43,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "404509",
+          "48828"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.941,
+        "zone_id": "270799502001027",
+        "anchor_distance_m": 26327.5
+      },
+      {
+        "cordon_id": "cordon_out_405071",
+        "x": 404898.55,
+        "y": 4934604.76,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "405071"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.917,
+        "zone_id": "270799502001027",
+        "anchor_distance_m": 24521.8
+      },
+      {
+        "cordon_id": "cordon_out_406061",
+        "x": 529129.71,
+        "y": 4894545.12,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "406061"
+        ],
+        "capacity": 1500.0,
+        "weight": 1401.5,
+        "peripherality": 1.001,
+        "zone_id": "270370614021029",
+        "anchor_distance_m": 41635.2
+      },
+      {
+        "cordon_id": "cordon_out_407456",
+        "x": 420688.28,
+        "y": 4947634.45,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "407456",
+          "81938"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.714,
+        "zone_id": "270190912014047",
+        "anchor_distance_m": 6594.6
+      },
+      {
+        "cordon_id": "cordon_out_408186",
+        "x": 405430.77,
+        "y": 4902436.72,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 7,
+        "link_ids": [
+          "120190",
+          "395340",
+          "408186",
+          "408201",
+          "408209",
+          "556186",
+          "556187"
+        ],
+        "capacity": 5400.0,
+        "weight": 2660.408849,
+        "peripherality": 0.985,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 14539.9
+      },
+      {
+        "cordon_id": "cordon_out_416255",
+        "x": 476376.68,
+        "y": 4924317.41,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "416255",
+          "525433"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.691,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 2931.8
+      },
+      {
+        "cordon_id": "cordon_out_420856",
+        "x": 546090.58,
+        "y": 4903465.7,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 4,
+        "link_ids": [
+          "420856",
+          "420857",
+          "587617",
+          "587646"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.925,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 30803.2
+      },
+      {
+        "cordon_id": "cordon_out_426396",
+        "x": 393102.47,
+        "y": 4900117.73,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "426396"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.072,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 26513.9
+      },
+      {
+        "cordon_id": "cordon_out_426475",
+        "x": 413424.98,
+        "y": 4889450.04,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "426475"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.025,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 11517.7
+      },
+      {
+        "cordon_id": "cordon_out_431664",
+        "x": 399411.96,
+        "y": 4971808.11,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "431664"
+        ],
+        "capacity": 1500.0,
+        "weight": 517.0,
+        "peripherality": 0.99,
+        "zone_id": "271711013004025",
+        "anchor_distance_m": 14312.9
+      },
+      {
+        "cordon_id": "cordon_out_431687",
+        "x": 404494.6,
+        "y": 4973047.89,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 2,
+        "link_ids": [
+          "431687",
+          "47442"
+        ],
+        "capacity": 1500.0,
+        "weight": 500.0,
+        "peripherality": 0.927,
+        "zone_id": "271711013004025",
+        "anchor_distance_m": 11372.1
+      },
+      {
+        "cordon_id": "cordon_out_431846",
+        "x": 407871.7,
+        "y": 4958274.77,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "431846",
+          "66274"
+        ],
+        "capacity": 1500.0,
+        "weight": 450.0,
+        "peripherality": 0.854,
+        "zone_id": "270190912014030",
+        "anchor_distance_m": 13481.6
+      },
+      {
+        "cordon_id": "cordon_out_433004",
+        "x": 435998.26,
+        "y": 4894755.47,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "433004"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.99,
+        "zone_id": "270799505003123",
+        "anchor_distance_m": 5024.2
+      },
+      {
+        "cordon_id": "cordon_out_440244",
+        "x": 539883.93,
+        "y": 5047416.1,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 5,
+        "link_ids": [
+          "440244",
+          "476162",
+          "522979",
+          "528240",
+          "546666"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.634,
+        "zone_id": "270251107003008",
+        "anchor_distance_m": 20982.1
+      },
+      {
+        "cordon_id": "cordon_out_440771",
+        "x": 565134.84,
+        "y": 5123954.88,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "440771"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.039,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 84033.5
+      },
+      {
+        "cordon_id": "cordon_out_448018",
+        "x": 479683.52,
+        "y": 5121650.75,
+        "direction": "outbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "448018"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.0,
+        "zone_id": "270959701002000",
+        "anchor_distance_m": 14536.3
+      },
+      {
+        "cordon_id": "cordon_out_448232",
+        "x": 556779.83,
+        "y": 4923558.83,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "448232"
+        ],
+        "capacity": 2000.0,
+        "weight": 518.0,
+        "peripherality": 0.823,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 8898.9
+      },
+      {
+        "cordon_id": "cordon_out_457078",
+        "x": 395229.24,
+        "y": 5055466.11,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "457078"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 1.095,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 18363.4
+      },
+      {
+        "cordon_id": "cordon_out_458482",
+        "x": 556955.52,
+        "y": 4976040.9,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "458482",
+          "509370"
+        ],
+        "capacity": 1500.0,
+        "weight": 5993.5,
+        "peripherality": 0.887,
+        "zone_id": "551091208024059",
+        "anchor_distance_m": 392.6
+      },
+      {
+        "cordon_id": "cordon_out_458556",
+        "x": 402083.28,
+        "y": 5043853.0,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 4,
+        "link_ids": [
+          "176974",
+          "176982",
+          "458554",
+          "458556"
+        ],
+        "capacity": 32000.0,
+        "weight": 646.5,
+        "peripherality": 0.968,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 8708.3
+      },
+      {
+        "cordon_id": "cordon_out_459865",
+        "x": 488835.2,
+        "y": 4925689.36,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "459865"
+        ],
+        "capacity": 2000.0,
+        "weight": 985.336611,
+        "peripherality": 0.678,
+        "zone_id": "270370615021086",
+        "anchor_distance_m": 373.1
+      },
+      {
+        "cordon_id": "cordon_out_465668",
+        "x": 445103.58,
+        "y": 4894156.98,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "465668"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.962,
+        "zone_id": "270799504001060",
+        "anchor_distance_m": 269.9
+      },
+      {
+        "cordon_id": "cordon_out_466180",
+        "x": 560870.94,
+        "y": 4965754.57,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "466180"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.909,
+        "zone_id": "550939601002019",
+        "anchor_distance_m": 640.9
+      },
+      {
+        "cordon_id": "cordon_out_467267",
+        "x": 446814.76,
+        "y": 4894205.18,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "467267"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.002,
+        "zone_id": "270799504001045",
+        "anchor_distance_m": 472.9
+      },
+      {
+        "cordon_id": "cordon_out_474368",
+        "x": 459394.79,
+        "y": 4883339.07,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "474368"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.075,
+        "zone_id": "270799504003048",
+        "anchor_distance_m": 11598.5
+      },
+      {
+        "cordon_id": "cordon_out_474417",
+        "x": 455400.08,
+        "y": 4895719.56,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 2,
+        "link_ids": [
+          "474417",
+          "570700"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.963,
+        "zone_id": "270799504003044",
+        "anchor_distance_m": 327.8
+      },
+      {
+        "cordon_id": "cordon_out_477544",
+        "x": 525527.51,
+        "y": 5068868.39,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "477544"
+        ],
+        "capacity": 2000.0,
+        "weight": 784.0,
+        "peripherality": 0.638,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 18989.7
+      },
+      {
+        "cordon_id": "cordon_out_48219",
+        "x": 534823.8,
+        "y": 4980629.29,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "157063",
+          "48219"
+        ],
+        "capacity": 6000.0,
+        "weight": 2956.009832,
+        "peripherality": 0.631,
+        "zone_id": "551091210004041",
+        "anchor_distance_m": 135.5
+      },
+      {
+        "cordon_id": "cordon_out_488147",
+        "x": 565153.7,
+        "y": 5027219.67,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 3,
+        "link_ids": [
+          "262969",
+          "488147",
+          "619113"
+        ],
+        "capacity": 8000.0,
+        "weight": 562.5,
+        "peripherality": 0.953,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 21519.8
+      },
+      {
+        "cordon_id": "cordon_out_492660",
+        "x": 421372.97,
+        "y": 5032443.11,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "492660"
+        ],
+        "capacity": 1500.0,
+        "weight": 1070.0,
+        "peripherality": 0.742,
+        "zone_id": "271410303022044",
+        "anchor_distance_m": 375.5
+      },
+      {
+        "cordon_id": "cordon_out_493354",
+        "x": 534805.93,
+        "y": 4982211.23,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "493354",
+          "493369"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.629,
+        "zone_id": "551091210004015",
+        "anchor_distance_m": 305.8
+      },
+      {
+        "cordon_id": "cordon_out_499117",
+        "x": 453426.74,
+        "y": 4920067.31,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "499117"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.702,
+        "zone_id": "270799503002045",
+        "anchor_distance_m": 286.1
+      },
+      {
+        "cordon_id": "cordon_out_499120",
+        "x": 453439.3,
+        "y": 4921896.39,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "499120"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.685,
+        "zone_id": "270799503002007",
+        "anchor_distance_m": 283.2
+      },
+      {
+        "cordon_id": "cordon_out_500513",
+        "x": 411679.96,
+        "y": 4895776.81,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "500513"
+        ],
+        "capacity": 8000.0,
+        "weight": 473.5,
+        "peripherality": 0.989,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 8617.0
+      },
+      {
+        "cordon_id": "cordon_out_505556",
+        "x": 511151.78,
+        "y": 5114027.53,
+        "direction": "outbound",
+        "compass": "N",
+        "n_links": 1,
+        "link_ids": [
+          "505556"
+        ],
+        "capacity": 1500.0,
+        "weight": 1996.5,
+        "peripherality": 0.943,
+        "zone_id": "270959701001025",
+        "anchor_distance_m": 45438.3
+      },
+      {
+        "cordon_id": "cordon_out_505593",
+        "x": 407991.79,
+        "y": 5044468.08,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "505593"
+        ],
+        "capacity": 6000.0,
+        "weight": 387.0,
+        "peripherality": 0.924,
+        "zone_id": "271410315002022",
+        "anchor_distance_m": 2832.9
+      },
+      {
+        "cordon_id": "cordon_out_508110",
+        "x": 516027.04,
+        "y": 4912552.95,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "508110"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.794,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 20617.6
+      },
+      {
+        "cordon_id": "cordon_out_509376",
+        "x": 433760.37,
+        "y": 4890739.43,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "509376"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.034,
+        "zone_id": "270799506004038",
+        "anchor_distance_m": 9049.2
+      },
+      {
+        "cordon_id": "cordon_out_509389",
+        "x": 434267.68,
+        "y": 4894497.61,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "509389"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.999,
+        "zone_id": "270799506004038",
+        "anchor_distance_m": 5266.8
+      },
+      {
+        "cordon_id": "cordon_out_512092",
+        "x": 400263.56,
+        "y": 5017065.37,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "512092"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.022,
+        "zone_id": "271711005003025",
+        "anchor_distance_m": 2599.7
+      },
+      {
+        "cordon_id": "cordon_out_513861",
+        "x": 547459.88,
+        "y": 4964158.13,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "513861",
+          "513864"
+        ],
+        "capacity": 2000.0,
+        "weight": 512.0,
+        "peripherality": 0.776,
+        "zone_id": "550939602003064",
+        "anchor_distance_m": 402.0
+      },
+      {
+        "cordon_id": "cordon_out_51424",
+        "x": 516688.62,
+        "y": 4906471.56,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "51424"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.848,
+        "zone_id": "270370614022033",
+        "anchor_distance_m": 26149.0
+      },
+      {
+        "cordon_id": "cordon_out_521381",
+        "x": 485630.83,
+        "y": 4925846.87,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "521381"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.672,
+        "zone_id": "270370615022007",
+        "anchor_distance_m": 1146.1
+      },
+      {
+        "cordon_id": "cordon_out_52289",
+        "x": 417597.25,
+        "y": 5097546.71,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "52289"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.832,
+        "zone_id": "270959702003053",
+        "anchor_distance_m": 25747.2
+      },
+      {
+        "cordon_id": "cordon_out_533625",
+        "x": 418478.91,
+        "y": 4894178.79,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "533625"
+        ],
+        "capacity": 8000.0,
+        "weight": 726.0,
+        "peripherality": 0.967,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 5118.2
+      },
+      {
+        "cordon_id": "cordon_out_537184",
+        "x": 559427.38,
+        "y": 4965082.15,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "537184"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.896,
+        "zone_id": "550939601001033",
+        "anchor_distance_m": 219.3
+      },
+      {
+        "cordon_id": "cordon_out_550278",
+        "x": 557449.24,
+        "y": 5011741.56,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "550278",
+          "606127"
+        ],
+        "capacity": 2000.0,
+        "weight": 1402.0,
+        "peripherality": 0.883,
+        "zone_id": "551091207001004",
+        "anchor_distance_m": 6321.2
+      },
+      {
+        "cordon_id": "cordon_out_550311",
+        "x": 562551.13,
+        "y": 5018563.83,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "550311",
+          "592315"
+        ],
+        "capacity": 2000.0,
+        "weight": 1146.0,
+        "peripherality": 0.959,
+        "zone_id": "551091207001000",
+        "anchor_distance_m": 13182.4
+      },
+      {
+        "cordon_id": "cordon_out_552337",
+        "x": 486918.0,
+        "y": 4922434.65,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 4,
+        "link_ids": [
+          "552337",
+          "552338",
+          "552348",
+          "589915"
+        ],
+        "capacity": 6000.0,
+        "weight": 924.0,
+        "peripherality": 0.71,
+        "zone_id": "270370615021074",
+        "anchor_distance_m": 2058.6
+      },
+      {
+        "cordon_id": "cordon_out_557935",
+        "x": 532272.18,
+        "y": 4996515.97,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 2,
+        "link_ids": [
+          "557935",
+          "557936"
+        ],
+        "capacity": 1500.0,
+        "weight": 504.0,
+        "peripherality": 0.602,
+        "zone_id": "551091205012051",
+        "anchor_distance_m": 908.4
+      },
+      {
+        "cordon_id": "cordon_out_56362",
+        "x": 501520.01,
+        "y": 4901683.98,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "56362"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.914,
+        "zone_id": "270370615021082",
+        "anchor_distance_m": 25693.1
+      },
+      {
+        "cordon_id": "cordon_out_566900",
+        "x": 417784.94,
+        "y": 5029600.32,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "566900",
+          "95446"
+        ],
+        "capacity": 13500.0,
+        "weight": 1437.0,
+        "peripherality": 0.755,
+        "zone_id": "271711003001033",
+        "anchor_distance_m": 88.5
+      },
+      {
+        "cordon_id": "cordon_out_569466",
+        "x": 422426.59,
+        "y": 4894715.31,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "569466"
+        ],
+        "capacity": 2250.0,
+        "weight": 1108.503687,
+        "peripherality": 0.945,
+        "zone_id": "270799506001054",
+        "anchor_distance_m": 5165.4
+      },
+      {
+        "cordon_id": "cordon_out_582223",
+        "x": 431632.62,
+        "y": 4993712.77,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 6,
+        "link_ids": [
+          "582223",
+          "582228",
+          "582240",
+          "582299",
+          "582303",
+          "582308"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.609,
+        "zone_id": "271711010013006",
+        "anchor_distance_m": 1242.3
+      },
+      {
+        "cordon_id": "cordon_out_582311",
+        "x": 431648.39,
+        "y": 4995304.54,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 3,
+        "link_ids": [
+          "582311",
+          "582317",
+          "582364"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.611,
+        "zone_id": "271711009005033",
+        "anchor_distance_m": 733.4
+      },
+      {
+        "cordon_id": "cordon_out_582365",
+        "x": 431705.61,
+        "y": 4996952.81,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 1,
+        "link_ids": [
+          "582365"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.614,
+        "zone_id": "271711009005023",
+        "anchor_distance_m": 939.6
+      },
+      {
+        "cordon_id": "cordon_out_587648",
+        "x": 557225.01,
+        "y": 4920753.42,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "587648"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.841,
+        "zone_id": "550939608003063",
+        "anchor_distance_m": 11722.0
+      },
+      {
+        "cordon_id": "cordon_out_592901",
+        "x": 404331.64,
+        "y": 5040925.2,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "592901",
+          "592966"
+        ],
+        "capacity": 1500.0,
+        "weight": 808.0,
+        "peripherality": 0.933,
+        "zone_id": "271410315001008",
+        "anchor_distance_m": 7012.8
+      },
+      {
+        "cordon_id": "cordon_out_593536",
+        "x": 423860.25,
+        "y": 4895897.82,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 4,
+        "link_ids": [
+          "117023",
+          "270",
+          "569469",
+          "593536"
+        ],
+        "capacity": 6000.0,
+        "weight": 153.0,
+        "peripherality": 0.93,
+        "zone_id": "270799506001054",
+        "anchor_distance_m": 4194.0
+      },
+      {
+        "cordon_id": "cordon_out_612167",
+        "x": 411007.74,
+        "y": 5133824.18,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 1,
+        "link_ids": [
+          "612167"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.066,
+        "zone_id": "270959702002031",
+        "anchor_distance_m": 30487.4
+      },
+      {
+        "cordon_id": "cordon_out_613246",
+        "x": 536387.76,
+        "y": 4993697.61,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 1,
+        "link_ids": [
+          "613246"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.644,
+        "zone_id": "551091205021032",
+        "anchor_distance_m": 688.4
+      },
+      {
+        "cordon_id": "cordon_out_615203",
+        "x": 555514.94,
+        "y": 4933496.34,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "615203"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.841,
+        "zone_id": "550939608003053",
+        "anchor_distance_m": 249.8
+      },
+      {
+        "cordon_id": "cordon_out_617978",
+        "x": 433952.88,
+        "y": 4914877.62,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 2,
+        "link_ids": [
+          "617978",
+          "617979"
+        ],
+        "capacity": 4000.0,
+        "weight": 59.0,
+        "peripherality": 0.745,
+        "zone_id": "270799501023092",
+        "anchor_distance_m": 1205.0
+      },
+      {
+        "cordon_id": "cordon_out_625908",
+        "x": 526524.71,
+        "y": 4905460.12,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "625908"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.899,
+        "zone_id": "270370614021029",
+        "anchor_distance_m": 30517.8
+      },
+      {
+        "cordon_id": "cordon_out_632833",
+        "x": 568363.11,
+        "y": 5073965.12,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "632833"
+        ],
+        "capacity": 2000.0,
+        "weight": 576.0,
+        "peripherality": 0.928,
+        "zone_id": "270251107001014",
+        "anchor_distance_m": 58906.8
+      },
+      {
+        "cordon_id": "cordon_out_66337",
+        "x": 411393.16,
+        "y": 5035182.98,
+        "direction": "outbound",
+        "compass": "NW",
+        "n_links": 2,
+        "link_ids": [
+          "66337",
+          "94313"
+        ],
+        "capacity": 1500.0,
+        "weight": 156.0,
+        "peripherality": 0.84,
+        "zone_id": "271410303021016",
+        "anchor_distance_m": 3050.7
+      },
+      {
+        "cordon_id": "cordon_out_73934",
+        "x": 549372.11,
+        "y": 5074004.53,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "73934"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.715,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 43309.8
+      },
+      {
+        "cordon_id": "cordon_out_73952",
+        "x": 563390.78,
+        "y": 4976286.93,
+        "direction": "outbound",
+        "compass": "E",
+        "n_links": 4,
+        "link_ids": [
+          "65705",
+          "65709",
+          "73952",
+          "73953"
+        ],
+        "capacity": 2250.0,
+        "weight": 6530.5,
+        "peripherality": 0.959,
+        "zone_id": "551091207003076",
+        "anchor_distance_m": 841.8
+      },
+      {
+        "cordon_id": "cordon_out_79410",
+        "x": 431756.63,
+        "y": 5003139.81,
+        "direction": "outbound",
+        "compass": "W",
+        "n_links": 3,
+        "link_ids": [
+          "150649",
+          "170193",
+          "79410"
+        ],
+        "capacity": 13500.0,
+        "weight": 297.0,
+        "peripherality": 0.607,
+        "zone_id": "271711007012009",
+        "anchor_distance_m": 137.0
+      },
+      {
+        "cordon_id": "cordon_out_80454",
+        "x": 549255.95,
+        "y": 5095027.9,
+        "direction": "outbound",
+        "compass": "NE",
+        "n_links": 1,
+        "link_ids": [
+          "80454"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.825,
+        "zone_id": "270251102011021",
+        "anchor_distance_m": 52735.6
+      },
+      {
+        "cordon_id": "cordon_out_81747",
+        "x": 528544.41,
+        "y": 4916154.64,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 3,
+        "link_ids": [
+          "81747",
+          "81752",
+          "81814"
+        ],
+        "capacity": 4000.0,
+        "weight": 1970.673221,
+        "peripherality": 0.748,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 21073.6
+      },
+      {
+        "cordon_id": "cordon_out_81755",
+        "x": 530130.02,
+        "y": 4916142.64,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "81755"
+        ],
+        "capacity": 4000.0,
+        "weight": 202.0,
+        "peripherality": 0.756,
+        "zone_id": "550939606003083",
+        "anchor_distance_m": 20558.7
+      },
+      {
+        "cordon_id": "cordon_out_84095",
+        "x": 554462.91,
+        "y": 4934710.59,
+        "direction": "outbound",
+        "compass": "SE",
+        "n_links": 1,
+        "link_ids": [
+          "84095"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.827,
+        "zone_id": "550939608003042",
+        "anchor_distance_m": 1074.3
+      },
+      {
+        "cordon_id": "cordon_out_90340",
+        "x": 478637.59,
+        "y": 4908427.7,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "90340"
+        ],
+        "capacity": 2000.0,
+        "weight": 387.0,
+        "peripherality": 0.861,
+        "zone_id": "270370615023033",
+        "anchor_distance_m": 16696.2
+      },
+      {
+        "cordon_id": "cordon_out_90390",
+        "x": 507365.07,
+        "y": 4891713.74,
+        "direction": "outbound",
+        "compass": "S",
+        "n_links": 1,
+        "link_ids": [
+          "90390"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 1.028,
+        "zone_id": "270370615021082",
+        "anchor_distance_m": 37209.5
+      },
+      {
+        "cordon_id": "cordon_out_91403",
+        "x": 400142.01,
+        "y": 4902681.09,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "91403"
+        ],
+        "capacity": 8000.0,
+        "weight": 565.5,
+        "peripherality": 1.014,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 19771.3
+      },
+      {
+        "cordon_id": "cordon_out_95920",
+        "x": 405013.78,
+        "y": 4904007.74,
+        "direction": "outbound",
+        "compass": "SW",
+        "n_links": 1,
+        "link_ids": [
+          "95920"
+        ],
+        "capacity": 1500.0,
+        "weight": 739.002458,
+        "peripherality": 0.977,
+        "zone_id": "270799506001010",
+        "anchor_distance_m": 15366.3
+      }
+    ]
+  },
+  "realised": {
+    "class_counts": {
+      "external_to_internal": 4491,
+      "internal_to_external": 4491,
+      "through": 3849
+    },
+    "class_shares": {
+      "external_to_internal": 0.35,
+      "internal_to_external": 0.35,
+      "through": 0.3
+    },
+    "departure_distribution": [
+      0.01925,
+      0.01652,
+      0.01426,
+      0.01574,
+      0.01652,
+      0.02533,
+      0.03749,
+      0.05736,
+      0.0657,
+      0.07552,
+      0.07521,
+      0.07069,
+      0.06874,
+      0.0689,
+      0.07474,
+      0.06531,
+      0.0523,
+      0.03936,
+      0.03328,
+      0.02665,
+      0.02237,
+      0.02174,
+      0.0198,
+      0.01722
+    ],
+    "cordon_usage": {
+      "cordon_out_258793": 277,
+      "cordon_inb_73952": 270,
+      "cordon_out_73952": 249,
+      "cordon_inb_104480": 246,
+      "cordon_out_317352": 245,
+      "cordon_out_458482": 239,
+      "cordon_inb_313608": 238,
+      "cordon_out_257439": 235,
+      "cordon_out_382593": 184,
+      "cordon_inb_382580": 172,
+      "cordon_inb_284880": 153,
+      "cordon_inb_13152": 142,
+      "cordon_inb_98037": 140,
+      "cordon_out_52289": 134,
+      "cordon_inb_408185": 131,
+      "cordon_inb_52289": 123,
+      "cordon_inb_582223": 122,
+      "cordon_out_233648": 120,
+      "cordon_inb_261508": 119,
+      "cordon_out_582311": 119,
+      "cordon_inb_582365": 117,
+      "cordon_inb_521721": 109,
+      "cordon_out_582365": 108,
+      "cordon_inb_293945": 107,
+      "cordon_inb_457077": 107,
+      "cordon_out_582223": 107,
+      "cordon_out_261512": 105,
+      "cordon_out_367404": 104,
+      "cordon_inb_307478": 103,
+      "cordon_out_408186": 103,
+      "cordon_out_293944": 103,
+      "cordon_inb_582311": 102,
+      "cordon_out_48219": 98,
+      "cordon_out_457078": 97,
+      "cordon_inb_294112": 94,
+      "cordon_inb_182236": 92,
+      "cordon_out_273688": 92,
+      "cordon_inb_566901": 87,
+      "cordon_out_416255": 85,
+      "cordon_out_505556": 85,
+      "cordon_out_151668": 84,
+      "cordon_out_307944": 84,
+      "cordon_out_283087": 82,
+      "cordon_out_521381": 82,
+      "cordon_inb_338585": 81,
+      "cordon_inb_179331": 80,
+      "cordon_inb_178049": 80,
+      "cordon_out_550278": 80,
+      "cordon_inb_105519": 78,
+      "cordon_inb_260535": 78,
+      "cordon_out_179331": 78,
+      "cordon_inb_81747": 76,
+      "cordon_out_382587": 73,
+      "cordon_out_119516": 72,
+      "cordon_inb_569465": 71,
+      "cordon_out_566900": 71,
+      "cordon_inb_521381": 70,
+      "cordon_inb_283087": 69,
+      "cordon_inb_297396": 69,
+      "cordon_out_178049": 69,
+      "cordon_out_81747": 68,
+      "cordon_inb_416255": 67,
+      "cordon_out_282033": 67,
+      "cordon_inb_229728": 66,
+      "cordon_out_229727": 64,
+      "cordon_out_492660": 60,
+      "cordon_out_211550": 59,
+      "cordon_inb_305808": 58,
+      "cordon_inb_119515": 58,
+      "cordon_out_569466": 58,
+      "cordon_out_130031": 58,
+      "cordon_inb_297625": 57,
+      "cordon_inb_492661": 57,
+      "cordon_inb_328719": 57,
+      "cordon_out_225097": 57,
+      "cordon_inb_121629": 56,
+      "cordon_inb_225094": 56,
+      "cordon_inb_344334": 56,
+      "cordon_out_11034": 56,
+      "cordon_inb_550277": 55,
+      "cordon_inb_404479": 54,
+      "cordon_out_139794": 54,
+      "cordon_out_406061": 54,
+      "cordon_out_289475": 53,
+      "cordon_inb_139795": 52,
+      "cordon_out_448018": 52,
+      "cordon_inb_287751": 51,
+      "cordon_inb_258628": 51,
+      "cordon_out_372438": 51,
+      "cordon_inb_11035": 50,
+      "cordon_inb_433003": 50,
+      "cordon_inb_448019": 49,
+      "cordon_inb_172919": 49,
+      "cordon_out_477544": 49,
+      "cordon_out_552337": 49,
+      "cordon_inb_512093": 48,
+      "cordon_inb_459864": 48,
+      "cordon_out_328718": 48,
+      "cordon_out_366815": 48,
+      "cordon_inb_550312": 47,
+      "cordon_inb_80453": 47,
+      "cordon_out_305809": 47,
+      "cordon_out_366523": 47,
+      "cordon_out_509376": 47,
+      "cordon_out_459865": 47,
+      "cordon_out_433004": 46,
+      "cordon_inb_307944": 45,
+      "cordon_inb_279151": 45,
+      "cordon_out_127756": 45,
+      "cordon_inb_282033": 44,
+      "cordon_inb_152055": 44,
+      "cordon_inb_533627": 44,
+      "cordon_inb_289474": 44,
+      "cordon_out_168286": 44,
+      "cordon_out_509389": 44,
+      "cordon_out_592901": 44,
+      "cordon_out_95920": 44,
+      "cordon_out_512092": 44,
+      "cordon_inb_287855": 43,
+      "cordon_inb_374058": 42,
+      "cordon_inb_287941": 42,
+      "cordon_inb_334459": 42,
+      "cordon_out_474417": 42,
+      "cordon_out_327820": 42,
+      "cordon_out_612167": 42,
+      "cordon_out_318608": 42,
+      "cordon_inb_334510": 41,
+      "cordon_inb_592771": 41,
+      "cordon_inb_144092": 41,
+      "cordon_inb_509375": 41,
+      "cordon_out_117022": 41,
+      "cordon_out_73934": 41,
+      "cordon_out_440244": 41,
+      "cordon_out_407456": 41,
+      "cordon_inb_168250": 40,
+      "cordon_inb_326601": 40,
+      "cordon_inb_295588": 40,
+      "cordon_out_613246": 40,
+      "cordon_out_550311": 40,
+      "cordon_out_120915": 40,
+      "cordon_inb_19606": 39,
+      "cordon_inb_404510": 39,
+      "cordon_inb_426476": 39,
+      "cordon_out_440771": 39,
+      "cordon_out_168251": 39,
+      "cordon_out_334458": 39,
+      "cordon_out_35309": 39,
+      "cordon_inb_458804": 38,
+      "cordon_inb_440243": 38,
+      "cordon_out_110457": 38,
+      "cordon_inb_552337": 37,
+      "cordon_inb_137899": 37,
+      "cordon_inb_295503": 37,
+      "cordon_out_404509": 37,
+      "cordon_out_373400": 37,
+      "cordon_out_51424": 37,
+      "cordon_out_289539": 37,
+      "cordon_inb_177419": 36,
+      "cordon_inb_499119": 36,
+      "cordon_inb_557855": 36,
+      "cordon_inb_477545": 36,
+      "cordon_inb_262970": 36,
+      "cordon_inb_493170": 36,
+      "cordon_inb_130238": 36,
+      "cordon_out_625908": 36,
+      "cordon_out_279150": 36,
+      "cordon_out_121630": 36,
+      "cordon_out_115020": 36,
+      "cordon_out_137898": 36,
+      "cordon_inb_509390": 35,
+      "cordon_inb_245867": 35,
+      "cordon_inb_474367": 35,
+      "cordon_inb_587649": 35,
+      "cordon_inb_474418": 35,
+      "cordon_inb_102316": 35,
+      "cordon_out_499117": 35,
+      "cordon_out_287946": 35,
+      "cordon_out_314921": 35,
+      "cordon_out_287286": 35,
+      "cordon_out_267674": 35,
+      "cordon_out_508110": 35,
+      "cordon_out_499120": 35,
+      "cordon_inb_612168": 34,
+      "cordon_inb_508109": 34,
+      "cordon_out_13153": 34,
+      "cordon_out_144091": 34,
+      "cordon_out_533625": 34,
+      "cordon_out_104010": 34,
+      "cordon_out_294826": 34,
+      "cordon_inb_158214": 33,
+      "cordon_inb_431663": 33,
+      "cordon_inb_243863": 33,
+      "cordon_inb_110456": 33,
+      "cordon_inb_306234": 33,
+      "cordon_inb_115019": 33,
+      "cordon_out_102316": 33,
+      "cordon_out_245866": 33,
+      "cordon_out_177418": 33,
+      "cordon_out_295946": 33,
+      "cordon_out_295587": 33,
+      "cordon_inb_280746": 32,
+      "cordon_inb_323761": 32,
+      "cordon_inb_440772": 32,
+      "cordon_inb_331433": 32,
+      "cordon_inb_225122": 32,
+      "cordon_inb_461077": 32,
+      "cordon_out_172918": 32,
+      "cordon_out_152056": 32,
+      "cordon_out_458556": 32,
+      "cordon_out_331400": 32,
+      "cordon_out_225123": 32,
+      "cordon_out_168220": 32,
+      "cordon_inb_270203": 31,
+      "cordon_inb_479004": 31,
+      "cordon_inb_625907": 31,
+      "cordon_inb_168287": 31,
+      "cordon_inb_405072": 31,
+      "cordon_inb_56361": 31,
+      "cordon_inb_95919": 31,
+      "cordon_out_90390": 31,
+      "cordon_out_404480": 31,
+      "cordon_out_488147": 31,
+      "cordon_out_270204": 31,
+      "cordon_out_190247": 31,
+      "cordon_out_632833": 31,
+      "cordon_inb_210538": 30,
+      "cordon_inb_104009": 30,
+      "cordon_inb_499118": 30,
+      "cordon_inb_407455": 30,
+      "cordon_inb_431845": 30,
+      "cordon_out_500513": 30,
+      "cordon_out_466180": 30,
+      "cordon_out_56362": 30,
+      "cordon_out_493354": 30,
+      "cordon_out_420856": 30,
+      "cordon_inb_513862": 29,
+      "cordon_inb_426395": 29,
+      "cordon_inb_287287": 29,
+      "cordon_inb_314920": 29,
+      "cordon_inb_91408": 29,
+      "cordon_inb_632834": 29,
+      "cordon_inb_331401": 29,
+      "cordon_out_158298": 29,
+      "cordon_out_80454": 29,
+      "cordon_out_537184": 29,
+      "cordon_out_350578": 29,
+      "cordon_out_405071": 29,
+      "cordon_out_130237": 29,
+      "cordon_inb_465669": 28,
+      "cordon_inb_392721": 28,
+      "cordon_inb_540558": 28,
+      "cordon_inb_158299": 28,
+      "cordon_inb_168221": 28,
+      "cordon_inb_373399": 28,
+      "cordon_out_431664": 28,
+      "cordon_out_280745": 28,
+      "cordon_out_225130": 28,
+      "cordon_out_426475": 28,
+      "cordon_inb_420856": 27,
+      "cordon_inb_505591": 27,
+      "cordon_inb_295945": 27,
+      "cordon_inb_467266": 27,
+      "cordon_inb_305648": 27,
+      "cordon_out_557935": 27,
+      "cordon_out_587648": 27,
+      "cordon_out_334511": 27,
+      "cordon_inb_466179": 26,
+      "cordon_inb_537185": 26,
+      "cordon_inb_615204": 26,
+      "cordon_inb_225131": 26,
+      "cordon_out_158215": 26,
+      "cordon_out_84095": 26,
+      "cordon_out_474368": 26,
+      "cordon_out_465668": 26,
+      "cordon_inb_289538": 25,
+      "cordon_inb_84094": 25,
+      "cordon_inb_391959": 25,
+      "cordon_inb_120916": 25,
+      "cordon_inb_350577": 25,
+      "cordon_inb_366522": 25,
+      "cordon_out_391960": 25,
+      "cordon_out_505593": 25,
+      "cordon_out_392722": 25,
+      "cordon_out_426396": 25,
+      "cordon_inb_90389": 24,
+      "cordon_inb_493306": 24,
+      "cordon_inb_267673": 24,
+      "cordon_out_402673": 24,
+      "cordon_out_306235": 24,
+      "cordon_out_615203": 24,
+      "cordon_inb_190246": 23,
+      "cordon_inb_294825": 23,
+      "cordon_inb_431688": 23,
+      "cordon_out_374059": 23,
+      "cordon_out_261768": 23,
+      "cordon_out_268475": 23,
+      "cordon_out_467267": 23,
+      "cordon_out_340425": 23,
+      "cordon_inb_613247": 22,
+      "cordon_inb_118017": 22,
+      "cordon_inb_403356": 22,
+      "cordon_inb_292475": 22,
+      "cordon_out_79410": 22,
+      "cordon_out_91403": 22,
+      "cordon_inb_261769": 21,
+      "cordon_out_90340": 21,
+      "cordon_out_431687": 21,
+      "cordon_out_513861": 21,
+      "cordon_out_118014": 21,
+      "cordon_inb_51425": 20,
+      "cordon_inb_257440": 20,
+      "cordon_out_331876": 20,
+      "cordon_inb_261536": 19,
+      "cordon_inb_607814": 18,
+      "cordon_out_448232": 18,
+      "cordon_inb_474362": 17,
+      "cordon_out_261535": 17,
+      "cordon_inb_300636": 16,
+      "cordon_out_431846": 16,
+      "cordon_out_242661": 16,
+      "cordon_out_280871": 16,
+      "cordon_inb_208861": 15,
+      "cordon_inb_448231": 15,
+      "cordon_out_208860": 15,
+      "cordon_out_300637": 13,
+      "cordon_out_361090": 13,
+      "cordon_inb_256209": 12,
+      "cordon_inb_242662": 12,
+      "cordon_inb_1743": 11,
+      "cordon_inb_311217": 11,
+      "cordon_inb_406117": 11,
+      "cordon_inb_90339": 11,
+      "cordon_inb_628994": 11,
+      "cordon_inb_361089": 11,
+      "cordon_out_66337": 11,
+      "cordon_out_593536": 11,
+      "cordon_out_157475": 11,
+      "cordon_out_1742": 10,
+      "cordon_inb_81755": 8,
+      "cordon_inb_157474": 8,
+      "cordon_out_81755": 8,
+      "cordon_inb_1084": 7,
+      "cordon_out_116476": 6,
+      "cordon_inb_81415": 2,
+      "cordon_out_617978": 2,
+      "cordon_out_1085": 1
+    }
+  },
+  "configured": {
+    "departure_distribution": {
+      "business_day": [
+        0.00856,
+        0.00642,
+        0.00535,
+        0.00535,
+        0.00856,
+        0.02139,
+        0.04064,
+        0.06203,
+        0.07487,
+        0.08342,
+        0.08556,
+        0.08342,
+        0.08021,
+        0.08342,
+        0.08128,
+        0.07273,
+        0.05561,
+        0.04064,
+        0.02995,
+        0.02139,
+        0.01604,
+        0.01283,
+        0.0107,
+        0.00963
+      ],
+      "through": [
+        0.03858,
+        0.03655,
+        0.03553,
+        0.03553,
+        0.03655,
+        0.03858,
+        0.04264,
+        0.04467,
+        0.04569,
+        0.04569,
+        0.04569,
+        0.04569,
+        0.04569,
+        0.04569,
+        0.04569,
+        0.04467,
+        0.04365,
+        0.04264,
+        0.04162,
+        0.04061,
+        0.04061,
+        0.03959,
+        0.03959,
+        0.03858
+      ]
+    }
+  },
+  "validation": {
+    "passed": true,
+    "tiers": {
+      "tier1": {
+        "tier": 1,
+        "passed": true,
+        "n_checks": 14,
+        "n_failed": 0,
+        "checks": [
+          {
+            "name": "trip_count_matches_demand",
+            "passed": true,
+            "detail": "generated 12,831, demand resolved 12,831",
+            "value": 0.0,
+            "tolerance": null
+          },
+          {
+            "name": "class_count_external_to_internal",
+            "passed": true,
+            "detail": "4,491 generated vs 4,491 demanded",
+            "value": 0.0,
+            "tolerance": null
+          },
+          {
+            "name": "class_count_internal_to_external",
+            "passed": true,
+            "detail": "4,491 generated vs 4,491 demanded",
+            "value": 0.0,
+            "tolerance": null
+          },
+          {
+            "name": "class_count_through",
+            "passed": true,
+            "detail": "3,849 generated vs 3,849 demanded",
+            "value": 0.0,
+            "tolerance": null
+          },
+          {
+            "name": "class_share_external_to_internal",
+            "passed": true,
+            "detail": "realised 0.350 vs configured 0.350",
+            "value": 1e-05,
+            "tolerance": 0.02
+          },
+          {
+            "name": "class_share_internal_to_external",
+            "passed": true,
+            "detail": "realised 0.350 vs configured 0.350",
+            "value": 1e-05,
+            "tolerance": 0.02
+          },
+          {
+            "name": "class_share_through",
+            "passed": true,
+            "detail": "realised 0.300 vs configured 0.300",
+            "value": 2e-05,
+            "tolerance": 0.02
+          },
+          {
+            "name": "departure_profile_external_to_internal",
+            "passed": true,
+            "detail": "max hourly deviation 0.0071 over 4,491 trips",
+            "value": 0.00712,
+            "tolerance": 0.0449
+          },
+          {
+            "name": "departure_profile_internal_to_external",
+            "passed": true,
+            "detail": "max hourly deviation 0.0117 over 4,491 trips",
+            "value": 0.01172,
+            "tolerance": 0.0449
+          },
+          {
+            "name": "departure_profile_through",
+            "passed": true,
+            "detail": "max hourly deviation 0.0057 over 3,849 trips",
+            "value": 0.00567,
+            "tolerance": 0.0461
+          },
+          {
+            "name": "cordon_ids_valid",
+            "passed": true,
+            "detail": "0 trip ends reference an unknown cordon",
+            "value": 0.0,
+            "tolerance": null
+          },
+          {
+            "name": "cordon_direction_respected",
+            "passed": true,
+            "detail": "0 trips enter on an outbound cordon or leave on an inbound one",
+            "value": 0.0,
+            "tolerance": null
+          },
+          {
+            "name": "through_trips_use_distinct_cordons",
+            "passed": true,
+            "detail": "0 through trips start and end at the same cordon",
+            "value": 0.0,
+            "tolerance": null
+          },
+          {
+            "name": "departure_times_in_range",
+            "passed": true,
+            "detail": "0 departures outside 00:00-30:00",
+            "value": 0.0,
+            "tolerance": null
+          }
+        ]
+      }
+    }
+  }
+}

@@ -17,19 +17,50 @@ class TBISurveyTrip(BaseSurveyTrip):
 
     Reads TBI CSV files, cleans with TBI-specific rules, and maps
     raw column names to the canonical schema defined in BaseSurveyTrip.
+
+    Two trip tables exist. The Trip file holds unlinked legs: a transfer
+    (walk -> bus -> walk) is split into legs whose middle purpose is
+    "Change mode". Cleaning must drop those legs, which leaves a hole in the
+    day. The LinkedTrip file joins the legs into one trip per activity. Set
+    ``linked_trip_file`` on the survey entry to use it; ``file`` (the Trip
+    file) is still read for the 2020 block groups, which the LinkedTrip file
+    does not carry.
     """
 
     # ── Raw CSV columns needed from the TBI file ───────────────────────
     RAW_COLUMNS = [
-        'person_id', 'mode_type',
+        'person_id', 'day_id', 'linked_trip_id', 'mode_type',
         'o_bg_2020', 'd_bg_2020',
         'o_purpose_category', 'd_purpose_category',
         'o_purpose_category_broad', 'd_purpose_category_broad',
         'depart_time', 'arrive_time',
         'duration_seconds', 'distance_miles',
         'trip_o_county', 'trip_d_county',
-        'trip_survey_complete', 'trip_weight',
+        'trip_weight',
     ]
+
+    # ── Raw columns from the LinkedTrip file (no block groups; those come
+    #    from its legs in the Trip file) ──
+    LINKED_RAW_COLUMNS = [
+        'linked_trip_id', 'person_id', 'day_id', 'mode_type',
+        'o_purpose_category', 'd_purpose_category',
+        'o_purpose_category_broad', 'd_purpose_category_broad',
+        'depart_time', 'arrive_time',
+        'duration_seconds', 'distance_miles',
+        'trip_o_county', 'trip_d_county',
+        'linked_trip_weight',
+    ]
+
+    # ── Where the day began (Day file ``begin_day``) -> origin purpose ──
+    # TBI leaves the origin of the first trip of a day "Missing" on about a
+    # third of the weighted days (2,812 of 2,815 Missing origins are first
+    # trips). The Day file says where the person began the day: on 94% of
+    # those days it is Home. Other places (a friend's home, a hotel) have no
+    # canonical activity, so those trips stay Missing and are dropped.
+    BEGIN_DAY_TO_PURPOSE = {
+        'Home': ('Home', 'Went home'),     # (o_purpose_category, ..._broad)
+        'Work': ('Work', 'Work'),
+    }
 
     # ── Mapping from raw TBI column names to canonical names ───────────
     COLUMN_MAP = {
@@ -41,9 +72,9 @@ class TBISurveyTrip(BaseSurveyTrip):
 
     # ── TBI-only columns used during cleaning then dropped ─────────────
     _CLEANING_ONLY_COLUMNS = [
+        'day_id', 'linked_trip_id',
         'o_purpose_category', 'd_purpose_category',
         'trip_o_county', 'trip_d_county',
-        'trip_survey_complete',
     ]
 
     # ── Mapping from raw TBI purpose labels to canonical activity types ──
@@ -136,15 +167,136 @@ class TBISurveyTrip(BaseSurveyTrip):
         logger.info(f"TBI person-days: {len(out):,} from {day_path}")
         return out.reset_index(drop=True)
 
-    def _get_allowed_county_fips(self) -> set:
-        """Extract 3-digit county FIPS codes from config region.counties.
+    # ── Reported commute frequency (Person file) ─────────────────────────
+    # commute_freq is asked of workers with a work place outside the home;
+    # a worker who works only from home commutes 0 days, and one whose job
+    # is travel (driver, sales) reports work_freq instead. Days per week;
+    # a week has at most 5 weekdays, so 6-7 counts as 5.
+    COMMUTE_FREQ_DAYS = {
+        '6-7 days a week': 5.0, '5 days a week': 5.0, '9 days every 2 weeks': 4.5,
+        '4 days a week': 4.0, '3 days a week': 3.0, '2 days a week': 2.0,
+        '1 day a week': 1.0, '1-3 days a month': 2.0 / 4.33,
+        'Less than monthly': 0.5 / 4.33, 'Never': 0.0,
+    }
+    JOB_TYPE_COMMUTES = {
+        'Go to one work location ONLY (outside of home)',
+        'Telework some days and travel to a work location some days',
+        'Work location regularly varies (different offices/jobsites)',
+    }
+    JOB_TYPE_HOME_ONLY = 'Work ONLY from home or remotely (telework, self-employed)'
+    JOB_TYPE_TRAVEL = 'Drive/bike/travel for work (driver, sales, deliveries)'
 
-        Config stores 5-character GEOIDs like '27053'. We take characters
-        [2:5] to get the county FIPS portion (e.g. '053'), matching how
-        block group strings encode county identity.
+    def reported_commute_rate(self) -> Optional[Dict[str, float]]:
+        """Share of weekdays a worker says they travel to work (Person file).
+
+        This is an independent check of the diary P(commute): the diary
+        counts the days with a trip to Work. The two differ for known
+        reasons: the reported value is a typical week (no leave, no sick
+        days), and the diary's Work also holds work-related business trips.
+        Weighted by person_weight. Returns None without a person file.
         """
-        county_geoids = self.config['region']['counties']
-        return {geoid[2:5] for geoid in county_geoids}
+        person_path = self._resolve_data_path(self._survey_entry().get('person_file'))
+        if person_path is None or not Path(person_path).exists():
+            return None
+        p = pd.read_csv(person_path, encoding='iso-8859-1',
+                        usecols=['person_id', 'employment', 'job_type', 'commute_freq',
+                                 'work_freq', 'person_weight'])
+        p = p[p['employment'].isin(self.WORKER_LABELS)
+              & (pd.to_numeric(p['person_weight'], errors='coerce') > 0)]
+        days = np.select(
+            [p['job_type'].isin(self.JOB_TYPE_COMMUTES),
+             p['job_type'].eq(self.JOB_TYPE_HOME_ONLY),
+             p['job_type'].eq(self.JOB_TYPE_TRAVEL)],
+            [p['commute_freq'].map(self.COMMUTE_FREQ_DAYS),
+             0.0,
+             p['work_freq'].map(self.COMMUTE_FREQ_DAYS)],
+            default=np.nan)
+        known = ~np.isnan(days)
+        w = pd.to_numeric(p['person_weight'], errors='coerce').to_numpy()[known]
+        if w.sum() <= 0:
+            return None
+        rate = float((w * days[known] / 5.0).sum() / w.sum())
+        logger.info(f"TBI reported commute: {rate:.1%} of weekdays "
+                    f"({int(known.sum()):,} of {len(p):,} workers answered)")
+        return {'rate': rate, 'workers': int(known.sum())}
+
+    def _get_allowed_county_fips(self) -> set:
+        """5-digit state+county GEOIDs from config region.counties.
+
+        The state is part of the key: the Twin Cities region holds Wisconsin
+        counties 55093 and 55109, and matching on the 3-digit county code
+        alone also let in Minnesota's 27093 (Meeker) and 27109 (Olmsted).
+        """
+        return {str(geoid)[:5] for geoid in self.config['region']['counties']}
+
+    def _read_linked_trips(self, linked_path: str, trip_path: str) -> pd.DataFrame:
+        """LinkedTrip rows with the Trip file's block groups.
+
+        A linked trip starts where its first leg starts and ends where its
+        last leg ends, so o_bg_2020 comes from the first leg and d_bg_2020
+        from the last.
+        """
+        legs = pd.read_csv(trip_path, encoding='iso-8859-1', low_memory=False,
+                           usecols=['linked_trip_id', 'leg_num', 'o_bg_2020', 'd_bg_2020'],
+                           dtype={'linked_trip_id': str, 'o_bg_2020': str, 'd_bg_2020': str})
+        legs = legs.sort_values(['linked_trip_id', 'leg_num'])
+        # drop_duplicates, not groupby().first(): first() would skip a leg
+        # with no block group and take the next leg's origin instead.
+        first_leg = legs.drop_duplicates('linked_trip_id', keep='first').set_index('linked_trip_id')
+        last_leg = legs.drop_duplicates('linked_trip_id', keep='last').set_index('linked_trip_id')
+        per_link = pd.DataFrame({
+            'o_bg_2020': first_leg['o_bg_2020'],
+            'd_bg_2020': last_leg['d_bg_2020'],
+        })
+        linked = pd.read_csv(linked_path, encoding='iso-8859-1', low_memory=False,
+                             usecols=self.LINKED_RAW_COLUMNS,
+                             dtype={'linked_trip_id': str, 'person_id': str, 'day_id': str})
+        linked = linked.rename(columns={'linked_trip_weight': 'trip_weight'})
+        n_orphan = int((~linked['linked_trip_id'].isin(per_link.index)).sum())
+        if n_orphan:
+            logger.warning(f"TBI: {n_orphan:,} linked trips have no leg in the Trip file")
+        df = linked.merge(per_link, left_on='linked_trip_id', right_index=True, how='left')
+        logger.info(f"TBI: {len(df):,} linked trips from {len(legs):,} legs")
+        return df
+
+    def _fill_missing_origins(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Give a "Missing" origin purpose the place the person was before.
+
+        The first trip of a day gets the Day file's ``begin_day`` (see
+        BEGIN_DAY_TO_PURPOSE); a later trip gets the previous trip's
+        destination. Must run before any trip is removed, so that the
+        previous trip is really the previous one.
+        """
+        miss = df['o_purpose_category'].eq('Missing') | df['o_purpose_category_broad'].eq('Missing')
+        if not miss.any():
+            return df
+        df = df.sort_values(['day_id', 'depart_time']).copy()
+        miss = miss.reindex(df.index)
+        first = ~df['day_id'].duplicated()
+
+        begin = pd.Series(np.nan, index=df.index, dtype=object)
+        day_path = self._resolve_data_path(self._survey_entry().get('day_file'))
+        if day_path and Path(day_path).exists():
+            day = pd.read_csv(day_path, usecols=['day_id', 'begin_day'],
+                              dtype={'day_id': str}, encoding='iso-8859-1')
+            begin = df['day_id'].astype(str).map(day.set_index('day_id')['begin_day'])
+
+        prev_n = df.groupby('day_id')['d_purpose_category'].shift(1)
+        prev_b = df.groupby('day_id')['d_purpose_category_broad'].shift(1)
+        n_first = n_later = 0
+        for label, (narrow, broad) in self.BEGIN_DAY_TO_PURPOSE.items():
+            sel = miss & first & begin.eq(label)
+            df.loc[sel, 'o_purpose_category'] = narrow
+            df.loc[sel, 'o_purpose_category_broad'] = broad
+            n_first += int(sel.sum())
+        later = miss & ~first & prev_n.notna()
+        df.loc[later, 'o_purpose_category'] = prev_n[later]
+        df.loc[later, 'o_purpose_category_broad'] = prev_b[later]
+        n_later = int(later.sum())
+        logger.info(f"TBI: filled {n_first + n_later:,} of {int(miss.sum()):,} Missing origin "
+                    f"purposes ({n_first:,} from the Day file begin_day, "
+                    f"{n_later:,} from the previous trip)")
+        return df
 
     def extract_data(self, year: str, file_path: Optional[str] = None) -> pd.DataFrame:
         """Read TBI CSV for the given year and apply geographic filtering.
@@ -171,23 +323,35 @@ class TBISurveyTrip(BaseSurveyTrip):
                 # Resolve relative paths against data_dir
                 if not Path(file_path).is_absolute():
                     file_path = str(Path(data_dir) / file_path)
-            logger.info(f"Reading {year} TBI survey data from {file_path}")
+            # _survey_entry() looks the entry up by year, so set it first.
+            self.metadata['source_year'] = year
+            linked_path = self._resolve_data_path(self._survey_entry().get('linked_trip_file'))
+            if linked_path:
+                logger.info(f"Reading {year} TBI linked trips from {linked_path} "
+                            f"(block groups from {file_path})")
+                df = self._read_linked_trips(linked_path, file_path)
+            else:
+                logger.info(f"Reading {year} TBI survey data from {file_path}")
+                df = pd.read_csv(
+                    file_path,
+                    usecols=self.RAW_COLUMNS,
+                    encoding='iso-8859-1',
+                    low_memory=False,
+                    dtype={'person_id': str, 'day_id': str, 'linked_trip_id': str,
+                           'o_bg_2020': str, 'd_bg_2020': str},
+                )
 
-            df = pd.read_csv(
-                file_path,
-                usecols=self.RAW_COLUMNS,
-                encoding='iso-8859-1',
-                low_memory=False,
-            )
+            # Before any trip is removed: the fill reads the previous trip.
+            df = self._fill_missing_origins(df)
 
             # Filter trips by block groups using county FIPS from config
             try:
                 allowed_fips = self._get_allowed_county_fips()
-                logger.info(f"Allowed county FIPS codes: {allowed_fips}")
+                logger.info(f"Allowed county GEOIDs: {sorted(allowed_fips)}")
 
                 # Block group format: state_fips(2) + county_fips(3) + tract + block_group
-                df['o_fips'] = df['o_bg_2020'].astype(str).str[2:5]
-                df['d_fips'] = df['d_bg_2020'].astype(str).str[2:5]
+                df['o_fips'] = df['o_bg_2020'].astype(str).str[:5]
+                df['d_fips'] = df['d_bg_2020'].astype(str).str[:5]
 
                 before_filter = len(df)
                 df = df[
@@ -235,8 +399,12 @@ class TBISurveyTrip(BaseSurveyTrip):
             logger.info(f"Starting TBI data cleaning. Initial records: {initial_count}")
 
             # ── TBI-specific basic filters ──────────────────────────────
+            # No trip_survey_complete filter: TBI weights trips whose trip
+            # survey is incomplete, and the purpose and mode checks below
+            # already reject trips that lack them. The filter removed walk
+            # access legs of transit trips most, so it cut bus + rail from
+            # 2.2% to 0.8% of the linked trips on weighted days.
             df = df[
-                (df['trip_survey_complete'] == 'Yes') &
                 (df['mode_type'].notna()) &
                 (df['mode_type'] != 'Long distance passenger mode') &
                 (df['mode_type'] != 'Missing') &

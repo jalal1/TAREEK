@@ -152,6 +152,16 @@ class BaseSurveyTrip(ABC):
         """
         return None
 
+    def reported_commute_rate(self) -> Optional[Dict[str, float]]:
+        """Share of weekdays workers *say* they commute, from a person file.
+
+        An independent check of the diary P(commute), shown next to it in
+        the demand budget; it never changes the demand. Returns
+        ``{'rate': float, 'workers': int}``, or None (the default) when the
+        survey does not ask it.
+        """
+        return None
+
     # ── Abstract methods (subclasses must implement) ────────────────────
 
     @abstractmethod

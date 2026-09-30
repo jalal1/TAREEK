@@ -479,6 +479,10 @@ class ConfigValidator:
         for s in active:
             if s.get('type') == 'tbi' and s.get('person_file') and not s.get('day_file'):
                 raise ConfigValidationError("TBI survey entry needs 'day_file' next to 'person_file'")
+            if s.get('type') == 'tbi' and s.get('linked_trip_file') and not s.get('file'):
+                raise ConfigValidationError(
+                    "TBI 'linked_trip_file' needs 'file' (the Trip file) too: the "
+                    "block groups of a linked trip come from its legs")
 
         months_cfg = data_cfg.get('survey_months', 'regular')
         if isinstance(months_cfg, str):

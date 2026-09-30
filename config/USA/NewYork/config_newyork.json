@@ -30,10 +30,10 @@
       {
         "type": "tbi",
         "year": "2023",
-        "file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Trip.csv",
+        "file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Trip.csv.gz",
         "weight": 0,
-        "person_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Person.csv",
-        "day_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Day.csv"
+        "person_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Person.csv.gz",
+        "day_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Day.csv.gz"
       },
       {
         "type": "nhts",

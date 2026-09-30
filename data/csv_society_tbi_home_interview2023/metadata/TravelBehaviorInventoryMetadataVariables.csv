@@ -1,0 +1,599 @@
+variable,description,hh,person,day,trip,linked_trip,vehicle,loc,trip_purpose,data_type,logic,is_checkbox
+accuracy,Accuracy,0,0,0,0,0,0,1,0,numeric,"",0
+age,Age of household member,0,1,0,0,0,0,0,0,integer/categorical,"",0
+alighting_station,Unlinked trip: Google suggested alighting station,0,0,0,1,0,0,0,0,character,If unlinked transit trip and travel diary was rMove app,0
+arrive_date,Arrival date,0,0,0,1,1,0,0,0,date-time,"",0
+arrive_dow,Arrival day of the week,0,0,0,1,1,0,0,0,integer/categorical,"",0
+arrive_hour,Arrival hour,0,0,0,1,1,0,0,0,integer/categorical,"",0
+arrive_minute,Arrival minute,0,0,0,1,1,0,0,0,numeric,"",0
+arrive_second,Arrival second,0,0,0,1,1,0,0,0,numeric,"",0
+arrive_time,Arrival time (US/Central time),0,0,0,1,1,0,0,0,date-time,"",0
+attend_school_1,"Traveled to school: Yes, person traveled to school on date",0,0,1,0,0,0,0,0,integer/categorical,If age < 18 and attends school or daycare in-person and did not report trip with school purpose on travel day,1
+attend_school_2,"Traveled to school: Yes, person traveled to another location for school (e.g., friend’s house, parent’s work) on date",0,0,1,0,0,0,0,0,integer/categorical,If age < 18 and attends school or daycare in-person and did not report trip with school purpose on travel day,1
+attend_school_3,"Traveled to school: No, person did not travel to school on date",0,0,1,0,0,0,0,0,integer/categorical,If age < 18 and attends school or daycare in-person and did not report trip with school purpose on travel day,1
+attend_school_998,Traveled to school: Don't know,0,0,1,0,0,0,0,0,integer/categorical,If age < 18 and attends school or daycare in-person and did not report trip with school purpose on travel day,1
+attend_school_999,Traveled to school: Prefer not to answer,0,0,1,0,0,0,0,0,integer/categorical,If age < 18 and attends school or daycare in-person and did not report trip with school purpose on travel day,1
+attend_school_no_1,Reason for not attending school: person was sick or quarantining,0,0,1,0,0,0,0,0,integer/categorical,If did not attend school or daycare on travel day,1
+attend_school_no_2,Reason for not attending school: person attended class online from home,0,0,1,0,0,0,0,0,integer/categorical,If did not attend school or daycare on travel day,1
+attend_school_no_3,"Reason for not attending school: person attended class online from another location (e.g., friend's)",0,0,1,0,0,0,0,0,integer/categorical,If did not attend school or daycare on travel day,1
+attend_school_no_4,"Reason for not attending school: School was scheduled to be closed (e.g., vacation, holiday)",0,0,1,0,0,0,0,0,integer/categorical,If did not attend school or daycare on travel day,1
+attend_school_no_5,"Reason for not attending school: School was closed or adjusted due to weather event (e.g., snow delay)",0,0,1,0,0,0,0,0,integer/categorical,If did not attend school or daycare on travel day,1
+attend_school_no_6,Reason for not attending school: Other,0,0,1,0,0,0,0,0,integer/categorical,If did not attend school or daycare on travel day,1
+attend_school_no_998,Reason for not attending school: Don't know,0,0,1,0,0,0,0,0,integer/categorical,If did not attend school or daycare on travel day,1
+attend_school_no_999,Reason for not attending school: Prefer not to answer,0,0,1,0,0,0,0,0,integer/categorical,If did not attend school or daycare on travel day,1
+av_future_travel,Predicted frequency of travel in the future when autonomous vehicles are used,0,1,0,0,0,0,0,0,integer/categorical,If household member 1 for participation groups 1 & 2. If adult in participation group 3.,0
+av_own_interest,Interest in owning autonomous vehicles in the future,0,1,0,0,0,0,0,0,integer/categorical,If household member 1 for participation groups 1 & 2. If adult in participation group 3.,0
+av_use_interest,Interest in using autonomous vehicles in the future,0,1,0,0,0,0,0,0,integer/categorical,If household member 1 for participation groups 1 & 2. If adult in participation group 3.,0
+bearing,Heading,0,0,0,0,0,0,1,0,numeric,"",0
+begin_day,Where participant began their day,0,0,1,0,0,0,0,0,integer/categorical,2021: If rMove and first day of travel period; 2023: If rMove,0
+bicycle_type_1,Type of bicycle: Standard bicycle,1,0,0,0,0,0,0,0,integer/categorical,2021: If number of bicycles > 0; 2023: If number of adult bicycles > 0,1
+bicycle_type_2,Type of bicycle: Electric bicycle,1,0,0,0,0,0,0,0,integer/categorical,2021: If number of bicycles > 0; 2023: If number of adult bicycles > 0,1
+bicycle_type_997,Type of bicycle: Other,1,0,0,0,0,0,0,0,integer/categorical,2021: If number of bicycles > 0; 2023: If number of adult bicycles > 0,1
+bike_freq,Frequency of bike trips,0,1,0,0,0,0,0,0,integer/categorical,if adult,0
+bike_park_location,Bicycle parking location,0,0,0,1,0,0,0,0,integer/categorical,2019: If adult and mode = bicycle; 2021 and 2023: If adult and mode or transit_access or transit_egresss = bicycle,0
+bike_store_1,"Bike storage place used by household: Inside house/apartment (includes garage, porch, storage area)",1,0,0,0,0,0,0,0,integer/categorical,If household has at least one bike,1
+bike_store_2,Bike storage place used by household: Bike rack,1,0,0,0,0,0,0,0,integer/categorical,If household has at least one bike,1
+bike_store_3,Bike storage place used by household: Bike locker,1,0,0,0,0,0,0,0,integer/categorical,If household has at least one bike,1
+bike_store_4,Bike storage place used by household: Secured bike room,1,0,0,0,0,0,0,0,integer/categorical,If household has at least one bike,1
+bike_store_5,"Bike storage place used by household: Locked to other object (e.g., post, tree)",1,0,0,0,0,0,0,0,integer/categorical,If household has at least one bike,1
+bike_store_7,Bike storage place used by household: In a parking garage/ramp/lot,1,0,0,0,0,0,0,0,integer/categorical,If household has at least one bike,1
+bike_store_8,Bike storage place used by household: Unlocked on-street,1,0,0,0,0,0,0,0,integer/categorical,If household has at least one bike,1
+bike_store_997,Bike storage place used by household: Other,1,0,0,0,0,0,0,0,integer/categorical,If household has at least one bike,1
+bikeshare_freq,Frequency of bike-share trips,0,1,0,0,0,0,0,0,integer/categorical,If uses bikeshare,0
+boarding_station,Unlinked trip Google suggested boarding station,0,0,0,1,0,0,0,0,character,"If unlinked transit trip, participation groups 1 & 3",0
+bus_payment_type,Bus fare payment method,0,0,0,1,0,0,0,0,integer/categorical,If used bus mode; if adult for participation groups 1 and 3,0
+can_drive,Household member drives,0,1,0,0,0,0,0,0,integer/categorical,"2019: If age 16+ in groups 1 & 2, adults in group 3; 2021 and 2023: If age 16+ and surveyable",0
+carshare_freq,How often uses carshare,0,1,0,0,0,0,0,0,integer/categorical,If uses carshare,0
+collect_time,Timestamp collected at (US/Central time),0,0,0,0,0,0,1,0,datetime,"",0
+commute_freq,Frequency of work commute,0,1,0,0,0,0,0,0,integer/categorical,"If employment = full, part, self, or volunteer and job type IS NOT """"work only from home""""",0
+commute_freq_pre_covid,Frequency of work commute prior to COVID,0,1,0,0,0,0,0,0,integer/categorical,"If job_type_pre_covid is not """"work only from home""""",0
+commute_subsidy_1,Commute benefits provided by employer: Free/discount transit fare,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_10,"Commute benefits provided by employer: Stipend for working at home (e.g., internet, equipment)",0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_2,Commute benefits provided by employer: Free/discount vanpool,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_3,"Commute benefits provided by employer: Free/discount Uber, Lyft, or other smartphone-app ride service",0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_4,"Commute benefits provided by employer: Cash or incentives for carpooling, walking, or biking to work",0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_5,Commute benefits provided by employer: Free/discount bikeshare membership,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_6,Commute benefits provided by employer: Free/discount bicycle tune-up/maintenance,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_7,"Commute benefits provided by employer: Free/discount carshare membership/use (e.g., Zipcar)",0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_8,Commute benefits provided by employer: Free/discount shuttle service,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_9,Commute benefits provided by employer: Free/subsidized parking pass,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_996,Commute benefits provided by employer: None of the above,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_998,Commute benefits provided by employer: Don't know,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer, age 18+ and surveyable",1
+commute_subsidy_use_1,Commute benefit used: Free/discount transit fare,0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_10,"Commute benefit used: Stipend for working at home (e.g., internet, equipment)",0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_2,Commute benefit used: Free/discount vanpool,0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_3,"Commute benefit used: Free/discount Uber, Lyft, or other smartphone-app ride service",0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_4,"Commute benefit used: Cash or incentives for carpooling, walking, or biking to work",0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_5,Commute benefit used: Free/discount bikeshare membership,0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_6,Commute benefit used: Free/discount bicycle tune-up/maintenance,0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_7,"Commute benefit used: Free/discount carshare membership/use (e.g., Zipcar)",0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_8,Commute benefit used: Free/discount shuttle service,0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_9,Commute benefit used: Free/subsidized parking pass,0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+commute_subsidy_use_996,Commute benefit used: None of the above,0,1,0,0,0,0,0,0,integer/categorical,If person’s employer offers any benefits,1
+d_bg_2010,Destination-- 2010 Block group,0,0,0,1,1,0,0,0,character,"",0
+d_bg_2020,Destination-- 2020 Block group,0,0,0,1,1,0,0,0,character,"",0
+d_county,Destination-- County,0,0,0,1,1,0,0,0,integer/categorical,"",0
+d_in_region,Destination is in study region,0,0,0,1,1,0,0,0,integer/categorical,"",0
+d_lat,Destination-- Latitude,0,0,0,1,1,0,0,0,numeric,"",0
+d_lon,Destination-- Longitude,0,0,0,1,1,0,0,0,numeric,"",0
+d_puma_2012,Destination-- 2012 Public Use Microdata Area,0,0,0,1,1,0,0,0,character,"",0
+d_puma_2022,Destination-- 2022 Public Use Microdata Area,0,0,0,1,1,0,0,0,character,"",0
+d_purpose,Destination purpose imputed,0,0,0,1,1,0,0,0,integer/categorical,"",0
+d_purpose_category,Destination purpose category imputed,0,0,0,1,1,0,0,0,integer/categorical,"",0
+d_purpose_reported,Destination purpose,0,0,0,1,0,0,0,0,integer/categorical,"",0
+d_purpose_category_reported,Destination purpose category reported,0,0,0,1,0,0,0,0,integer/categorical,"",0
+d_purpose_other,Destination purpose other write-in answer,0,0,0,1,0,0,0,0,character,"",0
+d_state,Destination-- State,0,0,0,1,1,0,0,0,integer/categorical,"",0
+d_zone,Destination zone,0,0,0,1,0,0,0,0,integer/categorical,"",0
+day_complete,Person day is complete,0,0,1,1,0,0,0,0,integer/categorical,"",0
+day_id,Day ID,0,0,1,1,1,0,0,0,character,"",0
+day_num,Day number within travel period,0,0,1,1,1,0,0,0,integer/categorical,"",0
+day_pct_trips_flagged,Percent of person's trip traces flagged on day,0,0,1,0,0,0,0,0,numeric,"",0
+day_weight,Day weight,0,0,1,0,0,0,0,0,numeric,"",0
+delivery_2,Type of delivery: Take-out/prepared food delivered to home,0,0,1,0,0,0,0,0,integer/categorical,if adult and rMove or (rMove for Web and person 1),1
+delivery_3,"Type of delivery: Someone came to do work at home (e.g., babysitter, housecleaning, lawn)",0,0,1,0,0,0,0,0,integer/categorical,if adult and rMove or (rMove for Web and person 1),1
+delivery_4,Type of delivery: Groceries delivered to home,0,0,1,0,0,0,0,0,integer/categorical,if adult and rMove or (rMove for Web and person 1),1
+delivery_5,"Type of delivery: Received packages at home (e.g., USPS, FedEx, UPS)",0,0,1,0,0,0,0,0,integer/categorical,if adult and rMove or (rMove for Web and person 1),1
+delivery_6,Type of delivery: Received personal packages at work,0,0,1,0,0,0,0,0,integer/categorical,if adult and rMove or (rMove for Web and person 1),1
+delivery_7,"Type of delivery: Received packages at another location (e.g., Amazon Locker, package pick-up point)",0,0,1,0,0,0,0,0,integer/categorical,if adult and rMove or (rMove for Web and person 1),1
+delivery_8,"Type of delivery: Other item delivered to home (e.g., appliance)",0,0,1,0,0,0,0,0,integer/categorical,if adult and rMove or (rMove for Web and person 1),1
+delivery_996,Type of delivery: None of the above,0,0,1,0,0,0,0,0,integer/categorical,if adult and rMove or (rMove for Web and person 1),1
+depart_date,Departure date,0,0,0,1,1,0,0,0,date,"",0
+depart_dow,Departure day of the week,0,0,0,1,1,0,0,0,integer/categorical,"",0
+depart_hour,Departure hour,0,0,0,1,1,0,0,0,integer/categorical,"",0
+depart_minute,Departure minute,0,0,0,1,1,0,0,0,numeric,"",0
+depart_seconds,Departure second,0,0,0,1,1,0,0,0,numeric,"",0
+depart_time,Departure time (US/Central time),0,0,0,1,1,0,0,0,date-time,"",0
+depart_time_reported,Imputed departure time (US/Central time),0,0,0,1,0,0,0,0,date-time,"",0
+disability,Disability status,0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,0
+distance_miles,Distance (miles),0,0,0,1,1,0,0,1,numeric,"",0
+driver,Driver or passenger on trip,0,0,0,1,0,0,0,0,integer/categorical,If mode/transit_acess/transit_egress = vehicle or other vehicle and (travel party = 2+ except if other travelers are household children under 16),0
+duration_minutes_reported,Imputed trip duration (minutes),0,0,0,1,0,0,0,0,numeric,"",0
+duration_minutes,Trip duration--minutes,0,0,0,1,1,0,0,0,numeric,"",0
+duration_seconds,Trip duration--seconds,0,0,0,1,0,0,0,0,numeric,"",0
+education,Highest level of education completed,0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,0
+employment,Employment status,0,1,0,0,0,0,0,0,integer/categorical,2019: If age 16+. Asked of adult members in participation group 3; 2021 and 2023: If age 16+,0
+employment_pre_covid,Employment status pre-covid,0,1,0,0,0,0,0,0,integer/categorical,If surveyable participant,0
+end_day,Where participant ended their day,0,0,1,0,0,0,0,0,integer/categorical,If rMove,0
+ev_charge,Electric vehicle was charged on travel day,0,0,1,0,0,0,0,0,integer/categorical,If household owns electric vehicle; if rMove or (web survey and person 1),0
+ev_charge_duration,Length of time electric vehicle was charged at home on travel day,0,0,1,0,0,0,0,0,integer/categorical,If charged electric vehicle; if rMove or (rMove for Web and person 1),0
+ev_charge_start_time,Time that electric vehicle was plugged in on travel day,0,0,1,0,0,0,0,0,integer/categorical,If charged electric vehicle; if rMove or (rMove for Web and person 1),0
+ev_charge_station,Electric vehicle charging stations at stop,0,0,0,1,0,0,0,0,integer/categorical,If used household electric vehicle on trip and parked at destination and vehicle_park_loc is not personal driveway/garage or didn’t park,0
+ev_charge_station_decision,Electric vehicle charging stations influenced decision to stop here,0,0,0,1,0,0,0,0,integer/categorical,If used EV charge station at destination and destination is not home/work/school location,0
+ev_charge_station_level_1,Charge station level: Level 1 (2-5 miles of range per 1 hour of charging),0,0,0,1,0,0,0,0,integer/categorical,If EV charge stations were at destination,1
+ev_charge_station_level_2,Charge station level: Level 2 (10-20 miles of range per 1 hour of charging),0,0,0,1,0,0,0,0,integer/categorical,If EV charge stations were at destination,1
+ev_charge_station_level_3,Charge station level: Level 3/DC Fast (60+ miles of range per 1 hour of charging),0,0,0,1,0,0,0,0,integer/categorical,If EV charge stations were at destination,1
+ev_charge_station_level_998,Charge station level: Don't know,0,0,0,1,0,0,0,0,integer/categorical,If EV charge stations were at destination,1
+ev_outlet,Parks electric vehicle within 20 feet of an electric outlet when parking at or near home,0,1,0,0,0,0,0,0,integer/categorical,if charges EV at or near home,0
+ev_purchase,Consideration of purchasing a fully electric vehicle,0,1,0,0,0,0,0,0,integer/categorical,2021: If household member 1 for participation groups 1 & 2. If adult in participation group 3. If household has >=1 vehicles and fuel type of primary vehicle driven is not electric; 2023: If household has >=1 vehicles and fuel type of primary vehicle driven is not electric,0
+ev_typical_charge_1,Electric vehicle charging location: At or near home,0,1,0,0,0,0,0,0,integer/categorical,if fuel type of primary vehicle driven is electric,1
+ev_typical_charge_2,Electric vehicle charging location: At work,0,1,0,0,0,0,0,0,integer/categorical,if fuel type of primary vehicle driven is electric,1
+ev_typical_charge_3,"Electric vehicle charging location: At a commute location (e.g., Park and Ride lot, parking garage/ramp)",0,1,0,0,0,0,0,0,integer/categorical,if fuel type of primary vehicle driven is electric,1
+ev_typical_charge_4,"Electric vehicle charging location: At a shopping location (e.g., grocery store, shopping mall",0,1,0,0,0,0,0,0,integer/categorical,if fuel type of primary vehicle driven is electric,1
+ev_typical_charge_5,"Electric vehicle charging location: At a public location (e.g., hospital, library, government building)",0,1,0,0,0,0,0,0,integer/categorical,if fuel type of primary vehicle driven is electric,1
+ev_typical_charge_6,Electric vehicle charging location: At a hotel/inn,0,1,0,0,0,0,0,0,integer/categorical,if fuel type of primary vehicle driven is electric,1
+ev_typical_charge_997,Electric vehicle charging location: Other,0,1,0,0,0,0,0,0,integer/categorical,if fuel type of primary vehicle driven is electric,1
+ev_typical_charge_other,Other electric vehicle charging location write-in answer,0,1,0,0,0,0,0,0,character,if responded “Other” to ev_typical_charge,0
+first_travel_date,First travel date,1,0,0,1,0,0,0,0,date,"",0
+fuel_type,Vehicle fuel type,0,0,0,0,0,1,0,0,integer/categorical,"",0
+gender,Gender,0,1,0,0,0,0,0,0,integer/categorical,if surveyable,0
+has_phone,Participant has phone,0,1,0,0,0,0,0,0,integer/categorical,"",0
+has_proxy,Has a proxy,0,1,0,0,0,0,0,0,integer/categorical,"",0
+hh_day_complete,Household day completion status,0,0,1,1,0,0,0,0,integer/categorical,"",0
+hh_day_complete_a,All surveys are completed for travel date for all household members using strict criteria,0,0,1,0,0,0,0,0,integer/categorical,"",0
+hh_day_complete_b,All surveys are completed for travel date for all household members using lenient criteria,0,0,1,0,0,0,0,0,integer/categorical,"",0
+hh_has_pets,Household owns pets,1,0,0,0,0,0,0,0,integer/categorical,"",0
+hh_id,Household ID,1,1,1,1,1,1,1,1,character,"",0
+hh_is_complete_a,Household provided complete travel information for one travel day filtered using criteria A (strict),1,0,0,0,0,0,0,0,integer/categorical,"",0
+hh_is_complete_b,Household provided complete travel information for one travel day filtered using criteria B (lenient),1,0,0,0,0,0,0,0,integer/categorical,"",0
+hh_member_1,Household member on trip: 1,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_10,Household member on trip: 10,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_11,Household member on trip: 11,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_2,Household member on trip: 2,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_3,Household member on trip: 3,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_4,Household member on trip: 4,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_5,Household member on trip: 5,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_6,Household member on trip: 6,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_7,Household member on trip: 7,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_8,Household member on trip: 8,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_member_9,Household member on trip: 9,0,0,0,1,0,0,0,0,integer/categorical,"",1
+hh_weight,Household weight,1,0,0,0,0,0,0,0,numeric,"",0
+home_bg_2010,Home location 2010 Block group,1,0,0,0,0,0,0,0,character,"",0
+home_bg_2020,Home location 2020 Block group,1,0,0,0,0,0,0,0,character,"",0
+home_county,Home location County,1,0,0,0,0,0,0,0,integer/categorical,"",0
+home_in_region,Home is in the study region,1,0,0,0,0,0,0,0,integer/categorical,"",0
+home_lat,Home location latitude,1,0,0,0,0,0,0,0,numeric,"",0
+home_lon,Home location longitude,1,0,0,0,0,0,0,0,numeric,"",0
+home_park,Park location at home,0,1,0,0,0,0,0,0,integer/categorical,If drives a household vehicle most often,0
+home_park_other,Other parking location at home open text response,1,1,0,0,0,0,0,0,character,if home_vehicle_park = Other,0
+home_park_pass,Vehicle has a permit/parking pass for parking at your home,0,0,0,0,0,1,0,0,integer/categorical,"",0
+home_park_pass_cost,Home parking permit/pass payment amount (monthly),0,0,0,0,0,1,0,0,numeric,If has parking permit/pass,0
+home_park_pay,Pays to park vehicle at home,0,1,0,0,0,0,0,0,integer/categorical,"if vehicle driven the most is not carshare, other, or none",0
+home_puma_2012,Home location 2012 Public Use Microdata Area,1,0,0,0,0,0,0,0,character,"",0
+home_puma_2022,Home location 2022 Public Use Microdata Area,1,0,0,0,0,0,0,0,character,"",0
+home_state,Destination state,1,0,0,0,0,0,0,0,integer/categorical,"",0
+home_zone,Home zone,1,0,0,0,0,0,0,0,integer/categorical,"",0
+hours_work,How many hours typically works per week,0,1,0,0,0,0,0,0,integer/categorical,"If employed full-time, part-time, self-employed or volunteer/intern",0
+housing_cost,2019: Rent paid per month; 2021-2023: Rent or mortgage paid per month,1,0,0,0,0,0,0,0,integer/categorical,2019: if household rents; 2021 and 2023: if household rents or owns,0
+income_detailed,Last year's household income--detailed categories,1,0,0,0,0,0,0,0,integer/categorical,"",0
+income_broad,Last year's household income--broad categories,1,0,0,0,0,0,0,0,integer/categorical,"",0
+invalid_purpose_flag,Trip flagged for invalid purpose,0,0,0,1,0,0,0,0,integer/categorical,"",0
+is_access,Trip flagged as access leg,0,0,0,1,0,0,0,0,integer/categorical,"",0
+day_is_complete_a,Day is complete under option A (strict),0,0,1,0,0,0,0,0,integer/categorical,"",0
+person_is_complete_a,Complete under option A (strict),0,1,0,0,0,0,0,0,integer/categorical,"",0
+person_is_complete_b,Complete under option B (lenient,0,1,0,0,0,0,0,0,integer/categorical,"",0
+day_is_complete_b,Day is complete under option B (lenient),0,0,1,0,0,0,0,0,integer/categorical,"",0
+is_egress,Trip flagged as egress leg,0,0,0,1,0,0,0,0,integer/categorical,"",0
+is_participant,Active participant (age 18+ and surveyable),0,1,0,0,0,0,0,0,integer/categorical,"",0
+is_proxy,Assigned proxy reporter,0,1,0,0,0,0,0,0,integer/categorical,"",0
+job_type,Usual work location type,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/self/volunteer and surveyable",0
+job_type_post_covid,Work location after Covid,0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/furlough/self/volunteer,0
+job_type_pre_covid,Work location prior to Covid,0,1,0,0,0,0,0,0,integer/categorical,"If employment_pre_covid = full, part, self, or volunteer",0
+language_at_home,Speaks a language other than English at home,0,1,0,0,0,0,0,0,integer/categorical,"",0
+language_at_home_other,Language spoken at home: Other,0,1,0,0,0,0,0,0,character,if responded “Other” language spoken at home,0
+last_travel_date,Travel period end,1,0,0,1,0,0,0,0,date,"",0
+lat,Latitude,0,0,0,0,0,0,1,0,numeric,"",0
+leg_id,Linked trip leg ID,0,0,0,1,0,0,0,0,numeric,"",0
+leg_num,Leg number along linked trip,0,0,0,1,0,0,0,0,numeric,"",0
+linked_trip_id,Linked trip ID,0,0,0,1,1,0,0,1,numeric,"",0
+linked_trip_num,Trip number for linked trip,0,0,0,1,1,0,0,0,numeric,"",0
+lon,Longitude,0,0,0,0,0,0,1,0,numeric,"",0
+made_travel,Participant made travel on travel day,0,0,1,0,0,0,0,0,integer/categorical,"If rMove, has no trips for the day, age < 18, attend_school is not went to school/daycare, begin_day = end_day, and begin_day is not Other",0
+make,Vehicle make,0,0,0,0,0,1,0,0,character,"",0
+make_model_other,"Open-response for """"other"""" vehicle make or model",0,0,0,0,0,1,0,0,character,"",0
+micromobility_devices_1,Micromobility device used: Scooter,1,0,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+micromobility_devices_2,Micromobility device used: Moped,1,0,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+micromobility_devices_3,Micromobility device used: Skateboard or rollerblades,1,0,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+micromobility_devices_4,Micromobility device used: Segway,1,0,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+micromobility_devices_5,Micromobility device used: Other,1,0,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+micromobility_devices_6,Micromobility device used: None,1,0,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+missing_distance,Trip distance is missing,0,0,0,1,0,0,0,0,integer/categorical,"",0
+missing_school_location,Missing school location,0,1,0,0,0,0,0,0,integer/categorical,If non-homeschooled student,0
+missing_speed,Trip speed is missing,0,0,0,1,0,0,0,0,integer/categorical,"",0
+missing_work_location,Missing work location,0,1,0,0,0,0,0,0,integer/categorical,If doesn't drive for a living/doesn't always work from home,0
+mode_1,Trip mode 1,0,0,0,1,0,0,0,0,integer/categorical,"",0
+mode_2,Trip mode 2,0,0,0,1,0,0,0,0,integer/categorical,2019: Participation groups 1 & 3 only,0
+mode_3,Trip mode 3,0,0,0,1,0,0,0,0,integer/categorical,2019: Participation groups 1 & 3 only,0
+mode_4,Trip mode 4,0,0,0,1,0,0,0,0,integer/categorical,"",0
+mode_other_comment,Other mode specified in textbox,0,0,0,1,0,0,0,0,character,if mode = other,0
+mode_type_unlinked,Unlinked trip mode type,0,0,0,1,0,0,0,0,integer/categorical,"",0
+mode_type,Linked trip mode type,0,0,0,0,1,0,0,0,integer/categorical,"",0
+mode_type_detailed,Detailed mode type,0,0,0,1,1,0,0,0,integer/categorical,"",0
+mode_type_p_1,Probability mode type is walk,0,0,0,1,0,0,0,0,numeric,2019: Participation groups 1 & 3 only,0
+mode_type_p_2,Probability mode type is bike,0,0,0,1,0,0,0,0,numeric,"",0
+mode_type_p_3,Probability mode type is vehicle,0,0,0,1,0,0,0,0,numeric,"",0
+mode_type_p_4,Probability mode type is transit,0,0,0,1,0,0,0,0,numeric,"",0
+mode_type_predicted,Predicted mode type,0,0,0,1,0,0,0,0,integer/categorical,"",0
+model,Vehicle model,0,0,0,0,0,1,0,0,character,"",0
+moped_share_freq,How often uses moped share programs,0,1,0,0,0,0,0,0,integer/categorical,If uses moped share,0
+no_travel_1,Reason for no travel on date: I did make trips on date,0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_11,"Reason for no travel on date: Weather conditions (e.g., snowstorm)",0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_12,"Reason for no travel on date: person may have made trips, but I don't know when or where",0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_2,Reason for no travel on date: Not scheduled to work/took day off,0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_3,"Reason for no travel on date: Worked at home for pay (e.g., telework, self-employed)",0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_4,Reason for no travel on date: Hung out around home,0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_5,"Reason for no travel on date: Scheduled school closure (e.g., holiday)",0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_6,"Reason for no travel on date: No available transportation (e.g., no car, no bus)",0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_7,Reason for no travel on date: Sick or quarantining (self or others),0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_8,"Reason for no travel on date: Waited for visitor/delivery (e.g., plumber)",0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_9,Reason for no travel on date: person did online/remote/home school,0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_99,Reason for no travel on date: Other reason,0,0,1,0,0,0,0,0,integer/categorical,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,1
+no_travel_other_specify,Other reason for no travel on date open text answer,0,0,1,0,0,0,0,0,character,2019 and 2021: If made no trips; all members in group 2 and adults only in participation groups 1 & 3; 2023: If using rMove and made_travel is no or don’t know OR If using rMove for Web and reported zero trips,0
+no_trips_from_rmove,rMove did not capture trips,0,0,1,0,0,0,0,0,integer/categorical,If made no trips; all members in group 2 and adults only in participation groups 1 & 3,0
+num_adults,Number of adults in household (age 18 and above),1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_bicycles,Total number of bicycles in household,1,0,0,0,0,0,0,0,integer/categorical,if rMove or (rMove for Web and person 1),0
+num_complete_fri,Household is complete on Friday of travel day,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_mon,Household is complete on Monday of travel day,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_sat,Household is complete on Saturday of travel day,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_sun,Household is complete on Sunday of travel day,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_thu,Household is complete on Thursday of travel day,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_tue,Household is complete on Tuesday of travel day,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_wed,Household is complete on Wednesday of travel day,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_hh_days,Number of complete household days,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_wkdays_4,"Number of complete household days on Monday, Tuesday, Wednesday, and Thursday",1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_wkends_3,"Number of complete household days on Friday, Saturday, Sunday",1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_wkdays_5,"Number of complete household days on Monday, Tuesday, Wednesday, Thursday, and Friday",1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_complete_wkends_2,Number of complete household days on Saturday and Sunday,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_hh_travelers,Number of  household members on trip,0,0,0,1,0,0,0,0,integer/categorical,"",0
+num_jobs,Number of jobs,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If employed full-time, part-time, self-employed or volunteer/intern. Asked of adults only in participation group 3; 2023: If employed full/part/furloughed/volunteer and surveyable",0
+num_kids,Number of children in household (age 0-17),1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_no_flag_days,Number of person days with no trip trace flags,0,1,0,0,0,0,0,0,numeric,"",0
+num_non_hh_travelers,Number of non-household members on trip,0,0,0,1,0,0,0,0,integer/categorical,"",0
+num_participants,Number of participants,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_people,Number of household members,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_person_days,Number of fully complete person days,0,1,0,0,0,0,0,0,integer/categorical,"",0
+num_students,Number of students,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_surveyable,Number of surveyable household members,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_travelers,Number of people in travel party,0,0,0,1,1,0,0,0,integer/categorical,"",0
+num_trips,Number of trips on complete travel day,0,0,1,0,0,0,0,0,numeric,"",0
+num_vehicles,Number of vehicles in household,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_workers,"Number of workers in household (employed full-time, employed part-time, self-employed, or volunteer/unpaid intern)",1,0,0,0,0,0,0,0,integer/categorical,"",0
+o_bg,Origin-- Block group 2010,0,0,0,1,1,0,0,0,character,"",0
+o_bg_2020,Origin-- Block group 2020,0,0,0,1,1,0,0,0,character,"",0
+o_county,Origin-- County,0,0,0,1,1,0,0,0,integer/categorical,"",0
+o_in_region,Origin is in study region,0,0,0,1,1,0,0,0,integer/categorical,"",0
+o_lat,Origin-- Latitude,0,0,0,1,1,0,0,0,numeric,"",0
+o_lon,Origin-- Longitude,0,0,0,1,1,0,0,0,numeric,"",0
+o_puma_2012,Origin-- 2012 Public Use Microdata Area,0,0,0,1,1,0,0,0,character,"",0
+o_puma_2022,Origin-- 2022 Public Use Microdata Area,0,0,0,1,1,0,0,0,character,"",0
+o_purpose,Origin purpose,0,0,0,1,1,0,0,0,integer/categorical,"",0
+o_purpose_category,Origin purpose category,0,0,0,1,1,0,0,0,integer/categorical,"",0
+o_state,Origin-- State,0,0,0,1,1,0,0,0,integer/categorical,"",0
+o_zone,Zone of trip origin,0,0,0,1,0,0,0,0,integer/categorical,"",0
+other_school_mode_season_1,Season that school mode varies: Spring,0,1,0,0,0,0,0,0,integer/categorical,if school mode varies by season,1
+other_school_mode_season_2,Season that school mode varies: Summer,0,1,0,0,0,0,0,0,integer/categorical,if school mode varies by season,1
+other_school_mode_season_3,Season that school mode varies: Fall,0,1,0,0,0,0,0,0,integer/categorical,if school mode varies by season,1
+other_school_mode_season_4,Season that school mode varies: Winter,0,1,0,0,0,0,0,0,integer/categorical,if school mode varies by season,1
+other_work_mode_season_1,Season that work mode varies: Spring,0,1,0,0,0,0,0,0,integer/categorical,if work mode varies by season,1
+other_work_mode_season_2,Season that work mode varies: Summer,0,1,0,0,0,0,0,0,integer/categorical,if work mode varies by season,1
+other_work_mode_season_3,Season that work mode varies: Fall,0,1,0,0,0,0,0,0,integer/categorical,if work mode varies by season,1
+other_work_mode_season_4,Season that work mode varies: Winter,0,1,0,0,0,0,0,0,integer/categorical,if work mode varies by season,1
+park_location,Vehicle parking location,0,0,0,1,1,0,0,0,integer/categorical,2019: If used vehicle mode ; if adult for participation groups 1 and 3; 2021 and 2023: If mode or transit_access or transit_egress = HH vehicle or other vehicle,0
+park_type,How parking was paid for trip,0,0,0,1,0,0,0,0,integer/categorical,"2019: If used vehicle mode & parked on street/garage; if adult for participation groups 1 and 3; 2021 and 2023: If park_location = lot/ramp/garage, on-street, or park and ride lot",0
+participate,Willing to participate in future studies,0,1,0,0,0,0,0,0,integer/categorical,"",0
+participation_group,Participation method,1,1,1,1,0,1,0,0,integer/categorical,"",0
+peer_rent_freq,How often uses peer-to-peer car rentlal,0,1,0,0,0,0,0,0,integer/categorical,if adult and uses peer-to-peer car rental,0
+person_id,Person ID,0,1,1,1,1,0,1,1,character,"",0
+person_num,Person number within household,0,1,1,1,1,0,0,0,integer/categorical,"",0
+person_pct_trips_flagged,Percent of person's total trip traces flagged,0,1,0,0,0,0,0,0,numeric,"",0
+person_weight,Person weight,0,1,0,0,0,0,0,0,numeric,"",0
+phone_type,Participant phone type,0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and surveyable,0
+predicted_mode_probability,Probability of predicted mode type,0,0,0,1,0,0,0,0,numeric,"",0
+prev_home_mn,Previous home location was located in state of Minnesota,1,0,0,0,0,0,0,0,integer/categorical,if lived in current residence <= 5 years,0
+prev_rent_own,Previous residence ownership status,1,0,0,0,0,0,0,0,integer/categorical,if lived in current residence <= 5 years,0
+prev_res_factors_1,Factors in moving away from previous residence: Could no longer afford previous residence because of an increase in rent or housing costs,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_10,Factors in moving away from previous residence: Concerns about safety or crime,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_11,Factors in moving away from previous residence: Concerns about COVID-19 health risks,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_12,Factors in moving away from previous residence: To upgrade to a better-quality home or to stop renting and buy a home,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_13,"Factors in moving away from previous residence: Forced to move out (e.g., building demolished or renovated, asked to leave by landlord, foreclosure)",1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_2,Factors in moving away from previous residence: Could no longer afford previous residence because of a change in income or finances,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_3,"Factors in moving away from previous residence: Friends, family, or cultural community were leaving the area",1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_4,"Factors in moving away from previous residence: Changes in household size, establish own household",1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_5,Factors in moving away from previous residence: Needed more space,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_6,Factors in moving away from previous residence: Needed less space,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_7,"Factors in moving away from previous residence: Employment or commuting considerations (e.g., to take new job or shorten commute)",1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_8,"Factors in moving away from previous residence: COVID-19 removed need to live in previous residence (e.g., no longer need to attend work or school in-person)",1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_9,Factors in moving away from previous residence: Access to a different K-12 school,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_997,Factors in moving away from previous residence: Other reason,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_999,Factors in moving away from previous residence: Prefer not to answer,1,0,0,0,0,0,0,0,integer/categorical,if previous home was in Minnesota (and moved in past 5 years),1
+prev_res_factors_other,Other factor in moving away from previous residence,1,0,0,0,0,0,0,0,character,if responded 'Other' to prev_res_factors,0
+prev_res_type,Previous residence type,1,0,0,0,0,0,0,0,integer/categorical,if lived in current residence <= 5 years,0
+proxy_complete,Proxy survey completion status,0,0,1,0,0,0,0,0,integer/categorical,If has a proxy (someone else is completing surveys on behalf of this person),0
+proxy_reported,Travel day reported by proxy,0,0,1,0,0,0,0,0,integer/categorical,"",0
+race_Native_American,Race/Ethnicity: American Indian or Alaska Native,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_Asian,Race/Ethnicity: Asian,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_Black,Race/Ethnicity: Black or African American,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_Hispanic_Latinx_Latino,"Race/Ethnicity: Hispanic, Latino, or Spanish origin",0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_Middle_Eastern_North_African,Race/Ethnicity: Middle Eastern or North African,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_Hawaiian_Pacific,Race/Ethnicity: Native Hawaiian or other Pacific Islander,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_White,Race/Ethnicity: White,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_Other,"Race/Ethnicity: Other race, ethnicity, or origin",0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_Not_Known,Race/Ethnicity: Don't know,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_No_Say,Race/Ethnicity: Prefer not to answer,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2023: If age 18+ and surveyable,1
+race_asian_1,Race/Ethnicity Asian: Cambodian,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_2,Race/Ethnicity Asian: Chinese,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_3,Race/Ethnicity Asian: Hmong,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_4,Race/Ethnicity Asian: Karen or Karenni,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_5,Race/Ethnicity Asian: Lao,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_6,"Race/Ethnicity Asian: South Asian (e.g., Indian, Pakistani, Bangladeshi)",0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_7,Race/Ethnicity Asian: Vietnamese,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_997,Race/Ethnicity Asian: Another Asian origin,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_998,Race/Ethnicity Asian: Don't Know,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_999,Race/Ethnicity Asian: Prefer not to answer,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Asian, Asian American” race/ethnicity",1
+race_asian_other,Other Asian race/ethnicity described,0,1,0,0,0,0,0,0,character,if responded “Other” Asian or Asian American race,0
+race_black_african_1,Race/Ethnicity Black African: African American,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Black, African, African American” race",1
+race_black_african_2,Race/Ethnicity Black African: Ethiopian,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Black, African, African American” race",1
+race_black_african_3,Race/Ethnicity Black African: Oromo,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Black, African, African American” race",1
+race_black_african_4,Race/Ethnicity Black African: Somali,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Black, African, African American” race",1
+race_black_african_5,Race/Ethnicity Black African: Liberian,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Black, African, African American” race",1
+race_black_african_997,Race/Ethnicity Black African: Another Black African Origin,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Black, African, African American” race",1
+race_black_african_998,Race/Ethnicity Black African: Don't know,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Black, African, African American” race",1
+race_black_african_999,Race/Ethnicity Black African: Prefer not to answer,0,1,0,0,0,0,0,0,integer/categorical,"if responded “Black, African, African American” race",1
+race_black_african_other,Other Black African race/ethnicity described,0,1,0,0,0,0,0,0,character,"if responded “Other” Black, African, or African American race/ethnicity",0
+race_hispanic_1,Race/Ethnicity Hispanic: Cuban,0,1,0,0,0,0,0,0,integer/categorical,"2021: Asked if responded """"Hispanic, Latinx, Latino"""" race/ethnicity; 2023: If age 18+ and surveyable",1
+race_hispanic_2,"Race/Ethnicity Hispanic: Mexican, Mexican American, Chicano",0,1,0,0,0,0,0,0,integer/categorical,"2021: Asked if responded """"Hispanic, Latinx, Latino"""" race/ethnicity; 2023: If age 18+ and surveyable",1
+race_hispanic_3,Race/Ethnicity Hispanic: Puerto Rican,0,1,0,0,0,0,0,0,integer/categorical,"2021: Asked if responded """"Hispanic, Latinx, Latino"""" race/ethnicity; 2023: If age 18+ and surveyable",1
+race_hispanic_996,"Race/Ethnicity Hispanic: Not of Hispanic, Latino, or Spanish origin",0,1,0,0,0,0,0,0,integer/categorical,"2021: Asked if responded """"Hispanic, Latinx, Latino"""" race/ethnicity; 2023: If age 18+ and surveyable",1
+race_hispanic_997,Race/Ethnicity Hispanic: Another Hispanic Origin,0,1,0,0,0,0,0,0,integer/categorical,"2021: Asked if responded """"Hispanic, Latinx, Latino"""" race/ethnicity; 2023: If age 18+ and surveyable",1
+race_hispanic_998,Race/Ethnicity Hispanic: Don't know,0,1,0,0,0,0,0,0,integer/categorical,"2021: Asked if responded """"Hispanic, Latinx, Latino"""" race/ethnicity; 2023: If age 18+ and surveyable",1
+race_hispanic_999,Race/Ethnicity Hispanic: Prefer not to answer,0,1,0,0,0,0,0,0,integer/categorical,"2021: Asked if responded """"Hispanic, Latinx, Latino"""" race/ethnicity; 2023: If age 18+ and surveyable",1
+race_hispanic_other,Other Hispanic race/ethnicity described,0,1,0,0,0,0,0,0,character,"2021: Asked if responded """"Other"""" Hispanic, Latinx, Latino race/ethnicity; 2023: If responded """"Other"""" ethnicity",0
+race_other,Other race/ethnicity described,0,1,0,0,0,0,0,0,character,"2019: Asked of all household members in participation group 1 and 2. Asked of adults only in participation group 3; 2021 and 2023: If responded """"other"""" to """"race""""",0
+rail_payment_type,Rail fare payment method,0,0,0,1,0,0,0,0,integer/categorical,If used rail mode; if adult for participation groups 1 and 3,0
+relationship,Relationship to household person number 1,0,1,0,0,0,0,0,0,integer/categorical,"",0
+remote_class_freq,Number of days last week class taken from somewhere besides home or school,0,1,0,0,0,0,0,0,integer/categorical,2021: If child who is not cared for at home or attending daycare; 2023: If adult student OR child who is not cared for at home or attending daycare (If school_type is not 1 or 2),0
+res_duration,How long lived at current residence,1,0,0,0,0,0,0,0,integer/categorical,"",0
+res_months,Number of months spent residing at current residence,1,0,0,0,0,0,0,0,integer/categorical,"",0
+res_type,Type of current residence,1,0,0,0,0,0,0,0,integer/categorical,If rMove or (rMove for Web and person 1),0
+residence_rent_own,Current residence ownership,1,0,0,0,0,0,0,0,integer/categorical,If rMove or (rMove for Web and person 1),0
+sample_home_bg,Sample home location-- Block group,1,0,0,0,0,0,0,0,character,"",0
+sample_home_county,Sample home location-- County,1,0,0,0,0,0,0,0,integer/categorical,"",0
+sample_home_lat,Sample home location-- Latitude,1,0,0,0,0,0,0,0,numeric,"",0
+sample_home_lon,Sample home location-- Longitude,1,0,0,0,0,0,0,0,numeric,"",0
+sample_home_state,Sample home location-- State,1,0,0,0,0,0,0,0,integer/categorical,"",0
+sample_segment,Sample segment,1,0,0,0,0,0,0,0,integer/categorical,"",0
+school_attend,Structure of classes,0,1,0,0,0,0,0,0,integer/categorical,If child and not homeschooled,0
+school_bg_2010,School location-- Block group 2010,0,1,0,0,0,0,0,0,character,"",0
+school_bg_2020,School location-- Block group 2020,0,1,0,0,0,0,0,0,character,"",0
+school_bus,School bus available in district,0,1,0,0,0,0,0,0,integer/categorical,2019: If under age 18 and not cared for at home or homeschooled; 2021 and 2023: If school_mode is not 'school bus',0
+school_county,School location-- County,0,1,0,0,0,0,0,0,integer/categorical,"",0
+school_daily,Student traveled to school,0,0,1,0,0,0,0,0,integer/categorical,If household members attend in-person school or daycare at least some of the time,0
+school_freq,Days per week commuting to school,0,1,0,0,0,0,0,0,integer/categorical,If adult student who attends some or all in-person classes OR child who is not cared for at home or homeschooled (If School_Type is not 1 or 4),0
+school_in_region,School is in study region,0,1,0,0,0,0,0,0,integer/categorical,If 0-17 or surveyable adult student,0
+school_lat,School location-- Latitude,0,1,0,0,0,0,0,0,numeric,If non-homeschooled student,0
+school_lon,School location-- Longitude,0,1,0,0,0,0,0,0,numeric,If non-homeschooled student,0
+school_mode,Typical travel mode to school,0,1,0,0,0,0,0,0,integer/categorical,If student and attends some or all classes in-person,0
+school_mode_season,Alternate commute method to school depending on season,0,1,0,0,0,0,0,0,integer/categorical,If school mode varies by season,0
+school_mode_seasonality,Does school mode vary by season,0,1,0,0,0,0,0,0,integer/categorical,If student and attends some or all classes in-person,0
+school_puma_2012,School location-- 2012 Public Use Microdata Area,0,1,0,0,0,0,0,0,character,"",0
+school_puma_2022,School location-- 2022 Public Use Microdata Area,0,1,0,0,0,0,0,0,character,"",0
+school_state,School location-- State,0,1,0,0,0,0,0,0,integer/categorical,"",0
+school_type,Type of school attends,0,1,0,0,0,0,0,0,integer/categorical,If surveyable child or surveyable adult student,0
+school_zone,Zone of school location,0,1,0,0,0,0,0,0,integer/categorical,"",0
+scoot_share_freq,How often uses scooter share programs,0,1,0,0,0,0,0,0,integer/categorical,if uses scooter share,0
+scooter_park_location,Scooter parking location type,0,0,0,1,0,0,0,0,integer/categorical,2019: If adult and used scooter mode; 2021 and 2023: If adult and mode or transit_access or transit_egresss = micromobility,0
+second_home,"Regularly spends the night at a second home (e.g., another parent or grandparent's house, partner or spouse's home, or a vacation home)",0,1,0,0,0,0,0,0,integer/categorical,If surveyable,0
+second_home_all,"Any household member regularly spends the night at a second residence in the region (e.g., home of other parent, home of spouse/partner)",0,1,0,0,0,0,0,0,integer/categorical,If has related household members,0
+second_home_in_region,Second home in study region,0,1,0,0,0,0,0,0,integer/categorical,"",0
+second_home_lat,Second home location-- Latitude,0,1,0,0,0,0,0,0,numeric,"",0
+second_home_lon,Second home location-- Longitude,0,1,0,0,0,0,0,0,numeric,"",0
+share_1,"Share service used: Uber, Lyft, or other smartphone-app ride service",0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_2,"Share service used: Carshare (e.g., Zipcar)",0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_201,Share service used: SouthWest Prime or MVTA Connect,0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_3,"Share service used: Peer-to-peer car rental (e.g., Turo)",0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_4,Share service used: Bikeshare or bike rental service,0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_5,Share service used: Vanpool,0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_6,"Share service used: Scooter share (e.g., Bird, Lime)",0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_7,"Share service used: Moped share (e.g., Scoot)",0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_8,"Share service used: Electric vehicle carshare (e.g., Evie)",0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_996,Share service used: None of the above,0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,1
+share_work_1,"Share work: Drives passengers for Uber, Lyft, or another smartphone-app ride service",0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and age 18+,1
+share_work_2,"Share work: Delivers packages for a smartphone-app service (e.g., Amazon Flex)",0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and age 18+,1
+share_work_3,"Share work: Delivers food/groceries for a smartphone-app service (e.g., DoorDash, Uber Eats)",0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and age 18+,1
+share_work_4,"Share work: Rents a personal vehicle for money (e.g., Turo)",0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and age 18+,1
+share_work_5,Share work: Redistributes bicycles for a bikeshare company,0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and age 18+,1
+share_work_6,Share work: Redistributes scooters for a scooter share company,0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and age 18+,1
+share_work_996,Share work: None of the above,0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and age 18+,1
+share_work_997,Share work: Other for-hire service related to transportation,0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and age 18+,1
+shop_online,Bought something online on travel date,0,0,1,0,0,0,0,0,integer/categorical,if adult,0
+speed,Speed,0,0,0,0,0,0,1,0,numeric,"",0
+speed_mph,Speed mph,0,0,0,1,1,0,0,0,numeric,"",0
+student,Student status and location,0,1,0,0,0,0,0,0,integer/categorical,2019 and 2021: If age 18+; 2023: If age 16+,0
+study_design,Study design,1,0,0,0,0,0,0,0,integer/categorical,"",0
+summary_complete,Daily survey completion status,0,0,1,0,0,0,0,0,integer/categorical,"",0
+surveyable,Surveyable,0,1,0,0,0,0,0,0,integer/categorical,"",0
+synthetic_trip,Synthetic child school trip flag,0,0,0,1,0,0,0,0,integer/categorical,"",0
+taxi_cost,Amount paid for taxi,0,0,0,1,0,0,0,0,numeric,2019: If used taxi mode & paid fare; if adult for participation groups 1 and 3; 2021 and 2023: If knows amount paid for taxi,0
+taxi_pay,Known amount paid for taxi,0,0,0,1,0,0,0,0,integer/categorical,"2021: If used taxi mode & paid fare; if adult for participation groups 1 and 3; 2023: if taxi_type = I paid, employer paid, split/shared",0
+taxi_type,Who paid taxi fare,0,0,0,1,0,0,0,0,integer/categorical,2019 and 2021: If used taxi mode; if adult for participation groups 1 and 3; 2023: If mode or transit_access or transit_egress = taxi,0
+telework_freq,How often teleworks,0,1,0,0,0,0,0,0,integer/categorical,"2019: If employed full-time, part-time, self-employed or volunteer/intern; 2021 and 2023: If commut_freq is not 6-7 days a week",0
+telework_time,"Time spent teleworking on travel day (minutes, where 600 = 10+ hours)",0,0,1,0,0,0,0,0,numeric,"2019 and 2021: If employed adult in groups 1 & 3, employed age 16+ in group 2; 2023: If employment = full/part/self/volunteer",0
+tnc_freq,"How often uses a smartphone-app ride service (e.g., Lyft, Uber)",0,1,0,0,0,0,0,0,integer/categorical,If uses smartphone-app ride services,0
+tnc_type,Type of smartphone-app ride service used on trip,0,0,0,1,0,0,0,0,integer/categorical,If mode is Uber/Lyft,0
+tnc_work_hours,"Hours per week driving for smartphone-app ride services (e.g., Uber, Lyft)",0,1,0,0,0,0,0,0,integer/categorical,If drives for smartphone-app ride services,0
+toll_transponder,Vehicle has a toll transponder,0,0,0,0,0,1,0,0,integer/categorical,"",0
+transit_access,Mode used to access transit stop,0,0,0,1,0,0,0,0,integer/categorical,If mode = bus or rail,0
+transit_egress,Mode used to leave transit stop,0,0,0,1,0,0,0,0,integer/categorical,If mode = bus or rail,0
+transit_freq,Frequency of transit trips,0,1,0,0,0,0,0,0,integer/categorical,If age 18+ and participant,0
+transit_pay,How typically pays for transit,0,1,0,0,0,0,0,0,integer/categorical,If uses transit,0
+transportation_barriers_1,Barrier preventing a trip: Parking was too expensive,0,1,0,0,0,0,0,0,integer/categorical,"",1
+transportation_barriers_2,Barrier preventing a trip: Vehicle was not working,0,1,0,0,0,0,0,0,integer/categorical,"",1
+transportation_barriers_3,Barrier preventing a trip: Vehicle was not available,0,1,0,0,0,0,0,0,integer/categorical,"",1
+transportation_barriers_4,Barrier preventing a trip: Bus was not running,0,1,0,0,0,0,0,0,integer/categorical,"",1
+transportation_barriers_5,Barrier preventing a trip: This has not happened in the past 7 days,0,1,0,0,0,0,0,0,integer/categorical,"",1
+transportation_barriers_997,Barrier preventing a trip: Other,0,1,0,0,0,0,0,0,integer/categorical,"",1
+transportation_barriers_999,Barrier preventing a trip: Prefer not to answer,0,1,0,0,0,0,0,0,integer/categorical,"",1
+travel_date,Travel date,0,0,1,1,0,0,0,0,date,"",0
+travel_dow,Travel day of week,0,0,1,1,0,0,0,0,integer/categorical,"",0
+trip_id,Trip ID,0,0,0,1,0,0,1,0,character,"",0
+trip_num,Trip number,0,0,0,1,0,0,0,0,numeric,"",0
+trip_survey_complete,Trip survey completion status,0,0,0,1,0,0,0,0,integer/categorical,"",0
+trip_weight,Trip weight,0,0,0,1,0,0,0,0,numeric,"",0
+unlinked_trip,Trip is unlinked,0,0,0,1,0,0,0,0,integer/categorical,2019 and 2021: Participation groups 1 & 3 only,0
+vanpool_freq,Frequency of vanpool trips,0,1,0,0,0,0,0,0,integer/categorical,If uses vanpool,0
+vehicle,Vehicle driven most often,0,1,0,0,0,0,0,0,integer/categorical,If household has 1+ vehicles and person drives.,0
+vehicle_cost,Monthly payment for vehicle,0,0,0,0,0,1,0,0,integer/categorical,If vehicle is owned and making payments or leased,0
+vehicle_id,Vehicle ID,0,0,0,1,0,1,0,0,numeric,"",0
+vehicle_name,Vehicle name,0,0,0,0,0,1,0,0,character,"",0
+vehicle_num,Vehicle number,0,0,0,0,0,1,0,0,integer/categorical,"",0
+vehicle_ownership,Ownership status of vehicle,0,0,0,0,0,1,0,0,integer/categorical,"",0
+vehicle_park_cost,Vehicle parking cost,0,0,0,1,0,0,0,0,numeric,If used vehicle mode & paid for parking; if adult for participation groups 1 and 3,0
+vehicle_park_who_paid,Who paid parking fare,0,0,0,1,0,0,0,0,integer/categorical,If used vehicle mode & parked on street/garage; if adult for participation groups 1 and 3,0
+vehicle_purchase,Likelihood of purchasing new vehicle in next 6 months,0,1,0,0,0,0,0,0,integer/categorical,"",0
+work_bg_2010,Work location-- Block group 2010,0,1,0,0,0,0,0,0,character,"",0
+work_bg_2020,Work location-- Block group 2020,0,1,0,0,0,0,0,0,character,"",0
+work_county,Work location-- County,0,1,0,0,0,0,0,0,integer/categorical,"",0
+work_freq,Days worked per week,0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and participant,0
+work_in_region,Work in study region,0,1,0,0,0,0,0,0,integer/categorical,If employment = full/part/self/volunteer and participant,0
+work_lat,Work location-- Latitude,0,1,0,0,0,0,0,0,numeric,If doesn't drive for a living/doesn't always work from home,0
+work_lon,Work location-- Longitude,0,1,0,0,0,0,0,0,numeric,If doesn't drive for a living/doesn't always work from home,0
+work_mode,Typical travel mode to work,0,1,0,0,0,0,0,0,integer/categorical,"2019: If doesn't drive for a living/doesn't always work from home. Derived for participation group 3; 2021: If doesn't drive for a living/doesn't always work from home. Derived for participation group 3. If commute_freq is not """"never""""; 2023: If employment = full/part/self/volunteer and job_type is not """"work only from home"""" and age 18+",0
+work_mode_pre_covid,Type of commute to work prior to Covid,0,1,0,0,0,0,0,0,integer/categorical,"If job_type_pre_covid is not """"work only from home""""",0
+work_mode_season,Alternate commute method to work depending on season,0,1,0,0,0,0,0,0,integer/categorical,If work mode varies by season,0
+work_mode_seasonality,Work mode varies by season,0,1,0,0,0,0,0,0,integer/categorical,"2019 and 2021: If doesn't drive for a living/doesn't always work from home; 2023: If commute_freq is not """"never""""",0
+work_park_cost,How much personally pays to park at/near work (monthly),0,1,0,0,0,0,0,0,numeric,If pays for parking at work,0
+work_park_pay,Typical way of paying for parking at work (doesn't work from home/drive for a living),0,1,0,0,0,0,0,0,integer/categorical,2019: If doesn't drive for a living/doesn't always work from home; 2021 and 2023: If work_mode = HH vehicle and parks at work,0
+work_puma_2012,Work location-- 2012 Public Use Microdata Area,0,1,0,0,0,0,0,0,character,"",0
+work_puma_2022,Work location-- 2022 Public Use Microdata Area,0,1,0,0,0,0,0,0,character,"",0
+work_state,Work location-- State,0,1,0,0,0,0,0,0,integer/categorical,"",0
+work_vehicle_park,Park location at work,0,1,0,0,0,0,0,0,integer/categorical,If work_mode = HH vehicle,0
+work_zone,Zone of work location,0,1,0,0,0,0,0,0,integer/categorical,"",0
+workplace_post_covid,Knows where work location will be after COVID,0,1,0,0,0,0,0,0,integer/categorical,"If job_type_post_covid is """"go to one work location only"""" or """"telework some days and travel to a work location some days"""" who was not already asked work location",0
+year,Vehicle year,0,0,0,0,0,1,0,0,integer/categorical,"",0
+signup_platform,Signup platform,1,0,0,0,0,0,0,0,character,"",0
+diary_platform,Diary platform,1,0,0,0,0,0,0,0,character,"",0
+num_days_complete,Number of complete days,1,1,0,0,0,0,0,0,integer/categorical,"",0
+num_days_complete_a,Number of complete days under strict criteria A,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_days_complete_b,Number of complete days under lenient criteria B,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_days_complete_weekday,Number of complete weekdays,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_days_complete_weekend,Number of complete weekend days,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_days_complete_weekday_a,Number of complete weekdays under strict criteria A,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_days_complete_weekend_a,Number of complete weekend days under strict criteria A,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_days_complete_weekday_b,Number of complete weekdays under lenient criteria B,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_days_complete_weekend_b,Number of complete weekend days under lenient criteria B,1,0,0,0,0,0,0,0,integer/categorical,"",0
+num_iOS_participants,Number of iOS participants,1,0,0,0,0,0,0,0,numeric,"",0
+user_agent_os,User's smartphone operating system,0,1,0,0,0,0,0,0,character,If rMove respondent,0
+second_home_county,Second home location-- County,0,1,0,0,0,0,0,0,integer/categorical,If person regularly spends the night at a second home in the study region,0
+second_home_state,Second home location-- State,0,1,0,0,0,0,0,0,integer/categorical,If person regularly spends the night at a second home in the study region,0
+second_home_bg_2010,Second home location-- 2010 Block group,0,1,0,0,0,0,0,0,character,If person regularly spends the night at a second home in the study region,0
+second_home_bg_2020,Second home location-- 2020 Public Use Microdata Area,0,1,0,0,0,0,0,0,character,If person regularly spends the night at a second home in the study region,0
+second_home_puma_2012,Second home location-- 2012 Public Use Microdata Area,0,1,0,0,0,0,0,0,character,If person regularly spends the night at a second home in the study region,0
+second_home_puma_2022,Second home location-- 2022 Public Use Microdata Area,0,1,0,0,0,0,0,0,character,If person regularly spends the night at a second home in the study region,0
+ios_device,Smartphone is an iOS device,0,1,0,0,0,0,0,0,integer/categorical,If rMove respondent,0
+num_flagged_trips,Number of flagged trips on the travel day,0,0,1,0,0,0,0,0,numeric,"",0
+num_complete_trip_surveys,Number of complete trip surveys,0,0,1,0,0,0,0,0,numeric,"",0
+speed_flag,Unusually high speed given mode,0,0,0,1,0,0,0,0,integer/categorical,"",0
+dwell_mins,Dwell minutes,0,0,0,1,0,0,0,0,numeric,"",0
+trace_quality_flag,Trip flag for poor trace data quality,0,0,0,1,0,0,0,0,integer/categorical,if rmove user with iOS device,0
+transit_quality_flag,Transit quality flag,0,0,0,1,0,0,0,0,character,"",0
+pt_density,Location points per minute (time adjusted for probable trip splitting),0,0,0,1,0,0,0,0,numeric,"",0
+point_dist_index,Percentage points over expected for largest distance between two points on trip,0,0,0,1,0,0,0,0,numeric,"",0
+hh_is_weighted,Household flag for inclusion in weighted sample,1,0,0,0,0,0,0,0,integer/categorical,"",0
+thrive_community_type,Thrive community designation of household,1,0,0,0,0,0,0,0,character,"",0
+trip_purpose_weight,Trip purpose weight (derived from trip weight),0,0,0,0,0,0,0,1,numeric,"",0
+trip_type,Was original trip for deriving trip purpose home-based or Non-home-based,,,,,0,,,1,character,"",0
+purpose,Overall trip purpose (derived from trip record),0,0,0,0,0,0,0,1,integer/categorical,"",0
+purpose_category,Overall trip purpose category (derived from trip record),0,0,0,0,0,0,0,1,integer/categorical,"",0
+survey_year,Survey year,1,1,1,1,1,1,,,integer/categorical,"",0
+vehicle_id,ID for vehicles,,,,,,,,,,,
+veh_age,Age of vehicle,,,,,,,,,,,
+hh_in_mpo,Household in the MPO geography (T/F),,,,,,,,,,,
+hh_county,Household County,,,,,,,,,,,
+hh_city,"Household City, Township, and Unorganized Territory",,,,,,,,,,,
+hh_census_place,Household Census Incorporated Place,,,,,,,,,,,
+cd_2050,Household community designation (2050 plan),,,,,,,,,,,
+cd_2050_broad,"Household community designation, broad categorizaiton (2050 plan)",,,,,,,,,,,
+cd_2050_rsd,"Household community designation, urban, rural, non-council (2050 plan)",,,,,,,,,,,
+cd_2040,Household community designation (2040 plan),,,,,,,,,,,
+cd_2040_broad,"Household community designation, broad categorizaiton (2040 plan)",,,,,,,,,,,
+cd_2040_rsd,"Household community designation, urban, rural, non-council (2040 plan)",,,,,,,,,,,
+hh_cbg_2010,Household 2010 Census block group,,,,,,,,,,,
+hh_cbg_2020,Household 2020 Census block group,,,,,,,,,,,
+hh_taz,Household Transportation Analysis Zones (TAZ),,,,,,,,,,,
+taz_pop_per_acre,Population density in household's TAZ,,,,,,,,,,,
+taz_housing_units_per_acre,Housing density in household's TAZ,,,,,,,,,,,
+taz_jobs_per_acre,Job density in household's TAZ,,,,,,,,,,,
+hh_tract,Household Census tract,,,,,,,,,,,
+trip_o_in_mpo,Trip origin in the MPO geography (T/F),,,,,,,,,,,
+trip_o_county,Trip origin County,,,,,,,,,,,
+trip_o_city,"Trip origin City, Township, and Unorganized Territory",,,,,,,,,,,
+trip_o_census_place,Trip origin Census Incorporated Place,,,,,,,,,,,
+trip_o_cd_2050,Trip origin community designation (2050 plan),,,,,,,,,,,
+trip_o_cd_2050_broad,"Trip origin community designation, broad categorizaiton (2050 plan)",,,,,,,,,,,
+trip_o_cd_2050_rsd,"Trip origin community designation, urban, rural, non-council (2050 plan)",,,,,,,,,,,
+trip_o_cd_2040,Trip origin community designation (2040 plan),,,,,,,,,,,
+trip_o_cd_2040_broad,"Trip origin community designation, broad categorizaiton (2040 plan)",,,,,,,,,,,
+trip_o_cd_2040_rsd,"Trip origin community designation, urban, rural, non-council (2040 plan)",,,,,,,,,,,
+trip_o_cbg_2010,Trip origin 2010 Census block group,,,,,,,,,,,
+trip_o_cbg_2020,Trip origin 2020 Census block group,,,,,,,,,,,
+trip_o_taz,Trip origin Transportation Analysis Zones (TAZ),,,,,,,,,,,
+trip_o_tract,Trip origin Census tract,,,,,,,,,,,
+trip_d_in_mpo,Trip destination in the MPO geography (T/F),,,,,,,,,,,
+trip_d_county,Trip destination County,,,,,,,,,,,
+trip_d_city,"Trip destination City, Township, and Unorganized Territory",,,,,,,,,,,
+trip_d_census_place,Trip destination Census Incorporated Place,,,,,,,,,,,
+trip_d_cd_2050,Trip destination community designation (2050 plan),,,,,,,,,,,
+trip_d_cd_2050_broad,"Trip destination community designation, broad categorizaiton (2050 plan)",,,,,,,,,,,
+trip_d_cd_2050_rsd,"Trip destination community designation, urban, rural, non-council (2050 plan)",,,,,,,,,,,
+trip_d_cd_2040,Trip destination community designation (2040 plan),,,,,,,,,,,
+trip_d_cd_2040_broad,"Trip destination community designation, broad categorizaiton (2040 plan)",,,,,,,,,,,
+trip_d_cd_2040_rsd,"Trip destination community designation, urban, rural, non-council (2040 plan)",,,,,,,,,,,
+trip_d_cbg_2010,Trip destination 2010 Census block group,,,,,,,,,,,
+trip_d_cbg_2020,Trip destination 2020 Census block group,,,,,,,,,,,
+trip_d_taz,Trip destination Transportation Analysis Zones (TAZ),,,,,,,,,,,
+trip_d_tract,Trip destination Census tract,,,,,,,,,,,
+work_in_mpo,Workplace in the MPO geography (T/F),,,,,,,,,,,
+work_county,Workplace County,,,,,,,,,,,
+work_city,"Workplace City, Township, and Unorganized Territory",,,,,,,,,,,
+work_census_place,Workplace Census Incorporated Place,,,,,,,,,,,
+work_cd_2050,Workplace community designation (2050 plan),,,,,,,,,,,
+work_cd_2050_broad,"Workplace community designation, broad categorizaiton (2050 plan)",,,,,,,,,,,
+work_cd_2050_rsd,"Workplace community designation, urban, rural, non-council (2050 plan)",,,,,,,,,,,
+work_cd_2040,Workplace community designation (2040 plan),,,,,,,,,,,
+work_cd_2040_broad,"Workplace community designation, broad categorizaiton (2040 plan)",,,,,,,,,,,
+work_cd_2040_rsd,"Workplace community designation, urban, rural, non-council (2040 plan)",,,,,,,,,,,
+work_cbg_2010,Workplace 2010 Census block group,,,,,,,,,,,
+work_cbg_2020,Workplace 2020 Census block group,,,,,,,,,,,
+work_taz,Workplace Transportation Analysis Zones (TAZ),,,,,,,,,,,
+work_tract,Workplace Census tract,,,,,,,,,,,
+school_in_mpo,School in the MPO geography (T/F),,,,,,,,,,,
+school_city,"School City, Township, and Unorganized Territory",,,,,,,,,,,
+school_cd_2050,School community designation (2050 plan),,,,,,,,,,,
+school_cd_2050_broad,"School community designation, broad categorizaiton (2050 plan)",,,,,,,,,,,
+school_cd_2050_rsd,"School community designation, urban, rural, non-council (2050 plan)",,,,,,,,,,,
+school_cd_2040,School community designation (2040 plan),,,,,,,,,,,
+school_cd_2040_broad,"School community designation, broad categorizaiton (2040 plan)",,,,,,,,,,,
+school_cd_2040_rsd,"School community designation, urban, rural, non-council (2040 plan)",,,,,,,,,,,
+school_cbg_2010,School 2010 Census block group,,,,,,,,,,,
+school_cbg_2020,School 2020 Census block group,,,,,,,,,,,
+school_taz,School Transportation Analysis Zones (TAZ),,,,,,,,,,,
+school_tract,School Census tract,,,,,,,,,,,
+trip_part,Starting or ending record of a trip,,,,,,,,,,,
+race,Collapsed race that aligns with the ACS.,,,,,,,,,,,
+ethnicity,Ethnicity that aligns with the ACS.,,,,,,,,,,,
+d_purpose_category_broad,Broad re-catagorization of trip destination purpose,,,,,,,,,,,
+o_purpose_category_broad,Broad re-catagorization of trip origin purpose,,,,,,,,,,,
+travel_date_season,Season of date,,,,,,,,,,,
+num_travelers_int,Number of travelers as integer cut off at 5,,,,,,,,,,,
+num_hh_travelers_int,Number of household travelers as integer cut off at 7,,,,,,,,,,,
+num_non_hh_travelers,Number of non-household travelers as integer cut off at 7,,,,,,,,,,,

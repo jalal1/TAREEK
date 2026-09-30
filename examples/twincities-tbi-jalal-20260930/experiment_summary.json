@@ -1,0 +1,1490 @@
+{
+  "experiment_id": "tc_tbi_hermes_nw16_10iter",
+  "created_at": "2026-09-30T10:12:40.708357",
+  "population": {
+    "_comment": "Population counts from census home location data (home_locs_dict). Summed from all census blocks within configured counties.",
+    "total_population": 3689612,
+    "total_population_comment": "Sum of total_employees + total_non_employees across all home blocks",
+    "total_employees": 1900761,
+    "total_employees_comment": "Sum of n_employees field from each home block (workers who commute)",
+    "total_non_employees": 1788851,
+    "total_non_employees_comment": "Sum of non_employees field from each home block (non-workers: retirees, students, etc.)"
+  },
+  "unscaled_trips": {
+    "_comment": "Total trips BEFORE applying scaling_factor. Represents full population trip demand.",
+    "work": 2068232,
+    "work_comment": "Unscaled work trips = total_employees (one work trip per employee)",
+    "nonwork": 2844883,
+    "nonwork_comment": "Sum of unscaled trips across all enabled nonwork purposes. Each purpose: non_employees * trip_rate from survey data"
+  },
+  "freight": {
+    "_comment": "Boundary freight (E-I, I-E, E-E truck trips). Full detail in freight_summary.json.",
+    "n_trips": 12831,
+    "share_of_all_agents_pct": 2.15,
+    "trips_by_class": {
+      "external_to_internal": 4491,
+      "internal_to_external": 4491,
+      "through": 3849
+    },
+    "demand_source": "hpms_cordon",
+    "demand_scale": 0.3,
+    "crossing_factor": 0.7692,
+    "crossing_factor_comment": "trips = crossings / (1 + through_share); converts cordon crossings into trips",
+    "unscaled_trips": 285133.5,
+    "truck_share_pct": 6.16,
+    "truck_share_source": "hpms_cache",
+    "truck_share_source_comment": "hpms_live | hpms_cache | national_table | config_pinned. A national_table result is a 1997 average, NOT a measurement for this region",
+    "vehicle_mix": {
+      "single_unit": 0.4002,
+      "combination": 0.5998
+    },
+    "n_cordons": 347,
+    "cordons_by_compass": {
+      "E": 49,
+      "N": 10,
+      "NE": 46,
+      "NW": 44,
+      "S": 57,
+      "SE": 61,
+      "SW": 47,
+      "W": 33
+    },
+    "cordon_weighting": {
+      "n_observed": 174,
+      "n_fallback": 173,
+      "total_weight": 370673.6,
+      "capacity_to_daily": 8.0,
+      "weight_by": "hpms_truck_aadt",
+      "hpms_match": {
+        "n_segments": 54436,
+        "n_cordons": 347,
+        "n_cordons_matched": 174,
+        "n_links_matched": 265,
+        "match_rate": 0.501,
+        "radius_m": 150.0,
+        "bearing_tolerance_deg": 45.0,
+        "matched_cordon_ids": [
+          "cordon_inb_102316",
+          "cordon_inb_104480",
+          "cordon_inb_105519",
+          "cordon_inb_1084",
+          "cordon_inb_11035",
+          "cordon_inb_118017",
+          "cordon_inb_119515",
+          "cordon_inb_121629",
+          "cordon_inb_130238",
+          "cordon_inb_137899",
+          "cordon_inb_139795",
+          "cordon_inb_144092",
+          "cordon_inb_157474",
+          "cordon_inb_172919",
+          "cordon_inb_1743",
+          "cordon_inb_177419",
+          "cordon_inb_182236",
+          "cordon_inb_19606",
+          "cordon_inb_208861",
+          "cordon_inb_210538",
+          "cordon_inb_225094",
+          "cordon_inb_225122",
+          "cordon_inb_225131",
+          "cordon_inb_229728",
+          "cordon_inb_242662",
+          "cordon_inb_256209",
+          "cordon_inb_257440",
+          "cordon_inb_258628",
+          "cordon_inb_261536",
+          "cordon_inb_262970",
+          "cordon_inb_282033",
+          "cordon_inb_287751",
+          "cordon_inb_287855",
+          "cordon_inb_287941",
+          "cordon_inb_289474",
+          "cordon_inb_292475",
+          "cordon_inb_293945",
+          "cordon_inb_294825",
+          "cordon_inb_295503",
+          "cordon_inb_295945",
+          "cordon_inb_297625",
+          "cordon_inb_300636",
+          "cordon_inb_305648",
+          "cordon_inb_305808",
+          "cordon_inb_306234",
+          "cordon_inb_307478",
+          "cordon_inb_307944",
+          "cordon_inb_311217",
+          "cordon_inb_313608",
+          "cordon_inb_326601",
+          "cordon_inb_328719",
+          "cordon_inb_331433",
+          "cordon_inb_334459",
+          "cordon_inb_334510",
+          "cordon_inb_344334",
+          "cordon_inb_361089",
+          "cordon_inb_366522",
+          "cordon_inb_392721",
+          "cordon_inb_403356",
+          "cordon_inb_406117",
+          "cordon_inb_431663",
+          "cordon_inb_431688",
+          "cordon_inb_431845",
+          "cordon_inb_448231",
+          "cordon_inb_458804",
+          "cordon_inb_461077",
+          "cordon_inb_474362",
+          "cordon_inb_477545",
+          "cordon_inb_492661",
+          "cordon_inb_493170",
+          "cordon_inb_505591",
+          "cordon_inb_513862",
+          "cordon_inb_521721",
+          "cordon_inb_533627",
+          "cordon_inb_540558",
+          "cordon_inb_550277",
+          "cordon_inb_550312",
+          "cordon_inb_552337",
+          "cordon_inb_566901",
+          "cordon_inb_592771",
+          "cordon_inb_607814",
+          "cordon_inb_617978",
+          "cordon_inb_628994",
+          "cordon_inb_632834",
+          "cordon_inb_73952",
+          "cordon_inb_81415",
+          "cordon_inb_81755",
+          "cordon_inb_90339",
+          "cordon_inb_91408",
+          "cordon_out_102316",
+          "cordon_out_1085",
+          "cordon_out_11034",
+          "cordon_out_116476",
+          "cordon_out_117022",
+          "cordon_out_118014",
+          "cordon_out_119516",
+          "cordon_out_121630",
+          "cordon_out_127756",
+          "cordon_out_130031",
+          "cordon_out_130237",
+          "cordon_out_137898",
+          "cordon_out_139794",
+          "cordon_out_144091",
+          "cordon_out_151668",
+          "cordon_out_157475",
+          "cordon_out_172918",
+          "cordon_out_1742",
+          "cordon_out_177418",
+          "cordon_out_208860",
+          "cordon_out_211550",
+          "cordon_out_225097",
+          "cordon_out_225123",
+          "cordon_out_225130",
+          "cordon_out_229727",
+          "cordon_out_242661",
+          "cordon_out_257439",
+          "cordon_out_258793",
+          "cordon_out_261535",
+          "cordon_out_268475",
+          "cordon_out_273688",
+          "cordon_out_280871",
+          "cordon_out_282033",
+          "cordon_out_287946",
+          "cordon_out_289475",
+          "cordon_out_293944",
+          "cordon_out_294826",
+          "cordon_out_295946",
+          "cordon_out_300637",
+          "cordon_out_305809",
+          "cordon_out_306235",
+          "cordon_out_317352",
+          "cordon_out_318608",
+          "cordon_out_327820",
+          "cordon_out_328718",
+          "cordon_out_331876",
+          "cordon_out_334458",
+          "cordon_out_334511",
+          "cordon_out_340425",
+          "cordon_out_35309",
+          "cordon_out_361090",
+          "cordon_out_366523",
+          "cordon_out_366815",
+          "cordon_out_372438",
+          "cordon_out_392722",
+          "cordon_out_406061",
+          "cordon_out_431664",
+          "cordon_out_431687",
+          "cordon_out_431846",
+          "cordon_out_448232",
+          "cordon_out_458482",
+          "cordon_out_458556",
+          "cordon_out_477544",
+          "cordon_out_488147",
+          "cordon_out_492660",
+          "cordon_out_500513",
+          "cordon_out_505556",
+          "cordon_out_505593",
+          "cordon_out_513861",
+          "cordon_out_533625",
+          "cordon_out_550278",
+          "cordon_out_550311",
+          "cordon_out_552337",
+          "cordon_out_557935",
+          "cordon_out_566900",
+          "cordon_out_592901",
+          "cordon_out_593536",
+          "cordon_out_617978",
+          "cordon_out_632833",
+          "cordon_out_66337",
+          "cordon_out_73952",
+          "cordon_out_79410",
+          "cordon_out_81755",
+          "cordon_out_90340",
+          "cordon_out_91403"
+        ],
+        "observed_link_ids": [
+          "102316",
+          "105519",
+          "1084",
+          "1085",
+          "11034",
+          "11035",
+          "116476",
+          "117022",
+          "117023",
+          "118014",
+          "118017",
+          "119515",
+          "119516",
+          "121629",
+          "121630",
+          "127756",
+          "130031",
+          "130237",
+          "130238",
+          "132487",
+          "135727",
+          "135732",
+          "136762",
+          "137898",
+          "137899",
+          "139794",
+          "139795",
+          "144091",
+          "144092",
+          "157474",
+          "157475",
+          "172918",
+          "172919",
+          "1742",
+          "1743",
+          "176974",
+          "176982",
+          "177418",
+          "177419",
+          "182236",
+          "19606",
+          "197963",
+          "197964",
+          "198241",
+          "198242",
+          "208860",
+          "208861",
+          "210538",
+          "211103",
+          "211550",
+          "212666",
+          "213168",
+          "225094",
+          "225095",
+          "225097",
+          "225098",
+          "225122",
+          "225123",
+          "225130",
+          "225131",
+          "225134",
+          "225135",
+          "229727",
+          "229728",
+          "242661",
+          "242662",
+          "243908",
+          "255406",
+          "255407",
+          "257314",
+          "257439",
+          "257440",
+          "258806",
+          "258809",
+          "261535",
+          "261536",
+          "262969",
+          "262970",
+          "268475",
+          "270",
+          "273688",
+          "273689",
+          "273690",
+          "273691",
+          "273719",
+          "273720",
+          "280871",
+          "282033",
+          "287751",
+          "287941",
+          "287946",
+          "288543",
+          "289474",
+          "289475",
+          "292475",
+          "293944",
+          "293945",
+          "294825",
+          "294826",
+          "295503",
+          "295945",
+          "295946",
+          "297625",
+          "300636",
+          "300637",
+          "305627",
+          "305648",
+          "305661",
+          "305662",
+          "305808",
+          "305809",
+          "306234",
+          "306235",
+          "307653",
+          "311217",
+          "313608",
+          "317352",
+          "317526",
+          "318608",
+          "321585",
+          "326601",
+          "328654",
+          "328718",
+          "328719",
+          "329143",
+          "329144",
+          "331945",
+          "333928",
+          "333929",
+          "334458",
+          "334459",
+          "334462",
+          "334463",
+          "334510",
+          "334511",
+          "340425",
+          "340737",
+          "344331",
+          "344334",
+          "35309",
+          "361089",
+          "361090",
+          "366522",
+          "366523",
+          "366815",
+          "387653",
+          "390324",
+          "390325",
+          "390330",
+          "390331",
+          "390469",
+          "392721",
+          "392722",
+          "393776",
+          "393777",
+          "403356",
+          "406061",
+          "406117",
+          "411981",
+          "428657",
+          "431663",
+          "431664",
+          "431687",
+          "431688",
+          "431845",
+          "431846",
+          "438128",
+          "440095",
+          "440096",
+          "448231",
+          "448232",
+          "458482",
+          "458554",
+          "458556",
+          "458804",
+          "461077",
+          "474362",
+          "47441",
+          "47442",
+          "477544",
+          "477545",
+          "480797",
+          "488147",
+          "492660",
+          "492661",
+          "493170",
+          "500513",
+          "505556",
+          "505591",
+          "505593",
+          "509370",
+          "512898",
+          "513861",
+          "513862",
+          "513863",
+          "513864",
+          "516493",
+          "517379",
+          "517381",
+          "520260",
+          "521721",
+          "521951",
+          "521954",
+          "529412",
+          "533625",
+          "533627",
+          "540558",
+          "543679",
+          "550277",
+          "550278",
+          "550311",
+          "550312",
+          "552337",
+          "552338",
+          "557935",
+          "557936",
+          "56355",
+          "566900",
+          "566901",
+          "58342",
+          "592314",
+          "592315",
+          "592324",
+          "592325",
+          "592771",
+          "592890",
+          "592901",
+          "592966",
+          "593536",
+          "604671",
+          "604674",
+          "606127",
+          "606128",
+          "607814",
+          "61504",
+          "61505",
+          "61506",
+          "616058",
+          "617978",
+          "617979",
+          "619113",
+          "622155",
+          "628994",
+          "632833",
+          "632834",
+          "65705",
+          "65709",
+          "66274",
+          "66275",
+          "66337",
+          "76755",
+          "79410",
+          "81415",
+          "81755",
+          "86106",
+          "86107",
+          "90339",
+          "90340",
+          "90895",
+          "90896",
+          "91403",
+          "91408",
+          "95445",
+          "95446",
+          "95760"
+        ],
+        "match_distance_m": {
+          "median": 7.2,
+          "max": 146.4
+        },
+        "bearing_difference_deg": {
+          "median": 1.0,
+          "max": 45.0
+        },
+        "bbox": [
+          -94.4176,
+          44.0571,
+          -91.9745,
+          46.3972
+        ]
+      }
+    },
+    "anchoring": {
+      "n_cordons": 347,
+      "anchor_distance_m": {
+        "min": 84.4,
+        "median": 6364.8,
+        "max": 84033.5
+      }
+    },
+    "tier1_passed": true,
+    "tier1_failures": []
+  },
+  "plans": {
+    "work": 158088,
+    "shopping": 162110,
+    "school": 93048,
+    "social": 96033,
+    "dining": 42401,
+    "other": 33016,
+    "freight": 12831,
+    "total": 584696,
+    "success_rate": 100.0,
+    "chain_retries": 41808,
+    "chain_retries_too_short": 26078,
+    "chain_retries_bad_structure": 0,
+    "chain_retries_missing_purpose": 0,
+    "chain_retries_missing_work": 0,
+    "chain_retries_has_work": 0,
+    "chain_retries_too_many_work": 15730,
+    "chain_attempts": 630492,
+    "poi_retries": 208616,
+    "time_retries": 11,
+    "schedules_built": 713137,
+    "schedules_trimmed": 4520,
+    "schedules_trimmed_pct": 0.63,
+    "schedules_over_budget_dropped": 11,
+    "schedules_over_budget_dropped_pct": 0.0,
+    "schedules_resampled": 128430,
+    "trim_excess_minutes_mean": 689.3,
+    "trim_excess_minutes_max": 3160.1,
+    "trim_minutes_applied_mean": 671.9
+  },
+  "plans_comment": {
+    "_comment": "Plan counts AFTER applying scaling_factor. plans = unscaled_trips * scaling_factor",
+    "work": "Number of work plans generated (employees * scaling_factor)",
+    "shopping": "Number of shopping plans (non_employees * shopping_trip_rate * scaling_factor)",
+    "school": "Number of school plans (non_employees * school_trip_rate * scaling_factor)",
+    "socialrecreation": "Number of social/recreation plans (non_employees * rate * scaling_factor)",
+    "dining": "Number of dining plans (non_employees * dining_trip_rate * scaling_factor)",
+    "other": "Number of other purpose plans (non_employees * other_trip_rate * scaling_factor)",
+    "freight": "Number of boundary freight (truck) plans, when freight.enabled. NOT included in total, which covers the passenger streams only",
+    "total": "Sum of all plan counts across all purposes (work + all nonwork)",
+    "success_rate": "Percentage of successfully generated plans: (total / (total + failed)) * 100",
+    "chain_retries": "Total retries due to invalid activity chains (sum of all reasons below)",
+    "chain_retries_too_short": "Retries due to chain having fewer than 3 activities",
+    "chain_retries_bad_structure": "Retries due to chain not starting/ending with Home",
+    "chain_retries_missing_purpose": "Retries due to chain missing target nonwork purpose",
+    "chain_retries_missing_work": "Retries due to chain missing Work activity (work plans)",
+    "chain_retries_has_work": "Retries due to chain containing Work (nonwork plans)",
+    "chain_retries_too_many_work": "Retries due to chain exceeding max Work activities",
+    "chain_attempts": "Total chain sampling attempts (retries + successes)",
+    "poi_retries": "Total retries due to POI selection failures (no suitable POI found nearby)",
+    "time_retries": "Total retries due to time constraint violations (activities overlapping or out of bounds)",
+    "schedules_built": "Schedule ATTEMPTS whose activity durations were all sampled successfully, and the denominator for the trim rates below. Counts attempts, not plans: _assign_times retries up to time_models.max_time_retries, so a plan that was dropped and resampled contributes more than once",
+    "schedules_trimmed": "Schedules that overran 24h and had activity durations compressed to fit",
+    "schedules_trimmed_pct": "schedules_trimmed as a percentage of schedules_built. A high rate means the 24-hour budget, not the survey, is setting activity durations",
+    "schedules_over_budget_dropped": "Schedules discarded because the overrun exceeded the total trimmable activity time (excess >= sum of durations)",
+    "schedules_over_budget_dropped_pct": "schedules_over_budget_dropped as a percentage of schedules_built. These are lost late-day plans, so a high rate biases demand away from evening and night",
+    "schedules_resampled": "Over-budget schedule attempts that were redrawn (new start and durations) instead of trimmed; duration_constraints.over_budget=\"resample\". Each one also counts in schedules_built",
+    "trim_excess_minutes_mean": "Mean minutes a trimmed schedule overran 24h by",
+    "trim_excess_minutes_max": "Largest single overrun in minutes (max across purposes, not a sum)",
+    "trim_minutes_applied_mean": "Mean minutes actually removed per trimmed schedule. Falls below trim_excess_minutes_mean when activities hit their min_minutes floors or post-trim jitter adds time back"
+  },
+  "parameters": {
+    "_comment": "Key simulation parameters from config file",
+    "scaling_factor": 0.15,
+    "scaling_factor_comment": "Fraction of full population to simulate. E.g., 0.1 means 10% sample. From config.plan_generation.scaling_factor",
+    "iterations": 10,
+    "iterations_comment": "Number of MATSim iterations for route/plan optimization. From config.matsim.configurable_params.lastIteration",
+    "flow_capacity_factor": 0.15,
+    "flow_capacity_factor_comment": "MATSim QSim flow capacity scaling. Should roughly match scaling_factor. Controls how many vehicles can pass a link per time unit.",
+    "storage_capacity_factor": 0.18,
+    "storage_capacity_factor_comment": "MATSim QSim storage capacity scaling. Should be >= flow_capacity_factor. Controls how many vehicles can be on a link simultaneously.",
+    "modes": {
+      "bus": {
+        "config_rate": 0.05,
+        "blend_weight": 0.5
+      },
+      "rail": {
+        "config_rate": 0.01,
+        "blend_weight": 0.5
+      }
+    },
+    "modes_comment": "Snapshot of config.modes.{bus,rail}.{config_rate,blend_weight} used for this run. Demand estimator reads this together with mode_choice.mode_distribution to back-calculate empirical chain_reduction for the next run."
+  },
+  "mode_choice": {
+    "_comment": "Mode-choice outputs aggregated across all purposes (trip-weighted). Used by the demand estimator to derive empirical chain_reduction.",
+    "total_mode_choices": 2279589,
+    "mode_distribution": {
+      "car": 0.885493,
+      "bus": 0.018315,
+      "rail": 0.000302,
+      "walk": 0.09589
+    },
+    "mode_distribution_comment": "Share of legs assigned to each mode across all generated plans, weighted by purpose volume."
+  },
+  "data_quality": {
+    "_comment": "Metrics about input data quality and coverage",
+    "home_blocks": 48457,
+    "home_blocks_comment": "Number of census blocks in home_locs_dict (filtered by configured counties)",
+    "home_blocks_with_coords": 48457,
+    "home_blocks_with_coords_comment": "Census blocks that have valid lat/lon coordinates (should equal home_blocks)",
+    "total_pois": 45653,
+    "total_pois_comment": "Total POIs loaded from database and filtered to county bounding box + 5km buffer",
+    "poi_activity_types": 6,
+    "poi_activity_types_comment": "Number of distinct activity types in POI data (e.g., Shopping, School, Dining)"
+  },
+  "network": {
+    "_comment": "Road network statistics from network.xml",
+    "num_nodes": 275034,
+    "num_nodes_comment": "Number of network nodes (intersections). Parsed from <nodes> element in network.xml",
+    "num_links": 634245,
+    "num_links_comment": "Number of network links (road segments). Parsed from <links> element in network.xml",
+    "file_size_mb": 328.61,
+    "file_size_mb_comment": "Size of network.xml file in megabytes"
+  },
+  "plans_file_size_mb": 345.0,
+  "plans_file_size_mb_comment": "Size of plans.xml file in megabytes. Larger files = more agents simulated.",
+  "runtime": {
+    "_comment": "Execution time measurements in minutes",
+    "total_min": 172.48,
+    "total_min_comment": "Total experiment runtime from start to finish (includes all steps)",
+    "plans_min": 21.98,
+    "plans_min_comment": "Time spent generating activity plans (work + all nonwork purposes)",
+    "matsim_min": 125.55,
+    "matsim_min_comment": "Time spent running MATSim simulation (all iterations)",
+    "eval_min": 21.5,
+    "eval_min_comment": "Time spent on evaluation (comparing sim output to ground truth)"
+  },
+  "paths": {
+    "_comment": "Relative paths to experiment outputs (from experiment directory)",
+    "network": "network.xml",
+    "plans": "plans.xml",
+    "output": "output/",
+    "output_comment": "MATSim simulation output directory (contains ITERS/, linkstats, etc.)",
+    "evaluation": "evaluation/",
+    "evaluation_comment": "Evaluation results directory (comparison CSVs, plots, maps)"
+  },
+  "simulation_status": "completed",
+  "simulation_status_comment": "Final status: completed, failed, or skipped",
+  "generated_plans_modes": {
+    "_comment": "Generated-leg counts by mode, parsed from plans.xml. These are the demand-side shares produced by ModeChoiceModel BEFORE MATSim replanning. For realised post-simulation shares see matsim_output (output_legs_count, transit.pt_legs_total).",
+    "counts": {
+      "car": 2031391,
+      "walk": 218590,
+      "pt": 42439
+    },
+    "counts_comment": "Number of legs per mode summed across all generated plans",
+    "shares_pct": {
+      "car": 88.61,
+      "walk": 9.54,
+      "pt": 1.85
+    },
+    "shares_pct_comment": "Mode shares as percentages of total legs. Sums to ~100.",
+    "total_legs": 2292420,
+    "total_legs_comment": "Total legs across all generated plans (all purposes)"
+  },
+  "matsim_output": {
+    "_comment": "Statistics extracted from MATSim output files (scorestats.csv, traveldistancestats.csv, legHistogram.txt, etc.)",
+    "output_persons_count": 597527,
+    "output_persons_count_comment": "Number of persons (agents) in final output. From output_persons.csv.gz.",
+    "output_executed_plans_count": 597527,
+    "output_executed_plans_count_comment": "Number of executed plans (selected=\"yes\") in final iteration. This equals the number of persons - one executed plan per person.",
+    "output_total_plans_count": 2354357,
+    "output_total_plans_count_comment": "Total plans in output_plans.xml.gz including non-selected alternatives. MATSim keeps multiple plans per person for learning/replanning.",
+    "output_trips_count": 2290788,
+    "output_trips_count_comment": "Total trips completed in simulation. From output_trips.csv.gz.",
+    "output_legs_count": 2366286,
+    "output_legs_count_comment": "Total legs (mode segments) in simulation. From output_legs.csv.gz.",
+    "score_final_executed": 83.65,
+    "score_final_executed_comment": "Average executed plan score in final iteration. Higher = better agent utility.",
+    "score_final_best": 84.03,
+    "score_final_best_comment": "Average best plan score per agent in final iteration.",
+    "score_improvement": 29.54,
+    "score_improvement_comment": "Score improvement from iteration 0 to final iteration. Positive = agents found better routes.",
+    "avg_leg_distance_km": 10.58,
+    "avg_leg_distance_km_comment": "Average distance per leg (single mode segment) in kilometers.",
+    "avg_trip_distance_km": 10.93,
+    "avg_trip_distance_km_comment": "Average distance per trip (origin to destination) in kilometers.",
+    "avg_leg_duration_min": 14.2,
+    "avg_leg_duration_min_comment": "Average travel time per leg in minutes. From legdurations.txt.",
+    "total_person_km": 25049890,
+    "total_person_km_comment": "Total person-kilometers traveled by all agents. From pkm_modestats.csv.",
+    "total_person_hours_traveling": 549297,
+    "total_person_hours_traveling_comment": "Total person-hours spent traveling. From ph_modestats.csv. (Excludes wait time; sum of *_travel columns only.)",
+    "peak_departures_per_5min": 194220,
+    "peak_departures_per_5min_comment": "Maximum departures in any 5-minute interval. Indicates peak demand.",
+    "peak_hour": "07:35:00",
+    "peak_hour_comment": "Time of day with highest departure rate (HH:MM:SS format).",
+    "max_en_route": 696672,
+    "max_en_route_comment": "Maximum number of agents traveling simultaneously. Indicates network load.",
+    "total_stuck_agents": 641,
+    "total_stuck_agents_comment": "Count of stuckAndAbort events from the final-iteration events file (authoritative). Each event = one agent giving up on a leg. Counted on the simulated sample (multiply by 1/scaling_factor for population-equivalent). Should be near 0 for good simulations.",
+    "final_iteration": 10,
+    "final_iteration_comment": "Last completed iteration number. Should match config iterations setting.",
+    "transit": {
+      "submodes": {
+        "bus": {
+          "routes": 3122,
+          "departures": 8473,
+          "vehicles": 7480,
+          "legs": 36778
+        },
+        "tram": {
+          "routes": 2,
+          "departures": 172,
+          "vehicles": 172,
+          "legs": 971
+        }
+      },
+      "total_routes": 3124,
+      "total_departures": 8645,
+      "total_vehicles": 7652,
+      "pt_legs_total": 37749
+    },
+    "transit_comment": "Public-transit sub-mode breakdown. Per-submode counts of routes and departures (from transitSchedule.xml), vehicles (from transitVehicles.xml), and realised pt legs (from output_legs.csv.gz, grouped by vehicle_id suffix). MATSim collapses all transit to mode=\"pt\" in plans/legs, so the suffix is the only signal that distinguishes bus / rail / tram / subway / etc. submodes_with_supply_but_no_demand flags the canonical \"routes dropped during pt2matsim mapping\" regression \u2014 e.g. tram vehicles defined but zero tram legs."
+  },
+  "evaluation": {
+    "_comment": "Comparison of simulated traffic volumes vs ground truth traffic counts. Fields are ordered by how much they should influence a calibration decision: overall level first, then how the error splits across stations, then across the day, then the GEH pass rates, and only then the remaining station-hour metrics.",
+    "aggregate_sim_obs_ratio": 0.9253,
+    "aggregate_sim_obs_ratio_comment": "Total simulated / total observed across every station-hour. The single headline number: >1 means the model puts MORE traffic on the network than the sensors saw, <1 means less. Read it together with stations_over_simulated below \u2014 a ratio near 1.0 can also be over- and under-simulating stations cancelling each other out.",
+    "total_observed_volume": 3854888.0,
+    "total_simulated_volume": 3566982.0,
+    "interquartile_mean_ratio": 0.9477,
+    "interquartile_mean_ratio_comment": "Interquartile mean of per-station sim/obs total-volume ratios. Drops bottom & top 25% of stations and averages the middle 50%. Robust to boundary stations; 1.0 = perfect, <0.7 = under-simulation. Used as the primary signal for demand_estimator scaling-factor decisions.",
+    "stations_over_simulated": 27,
+    "stations_within_10pct": 30,
+    "stations_under_simulated": 39,
+    "stations_split_comment": "Count of stations whose daily total is >1.1x observed (over), within 0.9-1.1x (ok), and <0.9x (under). This is what tells \"the whole model is too high\" apart from \"a few corridors are wrong\". Adding demand when most stations already over-simulate makes the fit worse, not better.",
+    "station_ratio_cv": 0.2773,
+    "station_ratio_cv_comment": "Coefficient of variation (std/mean) of the per-station sim/obs ratios \u2014 the concentrated-vs-uniform test. Below ~0.35 every station is off by a similar factor, so a single global lever (scaling_factor) can correct the region. Above it the error sits on particular corridors and a global multiplier would drag the already-correct stations off target. demand_estimator refuses to change scaling_factor when this is high or absent.",
+    "ratio_night": 0.457,
+    "ratio_morning": 1.0726,
+    "ratio_midday": 0.8885,
+    "ratio_evening": 0.8589,
+    "time_block_comment": "Sim/obs ratio within each block: night 0-3, morning 4-9, midday 10-17, evening 18-23. A model can match the daily total while being badly wrong hour by hour. If midday is near 1.0 while the peaks are high and night is near zero, the problem is WHEN trips depart, not how many there are \u2014 a departure-time question, not a scaling_factor one.",
+    "hourly_ratio_spread": 1.0688,
+    "hourly_ratio_spread_comment": "Max minus min of the 24 hourly sim/obs ratios. Near 0 means the daily profile has the right shape and only its level is off; large means the shape itself is wrong.",
+    "worst_hour": 0,
+    "worst_hour_ratio": 0.1629,
+    "station_daily_geh_lt5_pct": 7.29,
+    "station_daily_geh_comment": "Percent of stations whose 24-hour TOTAL scores GEH < 5. Each station is tested against the threshold on its own, so this is a count of passing stations rather than an average. No mean or median GEH is reported at any level: GEH grows with volume, so averaging it across stations of different size measures station size as much as model error, and the result is not the GEH of any real count. Individual per-station GEH values are in the device reports and spatial_overview.png.",
+    "num_devices": 49,
+    "num_devices_comment": "Number of ground truth traffic count devices successfully matched to network links",
+    "num_comparisons": 2304,
+    "num_comparisons_comment": "Total hourly comparison points (num_devices * hours with valid data)",
+    "geh_lt_5_pct": 27.17,
+    "geh_lt_5_pct_comment": "Percentage of hourly link counts with GEH < 5 \u2014 the industry-standard form of the convention, which is defined for one count over one period. Target >=85%.",
+    "correlation": 0.882,
+    "correlation_comment": "Pearson correlation coefficient between simulated and observed volumes, on station-hours. Aggregating to daily totals typically reads 0.04-0.05 higher, so state which one is being quoted.",
+    "mae": 473.74,
+    "mae_comment": "Mean Absolute Error in vehicles/hour. Average |simulated - observed| across all comparisons.",
+    "rmse": 712.44,
+    "rmse_comment": "Root Mean Square Error in vehicles/hour. Penalizes large errors more than MAE. RMSE = sqrt(mean((simulated - observed)^2))",
+    "mean_pct_error": -8.32,
+    "mean_pct_error_comment": "Mean percentage error: mean((simulated - observed) / observed * 100). Negative = underestimating traffic, Positive = overestimating traffic. Sensitive to boundary stations with through-traffic from outside the modeled area; prefer interquartile_mean_ratio for calibration decisions.",
+    "median_station_ratio": 0.9421,
+    "median_station_ratio_comment": "Median of per-station sim/obs ratios. Companion to interquartile_mean_ratio.",
+    "pct_stations_below_10pct": 0.0,
+    "pct_stations_below_10pct_comment": "Percent of count stations whose simulated total is below 10% of observed. High values indicate boundary stations capturing through-traffic from outside the modeled region (cannot be fixed by raising demand).",
+    "num_stations_below_10pct": 0,
+    "station_ratio_p10": 0.6134,
+    "station_ratio_p90": 1.2865,
+    "station_ratio_p10_p90_comment": "10th and 90th percentile of per-station sim/obs ratios \u2014 the raw spread behind station_ratio_cv.",
+    "num_stations_with_ratio": 96,
+    "peak_hour_correlation": 0.763,
+    "peak_hour_correlation_comment": "Correlation restricted to peak hours (6-9, 15-18).",
+    "geh_valid_count": 2304,
+    "zero_observed_count": 0,
+    "num_directional_counts": 96,
+    "num_directional_counts_comment": "Count locations INCLUDING direction (one physical sensor reports each travel direction separately), so this is typically 2x num_devices.",
+    "station_daily_geh_lt10_pct": 13.54,
+    "stations_over_simulated_pct": 28.1,
+    "station_ratios": [
+      {
+        "device_id": "FHA_27_009556_3",
+        "ratio": 0.29,
+        "observed": 4556.0,
+        "simulated": 1321.3
+      },
+      {
+        "device_id": "FHA_27_009556_7",
+        "ratio": 0.2922,
+        "observed": 4529.0,
+        "simulated": 1323.3
+      },
+      {
+        "device_id": "FHA_27_011283-p2_7",
+        "ratio": 0.4581,
+        "observed": 18128.0,
+        "simulated": 8305.3
+      },
+      {
+        "device_id": "FHA_27_011726-p2_7",
+        "ratio": 0.5188,
+        "observed": 22784.0,
+        "simulated": 11819.3
+      },
+      {
+        "device_id": "FHA_27_011238_7",
+        "ratio": 0.5834,
+        "observed": 65596.0,
+        "simulated": 38270.0
+      },
+      {
+        "device_id": "FHA_27_011726_3",
+        "ratio": 0.5929,
+        "observed": 72084.0,
+        "simulated": 42739.3
+      },
+      {
+        "device_id": "FHA_27_000040_1",
+        "ratio": 0.5992,
+        "observed": 31132.0,
+        "simulated": 18653.3
+      },
+      {
+        "device_id": "FHA_55_550002_7",
+        "ratio": 0.603,
+        "observed": 18924.0,
+        "simulated": 11410.7
+      },
+      {
+        "device_id": "FHA_27_011510_1",
+        "ratio": 0.6121,
+        "observed": 75846.0,
+        "simulated": 46422.0
+      },
+      {
+        "device_id": "FHA_27_011238_3",
+        "ratio": 0.6134,
+        "observed": 62394.0,
+        "simulated": 38270.7
+      },
+      {
+        "device_id": "FHA_27_000040_5",
+        "ratio": 0.6384,
+        "observed": 35675.0,
+        "simulated": 22774.7
+      },
+      {
+        "device_id": "FHA_27_011516_1",
+        "ratio": 0.6439,
+        "observed": 42324.0,
+        "simulated": 27250.7
+      },
+      {
+        "device_id": "FHA_55_550002_3",
+        "ratio": 0.6709,
+        "observed": 19389.0,
+        "simulated": 13008.0
+      },
+      {
+        "device_id": "FHA_27_006461_7",
+        "ratio": 0.6873,
+        "observed": 24997.0,
+        "simulated": 17180.7
+      },
+      {
+        "device_id": "FHA_27_010390_1",
+        "ratio": 0.6976,
+        "observed": 51427.0,
+        "simulated": 35874.7
+      },
+      {
+        "device_id": "FHA_27_000382_5",
+        "ratio": 0.709,
+        "observed": 17686.0,
+        "simulated": 12538.7
+      },
+      {
+        "device_id": "FHA_27_011191_3",
+        "ratio": 0.7525,
+        "observed": 44327.0,
+        "simulated": 33355.3
+      },
+      {
+        "device_id": "FHA_27_010069_5",
+        "ratio": 0.7593,
+        "observed": 44562.0,
+        "simulated": 33834.7
+      },
+      {
+        "device_id": "FHA_27_011236_7",
+        "ratio": 0.7616,
+        "observed": 43520.0,
+        "simulated": 33144.0
+      },
+      {
+        "device_id": "FHA_27_011517_1",
+        "ratio": 0.765,
+        "observed": 57472.0,
+        "simulated": 43964.7
+      },
+      {
+        "device_id": "FHA_27_010390_5",
+        "ratio": 0.7676,
+        "observed": 48539.0,
+        "simulated": 37258.0
+      },
+      {
+        "device_id": "FHA_27_011280_1",
+        "ratio": 0.7714,
+        "observed": 58844.0,
+        "simulated": 45392.7
+      },
+      {
+        "device_id": "FHA_27_006461_3",
+        "ratio": 0.7738,
+        "observed": 23345.0,
+        "simulated": 18063.3
+      },
+      {
+        "device_id": "FHA_27_011517_5",
+        "ratio": 0.78,
+        "observed": 55640.0,
+        "simulated": 43398.0
+      },
+      {
+        "device_id": "FHA_27_011747_7",
+        "ratio": 0.7804,
+        "observed": 64029.0,
+        "simulated": 49968.0
+      },
+      {
+        "device_id": "FHA_27_011510_5",
+        "ratio": 0.7824,
+        "observed": 51156.0,
+        "simulated": 40023.3
+      },
+      {
+        "device_id": "FHA_27_011236_3",
+        "ratio": 0.794,
+        "observed": 41191.0,
+        "simulated": 32704.7
+      },
+      {
+        "device_id": "FHA_27_010808_5",
+        "ratio": 0.8184,
+        "observed": 92881.0,
+        "simulated": 76018.0
+      },
+      {
+        "device_id": "FHA_27_010794_3",
+        "ratio": 0.8197,
+        "observed": 60570.0,
+        "simulated": 49651.3
+      },
+      {
+        "device_id": "FHA_27_010808_1",
+        "ratio": 0.8289,
+        "observed": 90405.0,
+        "simulated": 74940.0
+      },
+      {
+        "device_id": "FHA_27_010840_3",
+        "ratio": 0.8543,
+        "observed": 19816.0,
+        "simulated": 16929.3
+      },
+      {
+        "device_id": "FHA_27_011228_5",
+        "ratio": 0.8546,
+        "observed": 39018.0,
+        "simulated": 33344.7
+      },
+      {
+        "device_id": "FHA_27_011283_3",
+        "ratio": 0.8639,
+        "observed": 62147.0,
+        "simulated": 53691.3
+      },
+      {
+        "device_id": "FHA_27_011191_7",
+        "ratio": 0.8651,
+        "observed": 51666.0,
+        "simulated": 44696.7
+      },
+      {
+        "device_id": "FHA_27_010206_7",
+        "ratio": 0.8733,
+        "observed": 58187.0,
+        "simulated": 50817.3
+      },
+      {
+        "device_id": "FHA_27_010794_7",
+        "ratio": 0.8874,
+        "observed": 61780.0,
+        "simulated": 54822.0
+      },
+      {
+        "device_id": "FHA_27_011228_1",
+        "ratio": 0.8908,
+        "observed": 40694.0,
+        "simulated": 36252.0
+      },
+      {
+        "device_id": "FHA_27_011280_5",
+        "ratio": 0.8961,
+        "observed": 55358.0,
+        "simulated": 49606.0
+      },
+      {
+        "device_id": "FHA_27_010919_7",
+        "ratio": 0.897,
+        "observed": 72673.0,
+        "simulated": 65186.0
+      },
+      {
+        "device_id": "FHA_27_010310_1",
+        "ratio": 0.9064,
+        "observed": 43779.0,
+        "simulated": 39681.3
+      },
+      {
+        "device_id": "FHA_27_011747_3",
+        "ratio": 0.9138,
+        "observed": 67973.0,
+        "simulated": 62116.0
+      },
+      {
+        "device_id": "FHA_27_011749_3",
+        "ratio": 0.9142,
+        "observed": 45746.0,
+        "simulated": 41821.3
+      },
+      {
+        "device_id": "FHA_27_010206_3",
+        "ratio": 0.9156,
+        "observed": 59371.0,
+        "simulated": 54358.0
+      },
+      {
+        "device_id": "FHA_27_000382_1",
+        "ratio": 0.9288,
+        "observed": 16740.0,
+        "simulated": 15548.0
+      },
+      {
+        "device_id": "FHA_27_010800_7",
+        "ratio": 0.9315,
+        "observed": 83353.0,
+        "simulated": 77642.7
+      },
+      {
+        "device_id": "FHA_27_011749_7",
+        "ratio": 0.9361,
+        "observed": 43250.0,
+        "simulated": 40488.0
+      },
+      {
+        "device_id": "FHA_27_011273_5",
+        "ratio": 0.9403,
+        "observed": 81966.0,
+        "simulated": 77075.3
+      },
+      {
+        "device_id": "FHA_27_010205_1",
+        "ratio": 0.9413,
+        "observed": 29025.0,
+        "simulated": 27322.0
+      },
+      {
+        "device_id": "FHA_27_011464_1",
+        "ratio": 0.9421,
+        "observed": 34347.0,
+        "simulated": 32357.3
+      },
+      {
+        "device_id": "FHA_27_010899_7",
+        "ratio": 0.9467,
+        "observed": 43408.0,
+        "simulated": 41094.0
+      },
+      {
+        "device_id": "FHA_55_550154_7",
+        "ratio": 0.9504,
+        "observed": 22830.0,
+        "simulated": 21698.0
+      },
+      {
+        "device_id": "FHA_27_010899_3",
+        "ratio": 0.9551,
+        "observed": 41419.0,
+        "simulated": 39561.3
+      },
+      {
+        "device_id": "FHA_27_011273_1",
+        "ratio": 0.9591,
+        "observed": 76619.0,
+        "simulated": 73486.0
+      },
+      {
+        "device_id": "FHA_27_011196_7",
+        "ratio": 0.9709,
+        "observed": 16604.0,
+        "simulated": 16120.0
+      },
+      {
+        "device_id": "FHA_27_010730_5",
+        "ratio": 0.9735,
+        "observed": 75550.0,
+        "simulated": 73546.7
+      },
+      {
+        "device_id": "FHA_27_010800_3",
+        "ratio": 0.9815,
+        "observed": 77618.0,
+        "simulated": 76184.0
+      },
+      {
+        "device_id": "FHA_27_010205_5",
+        "ratio": 0.9945,
+        "observed": 29732.0,
+        "simulated": 29568.7
+      },
+      {
+        "device_id": "FHA_27_010730_1",
+        "ratio": 0.9963,
+        "observed": 63314.0,
+        "simulated": 63080.7
+      },
+      {
+        "device_id": "FHA_27_011464_5",
+        "ratio": 0.9981,
+        "observed": 34552.0,
+        "simulated": 34486.0
+      },
+      {
+        "device_id": "FHA_27_010919_3",
+        "ratio": 1.0038,
+        "observed": 72984.0,
+        "simulated": 73263.3
+      },
+      {
+        "device_id": "FHA_27_010310_5",
+        "ratio": 1.0078,
+        "observed": 37043.0,
+        "simulated": 37331.3
+      },
+      {
+        "device_id": "FHA_55_550153_7",
+        "ratio": 1.0116,
+        "observed": 29406.0,
+        "simulated": 29746.0
+      },
+      {
+        "device_id": "FHA_27_010840_7",
+        "ratio": 1.0373,
+        "observed": 18760.0,
+        "simulated": 19460.7
+      },
+      {
+        "device_id": "FHA_27_010398_3",
+        "ratio": 1.0491,
+        "observed": 46387.0,
+        "simulated": 48664.0
+      },
+      {
+        "device_id": "FHA_27_011726_7",
+        "ratio": 1.053,
+        "observed": 45570.0,
+        "simulated": 47986.0
+      },
+      {
+        "device_id": "FHA_27_011205_7",
+        "ratio": 1.0629,
+        "observed": 27964.0,
+        "simulated": 29724.0
+      },
+      {
+        "device_id": "FHA_27_010398_7",
+        "ratio": 1.0735,
+        "observed": 45789.0,
+        "simulated": 49154.0
+      },
+      {
+        "device_id": "FHA_55_550006_3",
+        "ratio": 1.086,
+        "observed": 43555.0,
+        "simulated": 47301.3
+      },
+      {
+        "device_id": "FHA_27_010069_1",
+        "ratio": 1.0873,
+        "observed": 36968.0,
+        "simulated": 40194.0
+      },
+      {
+        "device_id": "FHA_27_011196_3",
+        "ratio": 1.1006,
+        "observed": 14533.0,
+        "simulated": 15995.3
+      },
+      {
+        "device_id": "FHA_27_010338_5",
+        "ratio": 1.1051,
+        "observed": 43193.0,
+        "simulated": 47732.0
+      },
+      {
+        "device_id": "FHA_55_550154_3",
+        "ratio": 1.1077,
+        "observed": 21114.0,
+        "simulated": 23387.3
+      },
+      {
+        "device_id": "FHA_55_550153_3",
+        "ratio": 1.1778,
+        "observed": 28123.0,
+        "simulated": 33124.7
+      },
+      {
+        "device_id": "FHA_27_011516_5",
+        "ratio": 1.1832,
+        "observed": 29564.0,
+        "simulated": 34980.7
+      },
+      {
+        "device_id": "FHA_27_011759_5",
+        "ratio": 1.188,
+        "observed": 32645.0,
+        "simulated": 38780.7
+      },
+      {
+        "device_id": "FHA_27_011205_3",
+        "ratio": 1.2089,
+        "observed": 27143.0,
+        "simulated": 32812.0
+      },
+      {
+        "device_id": "FHA_55_550006_7",
+        "ratio": 1.2135,
+        "observed": 44010.0,
+        "simulated": 53407.3
+      },
+      {
+        "device_id": "FHA_55_550216_5",
+        "ratio": 1.2269,
+        "observed": 11872.0,
+        "simulated": 14565.3
+      },
+      {
+        "device_id": "FHA_27_010225_7",
+        "ratio": 1.228,
+        "observed": 38079.0,
+        "simulated": 46760.0
+      },
+      {
+        "device_id": "FHA_27_010225_3",
+        "ratio": 1.2408,
+        "observed": 38261.0,
+        "simulated": 47475.3
+      },
+      {
+        "device_id": "FHA_55_550008_3",
+        "ratio": 1.2455,
+        "observed": 17344.0,
+        "simulated": 21602.0
+      },
+      {
+        "device_id": "FHA_55_550008_7",
+        "ratio": 1.2479,
+        "observed": 16922.0,
+        "simulated": 21117.3
+      },
+      {
+        "device_id": "FHA_27_000042_1",
+        "ratio": 1.2516,
+        "observed": 20004.0,
+        "simulated": 25036.7
+      },
+      {
+        "device_id": "FHA_55_550880_1",
+        "ratio": 1.2523,
+        "observed": 9744.0,
+        "simulated": 12202.7
+      },
+      {
+        "device_id": "FHA_55_550880_5",
+        "ratio": 1.269,
+        "observed": 9272.0,
+        "simulated": 11766.0
+      },
+      {
+        "device_id": "FHA_27_011759_1",
+        "ratio": 1.2865,
+        "observed": 32511.0,
+        "simulated": 41826.0
+      },
+      {
+        "device_id": "FHA_27_010338_1",
+        "ratio": 1.2946,
+        "observed": 45578.0,
+        "simulated": 59005.3
+      },
+      {
+        "device_id": "FHA_55_550216_1",
+        "ratio": 1.3502,
+        "observed": 11878.0,
+        "simulated": 16038.0
+      },
+      {
+        "device_id": "FHA_27_010830_5",
+        "ratio": 1.3938,
+        "observed": 21281.0,
+        "simulated": 29660.7
+      },
+      {
+        "device_id": "FHA_27_010830_1",
+        "ratio": 1.4249,
+        "observed": 21389.0,
+        "simulated": 30476.7
+      },
+      {
+        "device_id": "FHA_27_042507_3",
+        "ratio": 1.4504,
+        "observed": 23980.0,
+        "simulated": 34780.7
+      },
+      {
+        "device_id": "FHA_27_042507_7",
+        "ratio": 1.4601,
+        "observed": 23446.0,
+        "simulated": 34234.7
+      },
+      {
+        "device_id": "FHA_27_000042_5",
+        "ratio": 1.4686,
+        "observed": 19747.0,
+        "simulated": 29000.0
+      },
+      {
+        "device_id": "FHA_27_011283_7",
+        "ratio": 1.5096,
+        "observed": 36253.0,
+        "simulated": 54726.7
+      },
+      {
+        "device_id": "FHA_27_009110_5",
+        "ratio": 1.584,
+        "observed": 9894.0,
+        "simulated": 15672.0
+      },
+      {
+        "device_id": "FHA_27_009110_1",
+        "ratio": 1.6216,
+        "observed": 10195.0,
+        "simulated": 16532.0
+      }
+    ],
+    "observed_night": 75220.0,
+    "simulated_night": 34374.7,
+    "observed_morning": 1066720.0,
+    "simulated_morning": 1144176.7,
+    "observed_midday": 1971240.0,
+    "simulated_midday": 1751358.0,
+    "observed_evening": 741708.0,
+    "simulated_evening": 637072.7,
+    "mean_error": -124.95920269097223,
+    "pct_error_valid_count": 2304,
+    "experiment_name": "tc_tbi_hermes_nw16_10iter",
+    "total_devices_all_regions": 96,
+    "devices_in_network_area": 96,
+    "network_links": 634245,
+    "flow_capacity_factor": 0.15,
+    "storage_capacity_factor": 0.18,
+    "population_scaling_factor": 0.15,
+    "volume_scaling_applied": true,
+    "volume_scaling_multiplier": 6.666666666666667
+  },
+  "demand_validation": {
+    "_comment": "Generated demand vs the household travel survey(s). This validates DEMAND (how many trips, by what mode, how far, when); the evaluation section validates ASSIGNMENT of that demand onto the network. Count stations cannot measure demand: they sit on a few major links and mix demand with routing and capacity effects.",
+    "primary_survey": "tbi",
+    "primary_survey_comment": "The survey the verdict is drawn from. A metro-specific (local) household travel survey wins when one is loaded; otherwise the national NHTS is used. Where both exist, differences between them are a property of the metro, not a model error.",
+    "has_local_survey": true,
+    "surveys": {
+      "tbi": {
+        "label": "tbi 2023",
+        "is_local": true,
+        "survey_trips": 90151,
+        "trips_per_person_survey": 3.838,
+        "trips_per_person_simulated": 3.834,
+        "trips_per_person_ratio": 0.999,
+        "survey_days_per_person": 3.41,
+        "mode_share": {
+          "car": {
+            "survey_pct": 86.87,
+            "simulated_pct": 89.31,
+            "diff_pp": 2.44
+          },
+          "walk": {
+            "survey_pct": 8.37,
+            "simulated_pct": 9.59,
+            "diff_pp": 1.22
+          },
+          "pt": {
+            "survey_pct": 3.05,
+            "simulated_pct": 1.1,
+            "diff_pp": -1.96
+          },
+          "bike": {
+            "survey_pct": 1.01,
+            "simulated_pct": 0.0,
+            "diff_pp": -1.01
+          },
+          "other": {
+            "survey_pct": 0.69,
+            "simulated_pct": 0.0,
+            "diff_pp": -0.69
+          }
+        },
+        "survey_mean_km": 9.79,
+        "survey_median_km": 5.23,
+        "survey_p25_km": 1.98,
+        "survey_p75_km": 12.38,
+        "simulated_mean_km": 10.93,
+        "simulated_median_km": 2.94,
+        "simulated_p25_km": 1.55,
+        "simulated_p75_km": 9.29,
+        "mean_km_ratio": 1.116,
+        "median_km_ratio": 0.562,
+        "departure_blocks": [
+          {
+            "block": "night",
+            "hours": "0-3",
+            "survey_pct": 0.58,
+            "simulated_pct": 0.45,
+            "diff_pp": -0.13
+          },
+          {
+            "block": "morning",
+            "hours": "4-9",
+            "survey_pct": 23.93,
+            "simulated_pct": 26.53,
+            "diff_pp": 2.6
+          },
+          {
+            "block": "midday",
+            "hours": "10-17",
+            "survey_pct": 57.67,
+            "simulated_pct": 53.82,
+            "diff_pp": -3.85
+          },
+          {
+            "block": "evening",
+            "hours": "18-23",
+            "survey_pct": 17.84,
+            "simulated_pct": 19.19,
+            "diff_pp": 1.35
+          }
+        ]
+      }
+    },
+    "surveys_comment": "One block per loaded survey, keyed by source type. trips_per_person_ratio is the headline trip-generation check (simulated / survey); a ratio well below 1.0 means demand is short of trips, which no assignment change can fix. mode_share is on MATSim's vocabulary \u2014 every transit sub-mode is \"pt\" on BOTH sides because MATSim writes only \"pt\". Trip lengths are km; compare median before mean, since a high mean with a matching median means the long tail is too heavy rather than every trip being too long. departure_blocks should be read against the evaluation section's ratio_* fields: departures matching the survey while hourly counts do not points at routing or capacity."
+  }
+}

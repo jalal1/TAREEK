@@ -120,6 +120,10 @@ used, the results, and a full `report.html` for each run. Now it has
 [Birmingham, AL](examples/birmingham-jalal-20260928/) and
 [Madison, WI](examples/madison-jalal-20260928/). We will add more cities.
 
+The [Twin Cities TBI example](examples/twincities-tbi-jalal-20260930/) uses a custom local
+household travel survey (TBI 2023) in place of NHTS, and compares the two surveys on the
+same region.
+
 You can also add your own region. See [examples/CONTRIBUTING.md](examples/CONTRIBUTING.md).
 
 > GitHub does not show HTML pages. To see a `report.html`, download the file and open it

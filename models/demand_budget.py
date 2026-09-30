@@ -176,6 +176,7 @@ class DemandBudget:
         self.purpose_chains_dfs: Dict[str, pd.DataFrame] = {}     # merged sources
         self.per_source_purpose_chains_dfs: Dict[str, Dict[str, pd.DataFrame]] = {}
         self.age_source: str = ''
+        self.reported_commute_by_source: Dict[str, Dict[str, float]] = {}  # person-file check
         self.notes: List[str] = []
 
     def origin_key(self, purpose: str) -> str:
@@ -195,6 +196,8 @@ class DemandBudget:
             'nonwork_persons_unscaled': {p: round(v) for p, v in self.purpose_origin_totals.items()},
             'knob_factors': {p: r(v) for p, v in self.purpose_factors.items()},
             'age_split_source': self.age_source,
+            'p_commute_reported_by_source': {src: {k: r(v) for k, v in d.items()}
+                                             for src, d in self.reported_commute_by_source.items()},
             'notes': self.notes,
         }
 
@@ -333,6 +336,16 @@ def compute_demand_budget(config: Dict,
             raise ValueError(f"Survey person-days have no '{seg}' segment; cannot build the budget")
 
     budget.p_commute = budget.segment_probs[B.SEG_WORKER]['commute']
+    # Independent check: what workers say about their commute (person file).
+    for src in probs_by_source:
+        source = getattr(survey_manager, 'sources', {}).get(src)
+        reported = source.reported_commute_rate() if source is not None else None
+        if reported and B.SEG_WORKER in probs_by_source[src]:
+            budget.reported_commute_by_source[src] = reported
+            budget.notes.append(
+                f"{src}: workers report commuting on {reported['rate']:.1%} of weekdays "
+                f"(person file, {reported['workers']:,} workers); the diary gives "
+                f"{probs_by_source[src][B.SEG_WORKER]['commute']:.1%}")
     for seg in (B.SEG_STUDENT, B.SEG_NONWORKER_ADULT):
         dropped = budget.segment_probs[seg]['commute']
         if dropped > 0.005:

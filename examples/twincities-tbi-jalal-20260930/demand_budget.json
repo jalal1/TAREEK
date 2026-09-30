@@ -1,0 +1,128 @@
+{
+  "p_commute_workers": 0.51104,
+  "segment_population": {
+    "worker": 1900761,
+    "student": 635060,
+    "nonworker_adult": 931687,
+    "child_0_4": 222104
+  },
+  "segment_probs": {
+    "worker": {
+      "no_travel": 0.13737,
+      "travel": 0.86263,
+      "other_travel": 0.35159,
+      "person_days": 4023.0,
+      "commute": 0.51104
+    },
+    "student": {
+      "no_travel": 0.23973,
+      "travel": 0.76027,
+      "other_travel": 0.75674,
+      "person_days": 528.0,
+      "commute": 0.00353
+    },
+    "nonworker_adult": {
+      "no_travel": 0.31842,
+      "travel": 0.68158,
+      "other_travel": 0.67532,
+      "person_days": 2195.0,
+      "commute": 0.00626
+    }
+  },
+  "segment_probs_by_source": {
+    "tbi": {
+      "worker": {
+        "travel": 0.86263,
+        "commute": 0.51104,
+        "other_travel": 0.35159,
+        "no_travel": 0.13737,
+        "person_days": 4023.0
+      },
+      "student": {
+        "travel": 0.76027,
+        "commute": 0.00353,
+        "other_travel": 0.75674,
+        "no_travel": 0.23973,
+        "person_days": 528.0
+      },
+      "nonworker_adult": {
+        "travel": 0.68158,
+        "commute": 0.00626,
+        "other_travel": 0.67532,
+        "no_travel": 0.31842,
+        "person_days": 2195.0
+      }
+    }
+  },
+  "purpose_mix": {
+    "worker": {
+      "Shopping": 0.43044,
+      "Other": 0.10688,
+      "Social": 0.23345,
+      "School": 0.09121,
+      "Dining": 0.13802
+    },
+    "student": {
+      "Shopping": 0.21395,
+      "Other": 0.01978,
+      "Social": 0.1432,
+      "School": 0.59696,
+      "Dining": 0.02611
+    },
+    "nonworker_adult": {
+      "Shopping": 0.45149,
+      "Other": 0.08946,
+      "Social": 0.28006,
+      "School": 0.06466,
+      "Dining": 0.11433
+    }
+  },
+  "purpose_rates_per_person_day": {
+    "worker": {
+      "Shopping": 0.15134,
+      "School": 0.03207,
+      "Social": 0.08208,
+      "Dining": 0.04853,
+      "Other": 0.03758
+    },
+    "student": {
+      "Shopping": 0.16191,
+      "School": 0.45174,
+      "Social": 0.10836,
+      "Dining": 0.01976,
+      "Other": 0.01497
+    },
+    "nonworker_adult": {
+      "Shopping": 0.3049,
+      "School": 0.04366,
+      "Social": 0.18913,
+      "Dining": 0.07721,
+      "Other": 0.06042
+    }
+  },
+  "nonwork_persons_unscaled": {
+    "Shopping": 1079289,
+    "School": 621630,
+    "Social": 641664,
+    "Dining": 282746,
+    "Other": 219556
+  },
+  "knob_factors": {
+    "Shopping": 1.6,
+    "School": 1.6,
+    "Social": 1.6,
+    "Dining": 1.6,
+    "Other": 1.6
+  },
+  "age_split_source": "ACS 2023 B01001 (cache)",
+  "p_commute_reported_by_source": {
+    "tbi": {
+      "rate": 0.61841,
+      "workers": 3757.0
+    }
+  },
+  "notes": [
+    "tbi: workers report commuting on 61.8% of weekdays (person file, 3,757 workers); the diary gives 51.1%",
+    "nonworker_adult: 0.6% of days are commute days; work plans come from LODES workers only, so these are not generated"
+  ]
+}
