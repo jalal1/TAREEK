@@ -87,9 +87,7 @@
       },
       "survey_rate": "auto",
       "config_rate": 0.12,
-      "_config_rate_help": "Chicago bus share target. ACS shows ~15% bus commute in Cook County; non-work trips are lower. Set to 0.12 pre-filtering; chain_consistency intersection will reduce this to ~6-8% in output",
       "blend_weight": 0.7,
-      "_blend_weight_help": "Lean heavily on config_rate since NHTS national bus share (~2%) is far below Chicago's actual usage",
       "share_adjustment": 0.0
     },
     "rail": {
@@ -109,9 +107,7 @@
       },
       "survey_rate": "auto",
       "config_rate": 0.13,
-      "_config_rate_help": "Chicago rail share target. CTA L + Metra carry ~40% of transit riders; set to 0.08 pre-filtering; chain_consistency will reduce to ~4-5% in output",
       "blend_weight": 0.7,
-      "_blend_weight_help": "Lean heavily on config_rate since NHTS national rail share (~1%) is far below Chicago's actual usage",
       "share_adjustment": 0.0
     },
     "walk": {
@@ -156,10 +152,10 @@
   },
   "plan_generation": {
     "target_plans": "all",
-    "scaling_factor": 0.11,
-    "work_scaling_multiplier": 1.0,
+    "scaling_factor": 0.12,
+    "work_scaling_multiplier": 1.3,
     "random_seed": 42,
-    "skip_if_exists": true,
+    "skip_if_exists": false,
     "supported_chain_types": [
       "home_work_home"
     ],
@@ -167,7 +163,7 @@
     "max_chain_retries": 10,
     "num_processes": 30,
     "default_mode": "car",
-    "cache_demand": true
+    "cache_demand": false
   },
   "od_matrix": {
     "source": "auto",
@@ -189,7 +185,8 @@
   "time_models": {
     "kde_bandwidth": "scott",
     "max_time_retries": 10,
-    "max_duration_sample_attempts": 100
+    "max_duration_sample_attempts": 100,
+    "first_departure_source": "first_of_day"
   },
   "duration_constraints": {
     "activity_durations": {
@@ -262,10 +259,11 @@
     "trim_jitter_minutes": 15,
     "_trim_jitter_minutes_help": "Random jitter (±minutes) added to trimmed activity durations to prevent departure clustering. 0 = no jitter",
     "departure_jitter_minutes": 5,
-    "_departure_jitter_minutes_help": "Random jitter (±minutes) added to first departure time to prevent clustering at KDE peaks. 0 = no jitter"
+    "_departure_jitter_minutes_help": "Random jitter (±minutes) added to first departure time to prevent clustering at KDE peaks. 0 = no jitter",
+    "over_budget": "resample"
   },
   "poi_assignment": {
-    "initial_radius_m": 2000,
+    "initial_radius_m": 4000,
     "radius_increment_m": 1000,
     "max_poi_retries": 10
   },
@@ -281,7 +279,8 @@
     "min_length": 3,
     "_min_length_help": "Minimum activities per chain. 3 = smallest valid chain (Home-X-Home). Raise to force longer chains.",
     "max_work_activities": 2,
-    "_max_work_activities_help": "Maximum Work activities allowed per work chain. 1 = simple commute only, 2 = allows split-shift or lunch-at-home patterns."
+    "_max_work_activities_help": "Maximum Work activities allowed per work chain. 1 = simple commute only, 2 = allows split-shift or lunch-at-home patterns.",
+    "early_stop_exponent": 2.0
   },
   "logging": {
     "level": "DEBUG",
@@ -299,7 +298,7 @@
     "version": "matsim_25",
     "mode": "basic",
     "run_simulation": true,
-    "heap_size_gb": 70,
+    "heap_size_gb": 100,
     "transit_network": true,
     "_transit_network_help": "If true, use pt2matsim pipeline to generate a multimodal network (road + transit) from OSM + GTFS. If false, use the default road-only network generator",
     "gtfs_sample_day": "dayWithMostTrips",
@@ -333,31 +332,30 @@
       "_controller.mobsim_help": "qsim | hermes. hermes is faster but is a simplified queue model that ignores trafficDynamics, linkDynamics and full stuckTime semantics. Use qsim for any congestion- or mode-choice-sensitive experiment.",
       "global.numberOfThreads": 30,
       "qsim.numberOfThreads": 30,
-      "qsim.flowCapacityFactor": 0.11,
-      "qsim.storageCapacityFactor": 0.11,
-      "qsim.stuckTime": 272.7,
+      "qsim.flowCapacityFactor": 0.12,
+      "qsim.storageCapacityFactor": 0.144,
+      "qsim.stuckTime": 10.0,
       "_qsim.stuckTime_help": "Seconds the frontmost vehicle on a link may fail to move before it is pushed onto the next link. Gridlock escape valve: HIGHER = waits LONGER. Mersini & Ziemke (2026): stuckTime = 30s / sample_share (30.0 at 100%). Only qsim honours this; hermes ignores it.",
       "linkStats.averageLinkStatsOverIterations": 5,
       "scoring.modeParams.pt.constant": 1,
       "_estimator_scoring.modeParams.pt.constant": "Cold start (no prior experiment). ACS transit share 10.70% (high-transit (10%-30%)). Seeding pt.constant=+0.5; subsequent runs with --experiment-dir will correct toward ACS using the clamped log-ratio update.",
-      "scoring.waitingPt": -1,
-      "_estimator_scoring.waitingPt": "Cold start (no prior experiment). Seeding waitingPt=-1.5 util/hr for transit density 10.70% (high-transit (10%-30%)).",
-      "scoring.modeParams.walk.constant": -3.0,
-      "_estimator_scoring.modeParams.walk.constant": "Cold start (no prior experiment). ACS walk share 3.37%. Seeding walk.constant=-2.0; subsequent runs will correct toward ACS using the clamped log-ratio update.",
+      "scoring.waitingPt": -3.0,
+      "scoring.modeParams.walk.constant": -1.0,
       "transitRouter.searchRadius": 1500.0,
       "_estimator_transitRouter.searchRadius": "Cold start (no prior experiment). ACS transit share 10.70% (high transit (10%-30%)). Seeding transit-router params from tier table; subsequent runs with --experiment-dir adjust by one tier when realised PT share is outside [70%, 130%] of the ACS target. Setting searchRadius=1200.0.",
       "transitRouter.extensionRadius": 300.0,
       "_estimator_transitRouter.extensionRadius": "Cold start (no prior experiment). ACS transit share 10.70% (high transit (10%-30%)). Seeding transit-router params from tier table; subsequent runs with --experiment-dir adjust by one tier when realised PT share is outside [70%, 130%] of the ACS target. Setting extensionRadius=250.0.",
       "transitRouter.maxBeelineWalkConnectionDistance": 400.0,
       "_estimator_transitRouter.maxBeelineWalkConnectionDistance": "Cold start (no prior experiment). ACS transit share 10.70% (high transit (10%-30%)). Seeding transit-router params from tier table; subsequent runs with --experiment-dir adjust by one tier when realised PT share is outside [70%, 130%] of the ACS target. Setting maxBeelineWalkConnectionDistance=350.0.",
-      "transitRouter.directWalkFactor": 2,
-      "_estimator_transitRouter.directWalkFactor": "Cold start (no prior experiment). ACS transit share 10.70% (high transit (10%-30%)). Seeding transit-router params from tier table; subsequent runs with --experiment-dir adjust by one tier when realised PT share is outside [70%, 130%] of the ACS target. Setting directWalkFactor=1.8."
+      "transitRouter.directWalkFactor": 1.3,
+      "hermes.endTime": "36:00:00"
     },
-    "write_intermediate_output": false
+    "write_intermediate_output": false,
+    "network_heap_size_gb": 40
   },
   "counts": {
     "enabled": true,
-    "rebuild": false,
+    "rebuild": true,
     "_rebuild_help": "If true, regenerate counts.xml and matched_devices.csv even if they already exist. Set to false to reuse cached files",
     "fha": {
       "data_dir": "data/FHA_counts",
@@ -390,7 +388,7 @@
     }
   },
   "nonwork_purposes": {
-    "nonwork_trip_share": 1.0,
+    "nonwork_trip_share": 2.0,
     "_nonwork_trip_share_help": "Factor on the survey travel probability of non-commute days (all segments). 1.0 = use the surveys as they are.",
     "Shopping": {
       "enabled": true,
@@ -404,7 +402,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both (recommended)"
       },
       "od_matrix": {
-        "beta": 2.0,
+        "beta": 1.6,
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -439,7 +437,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
       },
       "od_matrix": {
-        "beta": 1.8,
+        "beta": 2.0,
         "alpha": 0.15
       },
       "poi_weighting": {
@@ -471,7 +469,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
       },
       "od_matrix": {
-        "beta": 2.0,
+        "beta": 1.4,
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -500,7 +498,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
       },
       "od_matrix": {
-        "beta": 2.0,
+        "beta": 1.4,
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -527,12 +525,85 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
       },
       "od_matrix": {
-        "beta": 2.0,
+        "beta": 1.4,
         "alpha": 0.1
       },
       "poi_weighting": {
         "enabled": true
       }
+    }
+  },
+  "freight": {
+    "_help": "Boundary truck trips (E-I, I-E, E-E). See docs/freight/design.md",
+    "enabled": true,
+    "demand_source": "hpms_cordon",
+    "_demand_source_help": "hpms_cordon | car_share | absolute",
+    "truck_share": null,
+    "_truck_share_help": "null = resolve from HPMS/national table; a number pins it",
+    "demand_scale": 0.18,
+    "_demand_scale_help": "fraction of observed boundary freight to simulate. 1.0 = the full HPMS-derived volume. NOT a calibration target - the cordon screenline cannot judge it, because its yardstick is the same cordon weighting the demand comes from. Lower it only as a deliberate throttle.",
+    "trips_per_day": null,
+    "hpms": {
+      "enabled": true,
+      "service_url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/hpms_v2_view/FeatureServer/0",
+      "cache_dir": "data/hpms",
+      "cache_days": 90,
+      "timeout_seconds": 30
+    },
+    "hpms_match": {
+      "_help": "Stage 9: match each cordon to its HPMS segment so weights come from observed truck AADT instead of capacity. Any failure falls back to capacity; it never stops a run.",
+      "radius_m": 150.0,
+      "_radius_m_help": "how far from a cordon to look for an HPMS centreline; must exceed a carriageway separation without reaching a different road",
+      "bearing_tolerance_deg": 45.0,
+      "_bearing_tolerance_help": "direction agreement required. Without it an inbound cordon takes the opposing carriageway's volume ~half the time",
+      "bbox_pad_km": 5.0,
+      "min_truck_aadt": 50.0,
+      "_min_truck_aadt_help": "skip segments below this truck AADT server-side; they cannot inform a truck weight and they dominate the payload",
+      "timeout_seconds": 120
+    },
+    "class_shares": {
+      "external_to_internal": 0.35,
+      "internal_to_external": 0.35,
+      "through": 0.3
+    },
+    "cordon": {
+      "min_freespeed_ms": 22.0,
+      "min_capacity_vph": 1500,
+      "min_peripherality": 0.6,
+      "_min_peripherality_help": "1.0 = on the network envelope; 0.4-0.8 is the usable range",
+      "dedupe_radius_m": 1500,
+      "envelope_bins": 36,
+      "envelope_percentile": 99.0,
+      "weight_by": "hpms_truck_aadt",
+      "_weight_by_help": "hpms_truck_aadt | capacity. Observed truck volume where a cordon matched HPMS, capacity elsewhere; 'capacity' ignores observations entirely (ablation control)",
+      "fail_if_none_found": true
+    },
+    "internal_attractor": "freight_employment",
+    "_internal_attractor_help": "employment (all jobs weighted equally) | freight_employment (weighted goods-producing/handling CNS* sectors - a warehouse and an office of equal headcount are no longer equal). Falls back to employment with a warning if the work-location ETL predates the sector columns.",
+    "od_matrix": {
+      "friction": "exponential",
+      "beta": 0.02,
+      "_beta_help": "1/KM, not the QRFM 1/minute - see design.md section 2"
+    },
+    "departure_distribution": {
+      "_help": "24 hourly weights each; normalised on load, need not sum to 1",
+      "business_day": null,
+      "through": null
+    },
+    "mode": "car",
+    "subpopulation": "freight",
+    "require_events": true,
+    "_require_events_help": "sets writeEventsInterval so tier-2 validation can isolate trucks",
+    "vehicle_mix": {
+      "single_unit": 0.45,
+      "combination": 0.55
+    },
+    "pce": {
+      "enabled": false,
+      "_help": "stage 6: write vehicles.xml and set vehiclesSource. Must be its own run.",
+      "single_unit": 1.5,
+      "combination": 2.5,
+      "car": 1.0
     }
   }
 }
