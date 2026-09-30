@@ -258,3 +258,19 @@ This program is free software; you can redistribute it and/or modify
 it under the terms of the [GNU General Public License](LICENSE) as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
+
+---
+
+## Citation
+
+If you use TAREEK in your work, please cite it:
+
+```bibtex
+@software{khalil2026tareek,
+  author  = {Khalil, Jalal and Duaibes, Arein and Yan, Da and Sisiopiku, Virginia},
+  title   = {{TAREEK}: An Agent-Based Traffic Simulation System for Any {U.S.} Metropolitan Area},
+  year    = {2026},
+  url     = {https://github.com/jalal1/TAREEK},
+  license = {GPL-2.0-or-later}
+}
+```
