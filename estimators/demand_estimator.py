@@ -507,14 +507,19 @@ def compute_survey_benchmarks(
         - avg_legs: {'work': float, 'nonwork': float}
         - travel_day_rate: blended share of person-days with at least one trip (0.0-1.0)
     """
-    from data_sources.survey_manager import SurveyManager
+    from data_sources.survey_manager import (SurveyManager, ROLE_CHAINS, ROLE_PERSON_DAYS,
+                                             select_for_role)
     from data_sources.base_survey_trip import BaseSurveyTrip
     from models.chains import process_trip_chains, is_home_work_home_chain, is_home_other_home_chain
     import pandas as pd
 
     survey_manager = SurveyManager(config)
-    all_data = survey_manager.load_data()  # loads from DB, sets self.data on each source
-    blend_weights = survey_manager.get_blend_weights()
+    # Trips per travel day and legs per chain describe the chains, so they
+    # come from the 'chains' sources; the travel-day share from the
+    # 'person_days' sources (see survey_manager.ROLES).
+    blend_weights = survey_manager.get_blend_weights(ROLE_CHAINS)
+    pd_weights = survey_manager.get_blend_weights(ROLE_PERSON_DAYS)
+    all_data = select_for_role(survey_manager.load_data(), blend_weights)
 
     # We need person-day counts per source to compute a correct daily rate
     # for multi-day surveys (TBI). process_persons() groups trips by
@@ -524,7 +529,7 @@ def compute_survey_benchmarks(
     print("  [Source: survey_trips table in DuckDB — TBI + NHTS surveys]")
     print("  Computing trips-per-capita from survey data...")
 
-    all_persons_by_source = survey_manager.process_persons()
+    all_persons_by_source = survey_manager.process_persons(role=ROLE_CHAINS)
 
     tpc_result = {}
     weighted_sum = 0.0
@@ -582,7 +587,7 @@ def compute_survey_benchmarks(
         w = pdf[BaseSurveyTrip.PD_WEIGHT]
         share = w[pdf[BaseSurveyTrip.PD_N_TRIPS] > 0].sum() / w.sum()
         rates.append(share)
-        rate_w.append(blend_weights.get(source_name, 1.0))
+        rate_w.append(pd_weights.get(source_name, 1.0))
         print(f"    {source_name}: travel-day share {share:.1%} "
               f"({len(pdf):,} person-days incl. no-travel days)")
     if not rates:

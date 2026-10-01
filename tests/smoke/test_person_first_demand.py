@@ -59,6 +59,7 @@ def _bare_manager(config, sources=None):
     sm.config = config
     sm.survey_configs = config['data'].get('surveys', [])
     sm.sources = sources or {}
+    sm.person_day_sources = dict(sm.sources)
     sm._person_days = None
     sm._month_filters = {}
     return sm
@@ -178,7 +179,7 @@ class _FakeBudgetManager:
     def get_person_days(self):
         return self._pd
 
-    def get_blend_weights(self):
+    def get_blend_weights(self, role=None):
         return {'nhts': 1.0}
 
 

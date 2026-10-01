@@ -49,10 +49,10 @@ common schema (`data_sources/base_survey_trip.py`). The TBI reader is
   {
     "type": "tbi",
     "year": "2023",
-    "file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Trip.csv.gz",
-    "linked_trip_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023LinkedTrip.csv.gz",
-    "person_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Person.csv.gz",
-    "day_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Day.csv.gz",
+    "file": "surveys/twincities_tbi_2023/TravelBehaviorInventory2023Trip.csv.gz",
+    "linked_trip_file": "surveys/twincities_tbi_2023/TravelBehaviorInventory2023LinkedTrip.csv.gz",
+    "person_file": "surveys/twincities_tbi_2023/TravelBehaviorInventory2023Person.csv.gz",
+    "day_file": "surveys/twincities_tbi_2023/TravelBehaviorInventory2023Day.csv.gz",
     "weight": 1
   },
   { "type": "nhts", "year": "2022", "file": "nhts/csv/tripv2pub.csv",
@@ -135,7 +135,7 @@ python run_experiment.py --config config/twincities_tbi.json
 ```
 
 The TBI 2023 files are **in the repository**, in
-[`data/csv_society_tbi_home_interview2023/`](../../data/csv_society_tbi_home_interview2023/)
+[`data/surveys/twincities_tbi_2023/`](../../data/surveys/twincities_tbi_2023/)
 (public domain, gzip-compressed, with the publisher's metadata and notice). You do not
 need to download them. The run used the same files as uncompressed CSV; the
 `config_used.json` here points to the `.csv.gz` files, and the content is identical.

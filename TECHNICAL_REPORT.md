@@ -164,7 +164,7 @@ Each source has one job:
 
 **Person-days**: A trip table cannot show a person who stayed at home, because that person has no trips. So each survey class returns a person-day table from `load_person_days()`, one row per surveyed day including days with no trips (columns: person id, date, weight, segment, month, weekday, number of trips). NHTS reads its person file (`person_file`: `perv2pub.csv`, one day per person). TBI reads its Day and Person files (`day_file` and `person_file`, several days per person, so each row keeps its calendar date). A survey without a person file returns `None`; it still feeds chains and time models, but it cannot set day types.
 
-**Day types**: For each segment (worker, student, non-working adult), a day is a *commute* day if it has a trip to Work, an *other-travel* day if it has trips but none to Work, and a *no-travel* day otherwise. The *main purpose* of an other-travel day is the non-Home, non-Work stop with the longest dwell. Probabilities are weighted with the person-day weights and blended across surveys with `data.surveys[].weight`. Children 0-4 get no plan of their own; adult escort trips cover them.
+**Day types**: For each segment (worker, student, non-working adult), a day is a *commute* day if it has a trip to Work, an *other-travel* day if it has trips but none to Work, and a *no-travel* day otherwise. The *main purpose* of an other-travel day is the non-Home, non-Work stop with the longest dwell. Probabilities are weighted with the person-day weights and blended across the surveys that do the `person_days` job, with their `data.surveys[].weight` or `roles.person_days` (Section 11). Children 0-4 get no plan of their own; adult escort trips cover them.
 
 **Survey months**: `data.survey_months` selects the survey days that describe a regular weekday: `"regular"` (March-May and September-November, the default), `"all"`, or a list of months. The same person-days also select the trips, so day types, chains and time models describe the same days. A source keeps the month window only if every segment still has at least 200 person-days in it; otherwise that source uses all months. The counts month (`counts.fha.month`) should be inside the window; the validator warns when it is not.
 
@@ -392,6 +392,10 @@ Three parameters have a measured path. `truck_share` and `vehicle_mix` are resol
 
 **TBI (Twin Cities Travel Behavior Inventory 2023)**: The loader reads the trip file for chains and times, and the Day and Person files for person-days. TBI is set to weight 0 in the current configs. Before it can replace NHTS in the demand budget, the trip cleaning needs work: it drops work trips whose origin purpose is missing or "Change mode", so commute days become other-travel days (worker P(commute) 0.37 against 0.42 in the raw data); the broad "Work" purpose includes business trips; and trips between 0:00 and 3:00 get the next calendar date and do not match their Day row.
 
+**Birmingham local survey (`bham_local`)**: A small published survey of 451 Birmingham residents (`data/surveys/birmingham_al_local/`, MIT License), one row per person with up to 13 trips. It has no weights, no dates, no no-travel days and no persons under 18, so it cannot do the `person_days` job; NHTS does that job for it (see Survey Roles below).
+
+Custom (local) surveys are kept in `data/surveys/<region>_<survey>[_<year>]/`, each with a README. NHTS stays in `data/nhts/`.
+
 **Regional surveys**: Region-specific surveys produce better results. The system provides an extensible survey framework (see Section 13.1).
 
 Trips are stored in the DuckDB table `survey_trips`. The ETL runs only when a `(source_type, source_year)` pair is missing from the table, so a change to a trip loader has no effect until the rows of that source are deleted. Person-days are read from the survey files at run time and need no ETL.
@@ -399,6 +403,10 @@ Trips are stored in the DuckDB table `survey_trips`. The ETL runs only when a `(
 ### Multi-Survey Blending
 
 The system supports blending multiple survey sources with configurable weights. Weights are normalized automatically. A blended trip chain model wraps per-source Markov models. At sampling time, a source is selected proportionally to its weight, and a chain is drawn from that source's model. Setting a regional weight to zero causes automatic fallback to NHTS-only chains. The demand budget blends the day-type probabilities and purpose mixes of the sources with the same weights.
+
+### Survey Roles
+
+A survey does up to five jobs: `person_days` (day-type probabilities and segments in the demand budget), `chains` (activity sequences), `times` (departure, trip and activity duration models), `modes` (mode shares per purpose) and `od` (survey OD matrix and survey trip rates). The entry's `weight` applies to all five. An optional `roles` object overrides it per job, for example `{"type": "nhts", "weight": 0, "roles": {"person_days": 1}}` uses NHTS for person-days only. For each job the weights are normalised over the surveys that can do it; a survey without a person-day table cannot do `person_days`, and one without locations cannot do `od`. `chains`, `times`, `modes` and `person_days` each need at least one survey, and the run stops with a clear message otherwise. A survey with only `person_days` is not a trip source: its trips are read only by the demand budget. The rules are in `data_sources/survey_manager.py` (`ROLES`).
 
 ### Demand Estimation
 

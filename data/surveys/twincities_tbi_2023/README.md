@@ -58,10 +58,10 @@ are not used by Tareek and are not in this folder.
 {
   "type": "tbi",
   "year": "2023",
-  "file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Trip.csv.gz",
-  "linked_trip_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023LinkedTrip.csv.gz",
-  "person_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Person.csv.gz",
-  "day_file": "csv_society_tbi_home_interview2023/TravelBehaviorInventory2023Day.csv.gz",
+  "file": "surveys/twincities_tbi_2023/TravelBehaviorInventory2023Trip.csv.gz",
+  "linked_trip_file": "surveys/twincities_tbi_2023/TravelBehaviorInventory2023LinkedTrip.csv.gz",
+  "person_file": "surveys/twincities_tbi_2023/TravelBehaviorInventory2023Person.csv.gz",
+  "day_file": "surveys/twincities_tbi_2023/TravelBehaviorInventory2023Day.csv.gz",
   "weight": 1
 }
 ```

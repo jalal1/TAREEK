@@ -177,6 +177,7 @@ class DemandBudget:
         self.per_source_purpose_chains_dfs: Dict[str, Dict[str, pd.DataFrame]] = {}
         self.age_source: str = ''
         self.reported_commute_by_source: Dict[str, Dict[str, float]] = {}  # person-file check
+        self.person_day_weights: Dict[str, float] = {}             # normalised, sources used
         self.notes: List[str] = []
 
     def origin_key(self, purpose: str) -> str:
@@ -198,6 +199,7 @@ class DemandBudget:
             'age_split_source': self.age_source,
             'p_commute_reported_by_source': {src: {k: r(v) for k, v in d.items()}
                                              for src, d in self.reported_commute_by_source.items()},
+            'person_day_weights': {k: r(v) for k, v in self.person_day_weights.items()},
             'notes': self.notes,
         }
 
@@ -302,32 +304,54 @@ def compute_demand_budget(config: Dict,
         from models.home_locs_v2 import load_home_locations_by_counties
         home_locs_dict = load_home_locations_by_counties(config)
 
+    from data_sources.survey_manager import ROLE_PERSON_DAYS, ROLE_CHAINS
+
     budget = DemandBudget()
     purposes = enabled_purposes(config)
     use_weight = config.get('chains', {}).get('use_weighted_chains', True)
+    # person_days sources only; a source that cannot do the job maps to None.
     person_days = survey_manager.get_person_days()
-    blend_weights = survey_manager.get_blend_weights()
+    pd_role_weights = survey_manager.get_blend_weights(ROLE_PERSON_DAYS)
+
+    # A person_days source that supplies no trips (e.g. NHTS with
+    # roles {"person_days": 1} and weight 0) is not in persons_by_source,
+    # but its trips are still needed: P(commute) and the purpose mix are
+    # read off the trips of its travel days.
+    missing = [s for s, d in person_days.items() if d is not None and s not in persons_by_source]
+    pd_persons = dict(persons_by_source)
+    if missing:
+        loaded = survey_manager.process_persons(role=ROLE_PERSON_DAYS)
+        pd_persons.update({s: loaded[s] for s in missing if s in loaded})
 
     # ── Day records and per-source day-type probabilities ──────────────
     day_records: Dict[str, pd.DataFrame] = {}
     probs_by_source, mix_by_source = {}, {}
-    for src, persons in persons_by_source.items():
-        day_records[src] = _source_day_records(persons, person_days.get(src), purposes, use_weight)
+    # Ordered (not a set): the blend sums must not depend on hash order.
+    sources_in_order = list(persons_by_source) + [s for s in person_days if s not in persons_by_source]
+    for src in sources_in_order:
+        if src not in pd_persons:
+            continue
+        day_records[src] = _source_day_records(pd_persons[src], person_days.get(src), purposes, use_weight)
         if person_days.get(src) is not None:
             probs_by_source[src], mix_by_source[src] = _segment_probs(
                 person_days[src], day_records[src], purposes)
             unmatched = day_records[src]['pd_weight'].isna().mean()
             if unmatched > 0.02:
                 budget.notes.append(f"{src}: {unmatched:.1%} of travel days have no person-day row")
+    cannot = sorted(s for s, d in person_days.items() if d is None)
+    if cannot:
+        budget.notes.append(f"person_days: {cannot} cannot do this job (no person-day table); skipped")
 
     if not probs_by_source:
         raise ValueError(
             "No active survey provides person-days, so the model cannot know how "
             "often each segment travels. Add 'person_file' (NHTS) or "
-            "'person_file' + 'day_file' (TBI) to data.surveys[] of a survey with "
-            "weight > 0.")
+            "'person_file' + 'day_file' (TBI) to a survey in data.surveys[] and give "
+            "it weight > 0, or \"roles\": {\"person_days\": 1}"
+            + (f" ({cannot} have no person-day table)" if cannot else "") + ".")
 
-    pd_weights = {s: blend_weights.get(s, 0.0) for s in probs_by_source}
+    pd_weights = {s: pd_role_weights.get(s, 0.0) for s in probs_by_source}
+    budget.person_day_weights = {s: w / sum(pd_weights.values()) for s, w in pd_weights.items()}
     budget.segment_probs_by_source = probs_by_source
     budget.segment_probs = _blend(probs_by_source, pd_weights)
     budget.purpose_mix = _blend(mix_by_source, pd_weights)
@@ -338,7 +362,8 @@ def compute_demand_budget(config: Dict,
     budget.p_commute = budget.segment_probs[B.SEG_WORKER]['commute']
     # Independent check: what workers say about their commute (person file).
     for src in probs_by_source:
-        source = getattr(survey_manager, 'sources', {}).get(src)
+        source = (getattr(survey_manager, 'person_day_sources', {}).get(src)
+                  or getattr(survey_manager, 'sources', {}).get(src))
         reported = source.reported_commute_rate() if source is not None else None
         if reported and B.SEG_WORKER in probs_by_source[src]:
             budget.reported_commute_by_source[src] = reported
@@ -408,7 +433,10 @@ def compute_demand_budget(config: Dict,
 
     # ── Chain pools per main purpose, re-weighted to the region's segment mix ──
     if build_chains:
+        chain_sources = survey_manager.get_blend_weights(ROLE_CHAINS)
         for src, persons in persons_by_source.items():
+            if src not in chain_sources:
+                continue
             days = day_records[src]
             weights: Dict[Any, Tuple[str, float]] = {}
             for p in purposes:

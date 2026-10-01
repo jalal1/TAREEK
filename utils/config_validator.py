@@ -467,15 +467,24 @@ class ConfigValidator:
         survey values; a non-neutral value is allowed but reported, because
         it changes what the surveys say.
         """
+        from data_sources.survey_manager import (ROLE_PERSON_DAYS, is_active_entry, role_weight,
+                                                 validate_survey_roles)
         data_cfg = self.config.get('data', {})
         surveys = data_cfg.get('surveys', [])
-        active = [s for s in surveys if s.get('weight', 1.0) > 0]
-        if active and not any(s.get('person_file') for s in active):
+        if surveys:
+            try:
+                validate_survey_roles(surveys)
+            except ValueError as e:
+                raise ConfigValidationError(str(e))
+        active = [s for s in surveys if is_active_entry(s)]
+        person_day_entries = [s for s in surveys if role_weight(s, ROLE_PERSON_DAYS) > 0]
+        if active and not any(s.get('person_file') for s in person_day_entries):
             raise ConfigValidationError(
-                "No active survey (weight > 0) has a 'person_file'. The demand model "
-                "needs survey person-days to know how often each segment travels. "
+                "No survey that does the 'person_days' job has a 'person_file'. The demand "
+                "model needs survey person-days to know how often each segment travels. "
                 "NHTS: 'person_file': 'nhts/csv/perv2pub.csv'. TBI: 'person_file' and "
-                "'day_file'.")
+                "'day_file'. A survey can do this job alone with weight 0 and "
+                "\"roles\": {\"person_days\": 1}.")
         for s in active:
             if s.get('type') == 'tbi' and s.get('person_file') and not s.get('day_file'):
                 raise ConfigValidationError("TBI survey entry needs 'day_file' next to 'person_file'")

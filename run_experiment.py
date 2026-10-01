@@ -97,18 +97,45 @@ def load_shared_nonwork_data(config: Dict) -> Dict:
     logger.info(f"  Loaded {len(survey_df):,} survey trips")
     logger.info(f"  Processed {len(persons):,} persons")
 
-    # Process chains
+    # Process chains (from the sources that do the 'chains' job)
+    from data_sources.survey_manager import ROLE_CHAINS, ROLE_TIMES, select_for_role
     use_weight = config.get('chains', {}).get('use_weighted_chains', True)
-    chains = process_trip_chains(persons, use_weight=use_weight)
+    multi = survey_manager.has_multiple_sources()
+    if multi:
+        # Per-source data, loaded once and reused below.
+        all_data = survey_manager.load_data()
+        all_persons = survey_manager.process_persons()
+        chain_persons = {}
+        for p in select_for_role(all_persons, survey_manager.get_blend_weights(ROLE_CHAINS)).values():
+            chain_persons.update(p)
+    else:
+        chain_persons = persons
+    chains = process_trip_chains(chain_persons, use_weight=use_weight)
     chains_df = pd.DataFrame(chains)
     logger.info(f"  Processed {len(chains_df):,} trip chains")
 
-    # Initialize shared time models ONCE (used by all activity types)
+    # Initialize shared time models ONCE (used by all activity types).
+    # With several trip sources they are blended by the 'times' weights;
+    # joining the sources and fitting one model would weight each source by
+    # its number of trips instead.
     logger.info("  Initializing shared time models...")
-    from models.time import TripDurationModel, ActivityDurationModel
-    trip_duration_model = TripDurationModel(survey_df, config=config)
+    from models.time import (TripDurationModel, ActivityDurationModel,
+                             BlendedTripDurationModel, BlendedActivityDurationModel)
     bw_method = config.get('time_models', {}).get('kde_bandwidth', 'scott')
-    activity_duration_model = ActivityDurationModel(persons, bw_method=bw_method, config=config)
+    if multi:
+        times_w = survey_manager.get_blend_weights(ROLE_TIMES)
+        t_data = select_for_role(all_data, times_w)
+        t_persons = select_for_role(all_persons, times_w)
+        tdm = {n: TripDurationModel(df, config=config) for n, df in t_data.items()}
+        adm = {n: ActivityDurationModel(p, bw_method=bw_method, config=config)
+               for n, p in t_persons.items()}
+        trip_duration_model = (BlendedTripDurationModel(tdm, times_w) if len(tdm) > 1
+                               else next(iter(tdm.values())))
+        activity_duration_model = (BlendedActivityDurationModel(adm, times_w) if len(adm) > 1
+                                   else next(iter(adm.values())))
+    else:
+        trip_duration_model = TripDurationModel(survey_df, config=config)
+        activity_duration_model = ActivityDurationModel(persons, bw_method=bw_method, config=config)
     logger.info(f"  Time models initialized")
 
     # Initialize shared POI spatial index ONCE (contains all activity types)
@@ -120,11 +147,10 @@ def load_shared_nonwork_data(config: Dict) -> Dict:
 
     # Build per-source data for multi-source blending (if applicable)
     multi_source_data = {}
-    if survey_manager.has_multiple_sources():
+    if multi:
         logger.info("  Multi-source mode: building per-source data for blending...")
-        all_data = survey_manager.load_data()
-        all_persons = survey_manager.process_persons()
         blend_weights = survey_manager.get_blend_weights()
+        role_weights = survey_manager.get_role_weights()
 
         # Build per-source chains DataFrames
         per_source_chains_dfs = {}
@@ -138,8 +164,9 @@ def load_shared_nonwork_data(config: Dict) -> Dict:
             'per_source_persons': all_persons,
             'per_source_chains_dfs': per_source_chains_dfs,
             'blend_weights': blend_weights,
+            'role_weights': role_weights,
         }
-        logger.info(f"  Multi-source blending ready: {list(blend_weights.items())}")
+        logger.info(f"  Multi-source blending ready: {role_weights}")
 
     # Demand budget: day types per segment from the survey person-days, the
     # per-block origins of each main purpose (written into home_locs_dict),

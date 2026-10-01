@@ -28,7 +28,8 @@ if project_root not in sys.path:
 
 from config.config import load_config
 from data_sources.base_survey_trip import BaseSurveyTrip
-from data_sources.survey_manager import SurveyManager
+from data_sources.survey_manager import (SurveyManager, ROLE_CHAINS, ROLE_TIMES, ROLE_MODES,
+                                         ROLE_OD, select_for_role, role_weights_from_shared)
 from models.home_locs_v2 import load_home_locations_by_counties
 from models.work_locs_v2 import load_work_locations_by_counties
 from models.chains import TripChainModel, BlendedTripChainModel, filter_chains_by_type, process_trip_chains
@@ -728,13 +729,14 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
             # Multi-source: rebuild blended models from per-source data
             per_source_data = shared_data['per_source_data']       # {name: df}
             per_source_persons = shared_data['per_source_persons'] # {name: persons}
-            blend_weights = shared_data['blend_weights']           # {name: float}
+            chains_w = role_weights_from_shared(shared_data, ROLE_CHAINS)  # {name: float}
+            times_w = role_weights_from_shared(shared_data, ROLE_TIMES)
 
             # Chain model — per-source TripChainModels wrapped in blended
             per_source_chains_dfs = shared_data['per_source_chains_dfs']  # {name: chains_df}
             per_source_all_chains_dfs = shared_data.get('per_source_all_chains_dfs', {})
             chain_models = {}
-            for name, cdf in per_source_chains_dfs.items():
+            for name, cdf in select_for_role(per_source_chains_dfs, chains_w).items():
                 if not cdf.empty:
                     all_cdf = per_source_all_chains_dfs.get(name)
                     chain_models[name] = TripChainModel(
@@ -742,24 +744,25 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
                         length_distribution_df=all_cdf,
                         required_activity=BaseSurveyTrip.ACT_WORK, max_required=max_work)
             if len(chain_models) > 1:
-                self.chain_model = BlendedTripChainModel(chain_models, blend_weights)
+                self.chain_model = BlendedTripChainModel(chain_models, chains_w)
             else:
                 self.chain_model = next(iter(chain_models.values()))
 
             # Time model — per-source TripDurationModels
-            per_source_time = {name: TripDurationModel(df, config=config) for name, df in per_source_data.items()}
+            per_source_time = {name: TripDurationModel(df, config=config)
+                               for name, df in select_for_role(per_source_data, times_w).items()}
             if len(per_source_time) > 1:
-                self.time_model = BlendedTripDurationModel(per_source_time, blend_weights)
+                self.time_model = BlendedTripDurationModel(per_source_time, times_w)
             else:
                 self.time_model = next(iter(per_source_time.values()))
 
             # Activity duration model — per-source ActivityDurationModels
             per_source_act = {
                 name: ActivityDurationModel(p, bw_method=bw, config=config)
-                for name, p in per_source_persons.items()
+                for name, p in select_for_role(per_source_persons, times_w).items()
             }
             if len(per_source_act) > 1:
-                self.activity_duration_model = BlendedActivityDurationModel(per_source_act, blend_weights)
+                self.activity_duration_model = BlendedActivityDurationModel(per_source_act, times_w)
             else:
                 self.activity_duration_model = next(iter(per_source_act.values()))
         else:
@@ -812,11 +815,12 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
 
         # Initialize mode choice model with survey data
         if 'per_source_data' in shared_data:
-            # Multi-source: use per-source data and blend weights
+            # Multi-source: use per-source data and 'modes' weights
+            modes_w = role_weights_from_shared(shared_data, ROLE_MODES)
             self.mode_choice = ModeChoiceModel(
                 config,
-                survey_data=shared_data['per_source_data'],
-                survey_weights=shared_data['blend_weights'],
+                survey_data=select_for_role(shared_data['per_source_data'], modes_w),
+                survey_weights=modes_w,
                 gtfs_avail_manager=gtfs_avail_manager,
             )
         else:
@@ -1028,21 +1032,29 @@ class PlanGenerator(_BasePlanGenerator):
             all_data = self.survey_manager.load_data()
             all_persons = self.survey_manager.process_persons()
             weights = self.survey_manager.get_blend_weights()
+            self._role_weights = self.survey_manager.get_role_weights()
+            chains_w = self._role_weights[ROLE_CHAINS]
+            times_w = self._role_weights[ROLE_TIMES]
 
-            # 6a: Blended trip chain model
-            self.chain_model = self._init_blended_chain_model(all_persons, weights)
+            # 6a: Blended trip chain model ('chains' weights)
+            self.chain_model = self._init_blended_chain_model(
+                select_for_role(all_persons, chains_w), chains_w)
 
-            # 6b: Blended trip duration model
-            per_source_time = {name: TripDurationModel(df, config=self.config) for name, df in all_data.items()}
-            self.time_model = BlendedTripDurationModel(per_source_time, weights)
+            # 6b: Blended trip duration model ('times' weights)
+            per_source_time = {name: TripDurationModel(df, config=self.config)
+                               for name, df in select_for_role(all_data, times_w).items()}
+            self.time_model = (BlendedTripDurationModel(per_source_time, times_w)
+                               if len(per_source_time) > 1 else next(iter(per_source_time.values())))
 
-            # 6c: Blended activity duration model
+            # 6c: Blended activity duration model ('times' weights)
             bw = self.config.get('time_models', {}).get('kde_bandwidth', 'scott')
             per_source_act = {
                 name: ActivityDurationModel(p, bw_method=bw, config=self.config)
-                for name, p in all_persons.items()
+                for name, p in select_for_role(all_persons, times_w).items()
             }
-            self.activity_duration_model = BlendedActivityDurationModel(per_source_act, weights)
+            self.activity_duration_model = (
+                BlendedActivityDurationModel(per_source_act, times_w)
+                if len(per_source_act) > 1 else next(iter(per_source_act.values())))
 
             # Store per-source data for OD matrix blending (6d)
             self._all_survey_data = all_data
@@ -1058,6 +1070,7 @@ class PlanGenerator(_BasePlanGenerator):
             )
             self._all_survey_data = None
             self._blend_weights = None
+            self._role_weights = self.survey_manager.get_role_weights()
 
         # Hand the observed activity durations to the MATSim config writer.
         # Both branches above converge on self.activity_duration_model, and the
@@ -1149,20 +1162,17 @@ class PlanGenerator(_BasePlanGenerator):
         # Initialize mode choice model with survey data for mode rate computation
         logger.info("Initializing mode choice model...")
         if self._all_survey_data is not None:
-            # Multi-source: pass per-source survey data and weights
+            # Multi-source: pass per-source survey data and 'modes' weights
+            modes_w = self._role_weights[ROLE_MODES]
             self.mode_choice = ModeChoiceModel(
                 self.config,
-                survey_data=self._all_survey_data,
-                survey_weights=self._blend_weights,
+                survey_data=select_for_role(self._all_survey_data, modes_w),
+                survey_weights=modes_w,
                 gtfs_avail_manager=self.gtfs_avail_manager,
             )
         else:
             # Single source: wrap survey_df in dict for consistent interface
-            survey_name = 'default'
-            for entry in self.config.get('data', {}).get('surveys', []):
-                if entry.get('weight', 0) > 0:
-                    survey_name = entry.get('type', 'default')
-                    break
+            survey_name = next(iter(self.survey_manager.sources), 'default')
             self.mode_choice = ModeChoiceModel(
                 self.config,
                 survey_data={survey_name: self.survey_df},
@@ -1383,8 +1393,9 @@ class PlanGenerator(_BasePlanGenerator):
         # Build survey OD matrix (possibly blended from multiple sources)
         if self._all_survey_data is not None:
             # Multi-source path: only surveys with location data contribute
+            od_w = self._role_weights[ROLE_OD]
             loc_surveys = self.survey_manager.get_surveys_with_locations(
-                self._all_survey_data
+                select_for_role(self._all_survey_data, od_w)
             )
 
             if not loc_surveys:
@@ -1422,12 +1433,12 @@ class PlanGenerator(_BasePlanGenerator):
                         blend_branch='no_survey_hw_trips', alpha=alpha,
                     )
 
-                survey_od_matrix = blend_survey_od_matrices(
-                    per_source_ods, self._blend_weights
-                )
+                survey_od_matrix = blend_survey_od_matrices(per_source_ods, od_w)
         else:
-            # Single-source path (original behaviour)
-            survey_hw_df = self.survey_df.query(
+            # Single-source path (original behaviour); a source with od = 0
+            # leaves no rows, so the survey OD is empty and the guard below
+            # keeps the gravity / LODES matrix alone.
+            survey_hw_df = self.survey_manager.filter_df_by_role(self.survey_df, ROLE_OD).query(
                 f"{BaseSurveyTrip.ORIGIN_PURPOSE} == '{BaseSurveyTrip.ACT_HOME}' and "
                 f"{BaseSurveyTrip.DESTINATION_PURPOSE} == '{BaseSurveyTrip.ACT_WORK}'"
             )
@@ -2130,6 +2141,7 @@ class PlanGenerator(_BasePlanGenerator):
             shared_data['per_source_chains_dfs'] = per_source_chains_dfs
             shared_data['per_source_all_chains_dfs'] = per_source_all_chains_dfs
             shared_data['blend_weights'] = self._blend_weights
+            shared_data['role_weights'] = self._role_weights
 
         # Split OD pairs into chunks for each process
         chunk_size = max(1, len(od_pairs) // num_processes)

@@ -35,7 +35,8 @@ if project_root not in sys.path:
 
 from config.config import load_config
 from data_sources.base_survey_trip import BaseSurveyTrip
-from data_sources.survey_manager import SurveyManager
+from data_sources.survey_manager import (SurveyManager, ROLE_CHAINS, ROLE_TIMES, ROLE_MODES,
+                                         ROLE_OD, select_for_role, role_weights_from_shared)
 from models.home_locs_v2 import load_home_locations_by_counties
 from models.chains import TripChainModel, BlendedTripChainModel, process_trip_chains, filter_chains_by_type
 from models.time import TripDurationModel, ActivityDurationModel, BlendedTripDurationModel, BlendedActivityDurationModel
@@ -68,7 +69,7 @@ def build_budget_chain_model(shared_data: Optional[Dict], purpose: str, config: 
     home_boost = config.get('chains', {}).get('home_boost_factor', 2.0)
     length_df = shared_data.get('chains_df')
     per_source = shared_data.get('per_source_purpose_chains_dfs', {})
-    weights = shared_data.get('blend_weights', {})
+    weights = role_weights_from_shared(shared_data, ROLE_CHAINS)
     models = {src: TripChainModel(d[purpose], home_boost_factor=home_boost,
                                   length_distribution_df=length_df, required_activity=purpose)
               for src, d in per_source.items()
@@ -288,13 +289,14 @@ class _WorkerNonWorkPlanGenerator:
             # Multi-source: rebuild blended models
             per_source_data = shared_data['per_source_data']
             per_source_persons = shared_data['per_source_persons']
-            blend_weights = shared_data['blend_weights']
+            chains_w = role_weights_from_shared(shared_data, ROLE_CHAINS)
+            times_w = role_weights_from_shared(shared_data, ROLE_TIMES)
 
             # Chain model — filter for purpose and exclude Work, then blend
             # Note: per_source_chains_dfs from nonwork shared data are unfiltered,
             # so they serve as both transition source (after purpose filtering)
             # and length distribution source.
-            per_source_chains_dfs = shared_data['per_source_chains_dfs']
+            per_source_chains_dfs = select_for_role(shared_data['per_source_chains_dfs'], chains_w)
             chain_models = {}
             for name, cdf in per_source_chains_dfs.items():
                 purpose_cdf = cdf[
@@ -307,7 +309,7 @@ class _WorkerNonWorkPlanGenerator:
                         length_distribution_df=cdf,
                         required_activity=self.purpose)
             if len(chain_models) > 1:
-                self.chain_model = BlendedTripChainModel(chain_models, blend_weights)
+                self.chain_model = BlendedTripChainModel(chain_models, chains_w)
             elif chain_models:
                 self.chain_model = next(iter(chain_models.values()))
             else:
@@ -320,18 +322,19 @@ class _WorkerNonWorkPlanGenerator:
                                                   required_activity=self.purpose)
 
             # Time models
-            per_source_time = {name: TripDurationModel(df, config=config) for name, df in per_source_data.items()}
+            per_source_time = {name: TripDurationModel(df, config=config)
+                               for name, df in select_for_role(per_source_data, times_w).items()}
             if len(per_source_time) > 1:
-                self.trip_duration_model = BlendedTripDurationModel(per_source_time, blend_weights)
+                self.trip_duration_model = BlendedTripDurationModel(per_source_time, times_w)
             else:
                 self.trip_duration_model = next(iter(per_source_time.values()))
 
             per_source_act = {
                 name: ActivityDurationModel(p, bw_method=bw_method, config=config)
-                for name, p in per_source_persons.items()
+                for name, p in select_for_role(per_source_persons, times_w).items()
             }
             if len(per_source_act) > 1:
-                self.activity_duration_model = BlendedActivityDurationModel(per_source_act, blend_weights)
+                self.activity_duration_model = BlendedActivityDurationModel(per_source_act, times_w)
             else:
                 self.activity_duration_model = next(iter(per_source_act.values()))
         else:
@@ -364,10 +367,11 @@ class _WorkerNonWorkPlanGenerator:
 
         # Initialize mode choice model with survey data
         if 'per_source_data' in shared_data:
+            modes_w = role_weights_from_shared(shared_data, ROLE_MODES)
             self.mode_choice = ModeChoiceModel(
                 config,
-                survey_data=shared_data['per_source_data'],
-                survey_weights=shared_data['blend_weights'],
+                survey_data=select_for_role(shared_data['per_source_data'], modes_w),
+                survey_weights=modes_w,
                 gtfs_avail_manager=gtfs_avail_manager,
             )
         else:
@@ -1211,20 +1215,20 @@ class NonWorkPlanGenerator:
         """Initialize mode choice model with survey data for mode rate computation."""
         if (self._shared_data is not None
                 and 'per_source_data' in self._shared_data):
-            # Multi-source: pass per-source survey data and weights
+            # Multi-source: pass per-source survey data and 'modes' weights
+            modes_w = role_weights_from_shared(self._shared_data, ROLE_MODES)
             self.mode_choice = ModeChoiceModel(
                 self.config,
-                survey_data=self._shared_data['per_source_data'],
-                survey_weights=self._shared_data['blend_weights'],
+                survey_data=select_for_role(self._shared_data['per_source_data'], modes_w),
+                survey_weights=modes_w,
                 gtfs_avail_manager=self.gtfs_avail_manager,
             )
         else:
             # Single source: wrap survey_df in dict
             survey_name = 'default'
-            for entry in self.config.get('data', {}).get('surveys', []):
-                if entry.get('weight', 0) > 0:
-                    survey_name = entry.get('type', 'default')
-                    break
+            if (self.survey_df is not None and not self.survey_df.empty
+                    and BaseSurveyTrip.SOURCE_TYPE in self.survey_df.columns):
+                survey_name = str(self.survey_df[BaseSurveyTrip.SOURCE_TYPE].iloc[0])
             self.mode_choice = ModeChoiceModel(
                 self.config,
                 survey_data={survey_name: self.survey_df},
@@ -1248,11 +1252,11 @@ class NonWorkPlanGenerator:
         elif (self._shared_data is not None
               and 'per_source_data' in self._shared_data):
             # Multi-source: build blended model from per-source data
-            per_source_data = self._shared_data['per_source_data']
-            blend_weights = self._shared_data['blend_weights']
+            times_w = role_weights_from_shared(self._shared_data, ROLE_TIMES)
+            per_source_data = select_for_role(self._shared_data['per_source_data'], times_w)
             per_source_time = {name: TripDurationModel(df, config=self.config) for name, df in per_source_data.items()}
             if len(per_source_time) > 1:
-                self.trip_duration_model = BlendedTripDurationModel(per_source_time, blend_weights)
+                self.trip_duration_model = BlendedTripDurationModel(per_source_time, times_w)
                 logger.info("  Created blended trip duration model")
             else:
                 self.trip_duration_model = next(iter(per_source_time.values()))
@@ -1267,14 +1271,14 @@ class NonWorkPlanGenerator:
         elif (self._shared_data is not None
               and 'per_source_persons' in self._shared_data):
             # Multi-source: build blended model from per-source persons
-            per_source_persons = self._shared_data['per_source_persons']
-            blend_weights = self._shared_data['blend_weights']
+            times_w = role_weights_from_shared(self._shared_data, ROLE_TIMES)
+            per_source_persons = select_for_role(self._shared_data['per_source_persons'], times_w)
             per_source_act = {
                 name: ActivityDurationModel(p, bw_method=bw_method, config=self.config)
                 for name, p in per_source_persons.items()
             }
             if len(per_source_act) > 1:
-                self.activity_duration_model = BlendedActivityDurationModel(per_source_act, blend_weights)
+                self.activity_duration_model = BlendedActivityDurationModel(per_source_act, times_w)
                 logger.info("  Created blended activity duration model")
             else:
                 self.activity_duration_model = next(iter(per_source_act.values()))
@@ -1290,6 +1294,17 @@ class NonWorkPlanGenerator:
 
         logger.info("  Time models initialized")
         logger.info(f"  Average trip duration: {self.avg_trip_duration_min:.1f} minutes")
+
+    def _survey_df_for_od(self) -> pd.DataFrame:
+        """Survey trips of the sources that do the 'od' job (see survey_manager.ROLES)."""
+        from data_sources.survey_manager import role_weight
+        df = self.survey_df
+        col = BaseSurveyTrip.SOURCE_TYPE
+        if df is None or df.empty or col not in df.columns:
+            return df
+        od = {e['type'] for e in self.config.get('data', {}).get('surveys', [])
+              if role_weight(e, ROLE_OD) > 0}
+        return df[df[col].isin(od)]
 
     def _calculate_avg_trip_duration(self) -> float:
         """
@@ -1357,8 +1372,8 @@ class NonWorkPlanGenerator:
                 and 'per_source_chains_dfs' in self._shared_data):
             # Multi-source: per-source purpose-filtered chain models
             # Note: per_source_chains_dfs from nonwork shared data are unfiltered
-            per_source_chains_dfs = self._shared_data['per_source_chains_dfs']
-            blend_weights = self._shared_data['blend_weights']
+            chains_w = role_weights_from_shared(self._shared_data, ROLE_CHAINS)
+            per_source_chains_dfs = select_for_role(self._shared_data['per_source_chains_dfs'], chains_w)
 
             chain_models = {}
             for name, cdf in per_source_chains_dfs.items():
@@ -1375,7 +1390,7 @@ class NonWorkPlanGenerator:
                                 f"(excl. Work, length dist from {len(cdf)} unfiltered)")
 
             if len(chain_models) > 1:
-                self.chain_model = BlendedTripChainModel(chain_models, blend_weights)
+                self.chain_model = BlendedTripChainModel(chain_models, chains_w)
                 logger.info(f"  Blended chain model with {len(chain_models)} sources")
             elif chain_models:
                 self.chain_model = next(iter(chain_models.values()))
@@ -1430,12 +1445,12 @@ class NonWorkPlanGenerator:
         effective_config = self.config
         if (self._shared_data is not None
                 and 'per_source_data' in self._shared_data):
-            per_source_data = self._shared_data['per_source_data']
-            blend_weights = self._shared_data['blend_weights']
+            od_w = role_weights_from_shared(self._shared_data, ROLE_OD)
+            per_source_data = select_for_role(self._shared_data['per_source_data'], od_w)
 
             blended_rate = calculate_blended_survey_trip_rate(
-                per_source_data, blend_weights, self.purpose, self.config
-            )
+                per_source_data, od_w, self.purpose, self.config
+            ) if per_source_data else 0.0
             if blended_rate > 0:
                 import copy
                 effective_config = copy.deepcopy(self.config)
@@ -1451,7 +1466,7 @@ class NonWorkPlanGenerator:
             config=effective_config,
             home_locs_dict=self.home_locs_dict,
             poi_data=self.poi_data_flat,  # Use flat list for OD matrix creation
-            survey_df=self.survey_df,
+            survey_df=self._survey_df_for_od(),
             purpose=self.purpose,
             poi_block_mapping=poi_block_mapping,
             geo_level=self.geo_level,
@@ -1822,6 +1837,8 @@ class NonWorkPlanGenerator:
             shared['per_source_persons'] = self._shared_data['per_source_persons']
             shared['per_source_chains_dfs'] = self._shared_data['per_source_chains_dfs']
             shared['blend_weights'] = self._shared_data['blend_weights']
+            if 'role_weights' in self._shared_data:
+                shared['role_weights'] = self._shared_data['role_weights']
 
         return shared
 
