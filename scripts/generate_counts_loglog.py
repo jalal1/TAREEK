@@ -144,41 +144,58 @@ def load_hour(counts_file: Path, hour: int, sum_directions: bool) -> pd.DataFram
     return out
 
 
-def _plot_coords(plot_df: pd.DataFrame) -> pd.DataFrame:
+def _axis_floor(all_obs: np.ndarray, all_sim: np.ndarray) -> float:
+    """Lower limit of both log axes: half the smallest positive volume, at least 1.
+
+    Zero volumes are drawn ON this floor. They used to be drawn at 1, below the
+    floor whenever the smallest volume exceeded 2, so they fell outside the frame;
+    a simulated zero was passed to the log axis as-is and vanished. Both hid the
+    worst station-hours (Chicago: 23 of 1,008 sim=0, all at night).
+    """
+    vals = np.concatenate([np.asarray(all_obs, float), np.asarray(all_sim, float)])
+    vals = vals[vals > 0]
+    # The 1.0 fallback is a guard for the degenerate all-zero case, NOT a data
+    # point — including it unconditionally would pin the axis floor at 1 even
+    # when the smallest real volume is far above it.
+    data_lo = vals.min() if len(vals) else 1.0
+    return max(data_lo * 0.5, 1.0)
+
+
+def _plot_coords(plot_df: pd.DataFrame, floor: float) -> pd.DataFrame:
     """Return per-station plotting coordinates on the log-log axes.
 
-    Zero-observed points are clipped to obs=1 and sim>=1 so they stay on the
-    log axes — the same transform used for the scatter, so connector lines line
-    up exactly with the drawn markers. Columns: station, px (obs), py (sim).
+    Zero volumes (observed or simulated) are moved onto the axis floor — the
+    same transform used for the scatter, so connector lines line up exactly
+    with the drawn markers. Columns: station, px (obs), py (sim).
     """
     obs = plot_df["obs"].values.astype(float)
     sim = plot_df["sim"].values.astype(float)
-    px = np.where(obs == 0, 1.0, obs)
-    py = np.where(obs == 0, np.clip(sim, 1, None), sim)
+    px = np.where(obs <= 0, floor, obs)
+    py = np.where(sim <= 0, floor, sim)
     return pd.DataFrame({"station": plot_df["station"].astype(str).values,
                          "px": px, "py": py})
 
 
-def _scatter(ax, plot_df: pd.DataFrame, color: str, marker: str, label: str):
+def _scatter(ax, plot_df: pd.DataFrame, color: str, marker: str, label: str,
+             floor: float) -> int:
     """Plot one experiment's (obs, sim) points on log-log axes.
 
-    Non-zero-observed points are drawn directly; zero-observed points are
-    clipped to obs=1 so they remain visible on the log axis.
+    Points with both volumes positive are drawn filled. A point with a zero
+    volume on either side is drawn hollow on the axis floor, so every
+    station-hour stays visible. Returns the number of hollow points.
     """
-    sim = plot_df["sim"].values
-    obs = plot_df["obs"].values
-    mask_zero = obs == 0
+    coords = _plot_coords(plot_df, floor)
+    px, py = coords["px"].values, coords["py"].values
+    zero = ((plot_df["obs"].values <= 0) | (plot_df["sim"].values <= 0))
 
-    sim_nz, obs_nz = sim[~mask_zero], obs[~mask_zero]
-    sim_z = sim[mask_zero]
-
-    if len(obs_nz) > 0:
-        ax.scatter(obs_nz, sim_nz, s=20, color=color, alpha=0.75,
-                   marker=marker, linewidths=0, zorder=3, label=label)
-    if len(sim_z) > 0:
-        ax.scatter(np.ones_like(sim_z), np.clip(sim_z, 1, None), s=20,
-                   color=color, alpha=0.45, marker=marker, linewidths=0,
-                   zorder=3)
+    if (~zero).any():
+        ax.scatter(px[~zero], py[~zero], s=20, color=color,
+                   alpha=0.75, marker=marker, linewidths=0, zorder=3, label=label)
+    if zero.any():
+        ax.scatter(px[zero], py[zero], s=28,
+                   facecolors="none", edgecolors=color, marker=marker,
+                   linewidths=1.2, zorder=4, clip_on=False)
+    return int(zero.sum())
 
 
 def _draw_connectors(ax, coords_by_exp: list[pd.DataFrame]):
@@ -236,25 +253,20 @@ def _draw_connectors(ax, coords_by_exp: list[pd.DataFrame]):
     return connected
 
 
-def _finalize_axes(ax, all_obs: np.ndarray, all_sim: np.ndarray, title: str):
+def _finalize_axes(ax, all_obs: np.ndarray, all_sim: np.ndarray, title: str,
+                   n_zero: int = 0):
     """Add 1:1 / 2x / 0.5x reference lines, log scales, labels, and title.
 
     Axis limits auto-fit the data: the log-log range is derived from the actual
     min/max of all observed+simulated volumes (with a small margin) so points
-    are always visible, whatever the volume scale of the run.
+    are always visible, whatever the volume scale of the run. *n_zero* hollow
+    points drawn on the floor get a legend entry.
     """
-    # Only positive values are plottable on a log axis. The 1.0 fallback is a
-    # guard for the degenerate all-zero case, NOT a data point — including it
-    # unconditionally would pin the axis floor at 1 even when the smallest real
-    # volume is far above it, wasting most of the frame on empty decades.
     vals = np.concatenate([all_obs, all_sim])
     vals = vals[vals > 0]
-    if len(vals) == 0:
-        vals = np.array([1.0])
-    data_lo = vals.min()
-    data_hi = vals.max()
+    data_hi = vals.max() if len(vals) else 1.0
     # Reference lines span a little beyond the data on both ends.
-    lo = max(data_lo * 0.5, 1.0)
+    lo = _axis_floor(all_obs, all_sim)
     hi = data_hi * 2.0
     x_ref = np.array([lo, hi])
     ax.plot(x_ref, x_ref,       color="#444444", linewidth=1.4, linestyle="-",
@@ -273,6 +285,9 @@ def _finalize_axes(ax, all_obs: np.ndarray, all_sim: np.ndarray, title: str):
     ax.grid(True, alpha=0.3)
     ax.set_axisbelow(True)
     ax.spines[["top", "right"]].set_visible(False)
+    if n_zero:
+        ax.scatter([], [], s=28, facecolors="none", edgecolors="#555555",
+                   linewidths=1.2, label=f"Zero volume, drawn at axis edge ({n_zero})")
     ax.legend(fontsize=8, loc="lower right", framealpha=0.9)
 
 
@@ -293,26 +308,30 @@ def generate_overlay(loaded: dict[str, Path], hours: list[int], sum_directions: 
     station_base when --sum-directions collapses directions).
     """
     for hour in hours:
-        fig, ax = _new_fig()
-        all_obs, all_sim = [], []
-        coords_by_exp = []
-        plotted = 0
+        # Load every experiment first: zero volumes sit on the shared axis
+        # floor, which depends on all of them.
+        frames = []
         for i, (label, counts_file) in enumerate(loaded.items()):
             plot_df = load_hour(counts_file, hour, sum_directions)
             if plot_df is None or plot_df.empty:
                 print(f"  SKIP {label} hour {hour}: no data")
                 continue
-            # Connectors are drawn first (lower zorder) so markers sit on top.
-            coords_by_exp.append(_plot_coords(plot_df))
-            _scatter(ax, plot_df, _PALETTE[i % len(_PALETTE)],
-                     _MARKERS[i % len(_MARKERS)], label)
-            all_obs.append(plot_df["obs"].values)
-            all_sim.append(plot_df["sim"].values)
-            plotted += 1
-
-        if plotted == 0:
-            plt.close(fig)
+            frames.append((i, label, plot_df))
+        if not frames:
             continue
+        all_obs = np.concatenate([f["obs"].values for _, _, f in frames])
+        all_sim = np.concatenate([f["sim"].values for _, _, f in frames])
+        floor = _axis_floor(all_obs, all_sim)
+
+        fig, ax = _new_fig()
+        coords_by_exp = []
+        n_zero = 0
+        for i, label, plot_df in frames:
+            # Connectors are drawn first (lower zorder) so markers sit on top.
+            coords_by_exp.append(_plot_coords(plot_df, floor))
+            n_zero += _scatter(ax, plot_df, _PALETTE[i % len(_PALETTE)],
+                               _MARKERS[i % len(_MARKERS)], label, floor)
+        plotted = len(frames)
 
         if connect:
             if plotted < 2:
@@ -323,8 +342,8 @@ def generate_overlay(loaded: dict[str, Path], hours: list[int], sum_directions: 
                 print(f"  hour {hour}: connected {n} station(s) across experiments")
 
         agg = "summed" if sum_directions else "per-dir"
-        _finalize_axes(ax, np.concatenate(all_obs), np.concatenate(all_sim),
-                       f"Counts comparison — hour {hour:02d}:00 ({agg})")
+        _finalize_axes(ax, all_obs, all_sim,
+                       f"Counts comparison — hour {hour:02d}:00 ({agg})", n_zero)
         out_dir.mkdir(parents=True, exist_ok=True)
         # A single experiment gets the stable name the report looks for; only a
         # multi-experiment overlay needs the aggregation/connect suffixes to
@@ -353,10 +372,11 @@ def generate_separate(loaded: dict[str, Path], hours: list[int], sum_directions:
                 continue
 
             fig, ax = _new_fig()
-            _scatter(ax, plot_df, _PALETTE[0], _MARKERS[0], "Count stations")
+            floor = _axis_floor(plot_df["obs"].values, plot_df["sim"].values)
+            n_zero = _scatter(ax, plot_df, _PALETTE[0], _MARKERS[0], "Count stations", floor)
             agg = "summed" if sum_directions else "per-dir"
             _finalize_axes(ax, plot_df["obs"].values, plot_df["sim"].values,
-                           f"{label} — hour {hour:02d}:00 ({agg})")
+                           f"{label} — hour {hour:02d}:00 ({agg})", n_zero)
             out_dir.mkdir(parents=True, exist_ok=True)
             suffix = "summed" if sum_directions else "perdir"
             out_path = out_dir / f"counts_h{hour:02d}_{safe}_{suffix}.{fmt}"

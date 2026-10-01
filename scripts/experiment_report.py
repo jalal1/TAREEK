@@ -258,21 +258,26 @@ FIGURE_SECTIONS: List[Tuple[str, str, List[Tuple[str, str]]]] = [
 # questions: where the error sits, whether the network was congested, and how
 # the stations scatter against the counts.
 HOUR_FIGURES: List[Tuple[str, str, str]] = [
-    ("count_error_h{hh}.png", "Count station % error",
-     "Each station-direction coloured by how far its simulated volume is from "
-     "the count. Clusters of one colour mean a corridor problem; a scatter of "
-     "both means the error is spread."),
+    ("count_error_h{hh}.png", "Count station error (GEH)",
+     "Each station-direction coloured by the GEH of this hour and the sign of "
+     "the error: green GEH < 5, blue simulated too low, red too high (light "
+     "GEH 5-10, dark above 10). GEH scales with volume, so a small miss on a "
+     "quiet road at night is not marked as poor. Clusters of one colour mean a "
+     "corridor problem; a mix of blue and red means the error is spread."),
     ("counts_loglog_h{hh}.png", "Observed vs simulated",
      "One point per station-direction on log-log axes, with the 1:1 line and "
-     "the 2x / 0.5x bands. Points above the line over-simulate. This is the "
-     "view that shows whether errors are proportional or concentrated at one "
-     "end of the volume range."),
+     "the 2x / 0.5x bands. Points above the line over-simulate. Hollow points "
+     "have a zero volume and are drawn on the axis edge. This is the view that "
+     "shows whether errors are proportional or concentrated at one end of the "
+     "volume range."),
     ("heatmap_h{hh}_highways.png", "Highway congestion",
-     "Highway links coloured by simulated speed as a fraction of freespeed, "
-     "so red is slow rather than busy. Read it against the two figures above: "
-     "a corridor that is both congested here and under-simulated there is a "
-     "capacity problem, while under-simulation on a free-flowing corridor is "
-     "a demand or routing problem. Grey links carried no traffic this hour."),
+     "Highway links coloured by simulated speed as a fraction of the free speed "
+     "the simulation can reach (free time rounded to its 1 s step), so red is "
+     "slow rather than busy. The box gives the share of highway km in each "
+     "class. Read it against the two figures above: a corridor that is both "
+     "congested here and under-simulated there is a capacity problem, while "
+     "under-simulation on a free-flowing corridor is a demand or routing "
+     "problem. Grey links carried no traffic this hour."),
 ]
 
 # Congestion heatmaps now appear here, one per hour tab, rather than in a

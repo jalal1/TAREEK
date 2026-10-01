@@ -57,6 +57,13 @@ class SimulationEvaluator:
     CONGESTION_THRESHOLDS = [0.5, 0.75, 0.9]
     CONGESTION_LABELS = ['Severe', 'Congested', 'Moderate', 'Free flow']
 
+    # Hourly count-error map: GEH class and sign of (simulated - observed).
+    # Blue = simulated too low, red = too high; light GEH 5-10, dark GEH > 10.
+    SIGNED_GEH_COLORS = {
+        'good': '#2ECC40', 'low': '#9ECAE1', 'very_low': '#2171B5',
+        'high': '#FC9272', 'very_high': '#CB181D', 'none': '#BBBBBB',
+    }
+
     def __init__(self, experiment_dir: Path, ground_truth_data_dir: Optional[Path] = None):
         """
         Initialize evaluator
@@ -1569,10 +1576,19 @@ class SimulationEvaluator:
     def plot_hourly_pct_error_maps(self, matched_devices: pd.DataFrame, comparison_df: pd.DataFrame,
                                     hours: list = None, save: bool = True):
         """
-        Create per-hour spatial maps showing % error (sim vs observed) at each count station.
+        Create per-hour spatial maps of the count error at each count station.
 
-        Stations are colored green/yellow/red by absolute % error magnitude.
+        Stations are coloured by hourly GEH and by the sign of the error: green
+        GEH < 5, blue too low, red too high (light 5-10, dark > 10).
         Each requested hour produces one PNG: count_error_h{hour}.png
+
+        The colours used to be |% error| bands (15% / 30%), which ignore volume:
+        at night (Chicago median 50 veh/h at 3 AM) 95% of stations were red for
+        errors of a few dozen vehicles, while 15% of a 5,000 veh/h freeway
+        (750 veh/h) was "good". They also hid the sign, which is the question the
+        map is read for: Chicago 17 h had 41 of 42 stations too low, Twin Cities
+        8 h had 61 of 94 too high. GEH is the report's hourly target (GEH < 5 for
+        85% of station-hours), so the map shows which stations make that number.
         """
         if self.network_links is None or self.link_geometries is None:
             logger.warning("Network not loaded, cannot generate hourly pct-error maps")
@@ -1590,15 +1606,26 @@ class SimulationEvaluator:
                 logger.warning(f"No comparison data for hour {hour}, skipping")
                 continue
 
-            # Merge device locations with this hour's pct_error
+            # GEH with the sign of the error: negative = simulated below the count.
+            hour_df['geh_signed'] = hour_df['geh'] * np.sign(
+                hour_df['simulated'] - hour_df['observed'])
+            # Counted before the combined ids are split, so the totals match
+            # the station-directions in countscompare and the report.
+            g = hour_df['geh_signed']
+            n_good = int((g.abs() < 5).sum())
+            n_low = int((g <= -5).sum())
+            n_high = int((g >= 5).sum())
+            hour_df = self._expand_combined_ids(hour_df)
+
+            # Merge device locations with this hour's error
             hour_devices = matched_devices.merge(
-                hour_df[['device_id', 'observed', 'simulated', 'pct_error']],
+                hour_df[['device_id', 'observed', 'simulated', 'geh_signed']],
                 left_on='LOCAL_ID', right_on='device_id', how='inner'
             )
 
             fig, ax = plt.subplots(figsize=(14, 12))
             ax.set_title(
-                f'Count Station % Error — Hour {hour:02d}:00  |  {self.experiment_dir.name}',
+                f'Count Station Error (GEH) — Hour {hour:02d}:00  |  {self.experiment_dir.name}',
                 fontsize=15, fontweight='bold'
             )
 
@@ -1607,41 +1634,45 @@ class SimulationEvaluator:
             ax.add_collection(lc)
             self._draw_county_boundaries(ax)
 
-            # One arrow per station-direction, offset clear of the road. Both
+            # One bar per station-direction, offset clear of the road. Both
             # directions of a sensor share a lat/lon, so markers drawn at the
             # raw coordinate sit exactly on top of each other and half the
-            # stations are invisible. Colour alone carries the tier — the
-            # circle/square/triangle shapes were redundant with it.
-            def _pct_color(pct):
-                if pct is None or pd.isna(pct):
-                    return '#FF4136'          # no data — treated as poor
-                abs_pct = abs(pct)
-                if abs_pct <= 15:
-                    return '#2ECC40'
-                if abs_pct <= 30:
-                    return '#FFDC00'
-                return '#FF4136'
-
-            self._draw_station_arrows(ax, hour_devices, 'pct_error', _pct_color)
+            # stations are invisible.
+            self._draw_station_arrows(ax, hour_devices, 'geh_signed', self._signed_geh_color)
 
             ax.set_aspect('equal')
             ax.set_xlabel('UTM X (m)')
             ax.set_ylabel('UTM Y (m)')
             ax.grid(True, alpha=0.3)
 
+            c = self.SIGNED_GEH_COLORS
             legend_elements = [
-                Line2D([0], [0], color='#2ECC40', lw=5, solid_capstyle='butt',
-                       label='|% error| ≤ 15%  (Good)'),
-                Line2D([0], [0], color='#FFDC00', lw=5, solid_capstyle='butt',
-                       label='|% error| 15–30%  (Acceptable)'),
-                Line2D([0], [0], color='#FF4136', lw=5, solid_capstyle='butt',
-                       label='|% error| > 30% or no data  (Poor)'),
+                Line2D([0], [0], color=c['good'], lw=5, solid_capstyle='butt',
+                       label='GEH < 5  (Good)'),
+                Line2D([0], [0], color=c['low'], lw=5, solid_capstyle='butt',
+                       label='Too low, GEH 5–10'),
+                Line2D([0], [0], color=c['very_low'], lw=5, solid_capstyle='butt',
+                       label='Too low, GEH > 10'),
+                Line2D([0], [0], color=c['high'], lw=5, solid_capstyle='butt',
+                       label='Too high, GEH 5–10'),
+                Line2D([0], [0], color=c['very_high'], lw=5, solid_capstyle='butt',
+                       label='Too high, GEH > 10'),
+                Line2D([0], [0], color=c['none'], lw=5, solid_capstyle='butt',
+                       label='No data'),
                 Line2D([0], [0], color='#555555', lw=5, solid_capstyle='butt',
                        label='One bar per direction, aligned with the road'),
                 mpatches.Patch(facecolor='none', edgecolor='blue', linestyle='--',
                                linewidth=2, label='County Boundary'),
             ]
             ax.legend(handles=legend_elements, loc='upper right', framealpha=0.9, fontsize=9)
+
+            ax.text(0.02, 0.02,
+                    f"Station-directions: {len(g)}\n"
+                    f"GEH < 5: {n_good}   too low: {n_low}   too high: {n_high}"
+                    + (f"   no data: {len(g) - n_good - n_low - n_high}"
+                       if len(g) > n_good + n_low + n_high else ""),
+                    transform=ax.transAxes, fontsize=10, va='bottom', ha='left',
+                    bbox=dict(boxstyle='round', facecolor='white', alpha=0.85), zorder=10)
 
             if save:
                 plot_path = self.evaluation_dir / f'count_error_h{hour:02d}.png'
@@ -1667,7 +1698,7 @@ class SimulationEvaluator:
         # small simply because hourly counts are small; averaging 24 of them
         # produces a number that is not the GEH of anything and is not
         # comparable to the GEH < 5 convention this legend cites.
-        device_geh = self._station_daily_geh(comparison_df)
+        device_geh = self._expand_combined_ids(self._station_daily_geh(comparison_df))
         devices_with_geh = matched_devices.merge(
             device_geh, left_on='LOCAL_ID', right_on='device_id', how='left')
 
@@ -1720,6 +1751,37 @@ class SimulationEvaluator:
             return '#FFDC00'
         return '#FF4136'
 
+    @classmethod
+    def _signed_geh_color(cls, geh_signed: float) -> str:
+        """Colour for a GEH carrying the sign of (simulated - observed)."""
+        c = cls.SIGNED_GEH_COLORS
+        if geh_signed is None or pd.isna(geh_signed):
+            return c['none']
+        g = abs(geh_signed)
+        if g < 5:
+            return c['good']
+        if geh_signed < 0:
+            return c['low'] if g < 10 else c['very_low']
+        return c['high'] if g < 10 else c['very_high']
+
+    @staticmethod
+    def _expand_combined_ids(df: pd.DataFrame, id_col: str = 'device_id') -> pd.DataFrame:
+        """Split combined count ids 'A+B' into one row per station, same values.
+
+        When two stations match the same link, the counts module reports them
+        as one 'A+B' station, but matched_devices.csv keeps A and B. Without the
+        split the merge on LOCAL_ID dropped them from the maps (Birmingham: 4 of
+        53 station-directions). Both locations get the combined value.
+        """
+        if df.empty:
+            return df
+        ids = df[id_col].astype(str)
+        if not ids.str.contains('+', regex=False).any():
+            return df
+        out = df.copy()
+        out[id_col] = ids.str.split('+')
+        return out.explode(id_col, ignore_index=True)
+
     def _draw_station_arrows(self, ax, devices: pd.DataFrame, value_col: str,
                              color_fn, offset_m: float = 900.0,
                              length_m: float = 2400.0,
@@ -1731,10 +1793,17 @@ class SimulationEvaluator:
         directions exactly on top of each other — half the stations are hidden.
         Each direction is instead drawn as a small rectangle aligned with the
         road, pushed perpendicular to its own heading so the pair sits side by
-        side and both stay readable.
+        side and both stay readable. Two stations with the same location AND
+        direction (a split parallel roadway, '<id>-p2_<dir>') are stacked
+        further out, one bar width per extra station.
         """
-        # FHWA cardinal codes -> unit vector (x=east, y=north) in UTM.
-        dir_vectors = {1: (0.0, 1.0), 3: (1.0, 0.0), 5: (0.0, -1.0), 7: (-1.0, 0.0)}
+        # FHWA direction codes -> unit vector (x=east, y=north) in UTM.
+        # 1 N, 2 NE, 3 E, 4 SE, 5 S, 6 SW, 7 W, 8 NW. Other codes (0, 9:
+        # combined directions) have no heading and are drawn as dots.
+        d = np.sqrt(0.5)
+        dir_vectors = {1: (0.0, 1.0), 2: (d, d), 3: (1.0, 0.0), 4: (d, -d),
+                       5: (0.0, -1.0), 6: (-d, -d), 7: (-1.0, 0.0), 8: (-d, d)}
+        stacked: Dict[Tuple, int] = defaultdict(int)
 
         for _, device in devices.iterrows():
             value = device.get(value_col)
@@ -1745,21 +1814,26 @@ class SimulationEvaluator:
                 travel_dir = int(travel_dir)
             except (TypeError, ValueError):
                 travel_dir = None
-            dx, dy = dir_vectors.get(travel_dir, (1.0, 0.0))
 
-            if travel_dir is None:
-                # No direction recorded: fall back to a dot rather than a bar
+            if travel_dir not in dir_vectors:
+                # No usable direction: fall back to a dot rather than a bar
                 # whose orientation would imply a heading we do not know.
                 ax.scatter(device['utm_x'], device['utm_y'], c=color, s=45,
                            edgecolors='black', linewidths=0.7, zorder=5)
                 continue
+            dx, dy = dir_vectors[travel_dir]
+
+            key = (round(float(device['utm_x'])), round(float(device['utm_y'])), travel_dir)
+            k = stacked[key]
+            stacked[key] += 1
 
             # Perpendicular offset (right-hand side of travel), so the two
             # directions of one sensor land on opposite sides of its location
             # instead of exactly on top of each other.
             px, py = dy, -dx
-            cx = device['utm_x'] + px * offset_m
-            cy = device['utm_y'] + py * offset_m
+            off = offset_m + k * (width_m + 150.0)
+            cx = device['utm_x'] + px * off
+            cy = device['utm_y'] + py * off
 
             # A small rectangle aligned with the direction of travel. Simpler
             # and cleaner than an arrow at this scale: the bar shows the axis
@@ -1875,13 +1949,16 @@ class SimulationEvaluator:
 
         elif method == 'gaussian':
             # Gaussian kernel smoothing based on spatial distance between link midpoints.
-            # Each link's ratio is a distance-weighted average of nearby links,
-            # with weights decaying by exp(-d^2 / (2 * sigma^2)).
+            # Each link's ratio is a distance- and length-weighted average of nearby
+            # links, with weights length * exp(-d^2 / (2 * sigma^2)). Without the
+            # length factor a 10 m junction stub counts as much as a 1 km section,
+            # and junctions split the network into many short links.
             # Sigma is set to the median link length to adapt to network scale.
             rated = hw_data[has_ratio_mask]
             mid_x = (rated['from_x'].values + rated['to_x'].values) / 2
             mid_y = (rated['from_y'].values + rated['to_y'].values) / 2
             ratios_arr = rated['congestion_ratio'].values
+            length_arr = np.maximum(rated['LENGTH'].fillna(0).values, 1.0)
             rated_idx = rated.index.values
 
             median_length = hw_data.loc[has_ratio_mask, 'LENGTH'].median()
@@ -1898,12 +1975,68 @@ class SimulationEvaluator:
                 dy = mid_y - mid_y[i]
                 dist_sq = dx * dx + dy * dy
                 within = dist_sq <= cutoff_sq
-                weights = np.exp(-dist_sq[within] / two_sigma_sq)
+                weights = np.exp(-dist_sq[within] / two_sigma_sq) * length_arr[within]
                 smoothed.loc[rated_idx[i]] = np.average(ratios_arr[within], weights=weights)
 
             hw_data['congestion_ratio'] = smoothed
 
         return hw_data
+
+    @staticmethod
+    def _mobsim_free_travel_time(length: pd.Series, freespeed: pd.Series) -> pd.Series:
+        """Free travel time as the mobsim records it: whole seconds, at least 1 s."""
+        return np.maximum(np.ceil(length / freespeed), 1.0)
+
+    def _measure_free_tt_offset(self, raw_linkstats: pd.DataFrame,
+                                link_ids: Optional[pd.Series] = None,
+                                max_vc: float = 0.1, min_links: int = 100,
+                                quantile: float = 0.9) -> float:
+        """
+        Upper quantile of (recorded - rounded free travel time) on near-empty links
+        in the quietest hour of the day. One value for the whole run.
+
+        The rounding rule in _mobsim_free_travel_time was measured on Hermes; QSim
+        and other versions may add a different fixed amount per link. Measuring the
+        rest keeps the reference right for whichever mobsim wrote the linkstats.
+
+        An upper quantile, not the median: on chi_s20_w10_nw10_fr018_10iter at
+        1 AM (17 veh/h median on the slow links) a quarter of the empty links
+        recorded exactly 1 s more than the rounded free time. The median (0 s)
+        left those short links "moderate" at night; a delay under one time step
+        cannot be told from rounding, so it is counted as free flow.
+
+        Only the quietest hour is used. A link below ``max_vc`` can still sit in a
+        queue that spills back from downstream; the per-hour median rose from
+        +0.00 s at 0-4 h to +0.9 s at 19-22 h, and using that would have hidden
+        real delay. Returns 0.0 if no hour has ``min_links`` near-empty links.
+        """
+        df = raw_linkstats
+        if link_ids is not None:
+            df = df[df['link_id'].isin(set(link_ids))]
+        ff = getattr(self, 'flow_capacity_factor', None) or 1.0
+        base = (df['LENGTH'] > 0) & (df['FREESPEED'] > 0) & (df.get('CAPACITY', 0) > 0)
+        hours = [h for h in range(24)
+                 if f'HRS{h}-{h+1}avg' in df.columns and f'TRAVELTIME{h}-{h+1}avg' in df.columns]
+        best = None  # (total volume, hour, offset)
+        for h in hours:
+            vol_col, tt_col = f'HRS{h}-{h+1}avg', f'TRAVELTIME{h}-{h+1}avg'
+            ok = base & (df[vol_col] > 0) & (df[tt_col] > 0) & (df[vol_col] / ff / df['CAPACITY'] < max_vc)
+            if ok.sum() < min_links:
+                continue
+            total = float(df.loc[base, vol_col].sum())
+            if best is None or total < best[0]:
+                rest = df.loc[ok, tt_col] - self._mobsim_free_travel_time(df.loc[ok, 'LENGTH'], df.loc[ok, 'FREESPEED'])
+                best = (total, h, float(rest.quantile(quantile)))
+        if best is None:
+            logger.info("  Free travel time offset: no hour with enough near-empty links; using 0 s")
+            return 0.0
+        _, h, offset = best
+        logger.info(f"  Free travel time offset (p{quantile * 100:.0f} of recorded - rounded free "
+                    f"time, near-empty links in the quietest hour h{h}): {offset:+.2f} s")
+        if offset < -0.5 or offset > 1.5:
+            logger.warning("  Free travel time offset outside -0.5..1.5 s: the mobsim does not "
+                           "round link times as Hermes does; the measured offset is used")
+        return offset
 
     def _load_linkstats_raw(self) -> Optional[pd.DataFrame]:
         """Load raw linkstats with LENGTH, FREESPEED, and TRAVELTIME columns."""
@@ -2003,6 +2136,8 @@ class SimulationEvaluator:
         bounds = [0] + t + [1.0]
         norm = BoundaryNorm(bounds, cmap.N)
 
+        free_tt_offset = self._measure_free_tt_offset(raw_linkstats, link_ids=highway_links['link_id'])
+
         figs = []
         for hour_idx, label, filename in peak_hours:
             vol_col = f'HRS{hour_idx}-{hour_idx+1}avg'
@@ -2025,13 +2160,30 @@ class SimulationEvaluator:
             has_traveltime = hw_data[tt_col].fillna(0) > 0 if tt_col in hw_data.columns else pd.Series(False, index=hw_data.index)
             can_compute = has_traffic & has_traveltime & (hw_data['FREESPEED'].fillna(0) > 0)
 
-            # actual_speed = LENGTH / TRAVELTIME, ratio = actual_speed / FREESPEED
+            # ratio = reference travel time / recorded travel time.
+            #
+            # The reference is NOT LENGTH / FREESPEED. The mobsim moves vehicles
+            # in whole seconds, so an empty link records its free time rounded up,
+            # sometimes one second more (measured on chi_s20_w10_nw10_fr018_10iter,
+            # Hermes: recorded minus ceil(free time) has a median of -0.03 s on
+            # links below v/c 0.1, and a quarter of them read +1 s at 1 AM).
+            # Against the unrounded free time a 20 m motorway link (0.8 s) that
+            # records 1-2 s scores 0.4-0.8 with no traffic at all: 33% of the
+            # 0-25 m links were red at 8 AM, and the short links at every
+            # intersection painted whole arterial grids red. The reference is the
+            # rounded free time plus the step noise measured on near-empty links
+            # in the quietest hour of this run, so only queue delay lowers the
+            # ratio.
             hw_data['congestion_ratio'] = np.nan
             if can_compute.any():
-                actual_speed = hw_data.loc[can_compute, 'LENGTH'] / hw_data.loc[can_compute, tt_col]
+                ref_tt = (self._mobsim_free_travel_time(
+                    hw_data.loc[can_compute, 'LENGTH'], hw_data.loc[can_compute, 'FREESPEED'])
+                    + free_tt_offset)
                 hw_data.loc[can_compute, 'congestion_ratio'] = np.minimum(
-                    actual_speed / hw_data.loc[can_compute, 'FREESPEED'], 1.0
+                    ref_tt / hw_data.loc[can_compute, tt_col], 1.0
                 )
+            # Unsmoothed copy for the km-weighted shares printed on the figure.
+            hw_data['raw_ratio'] = hw_data['congestion_ratio']
 
             # Smooth congestion ratios to reduce visual noise from short links
             if smoothing:
@@ -2094,19 +2246,33 @@ class SimulationEvaluator:
             cbar.set_ticks([0] + t + [1.0])
             cbar.set_ticklabels(['0 (gridlock)'] + [str(v) for v in t] + ['1.0 (free flow)'])
 
-            # Log congestion stats
+            # Share of highway km in each class, from the unsmoothed ratios.
+            # Weighted by length, not by link count: links under 50 m are ~38%
+            # of the highway links but a small share of the km, so a count
+            # share mostly measures how often the network is split at junctions.
             if len(with_ratio) > 0:
-                r = ratios
+                r = with_ratio['raw_ratio'].values
+                km = with_ratio['LENGTH'].fillna(0).values / 1000.0
+                total_km = km.sum()
                 labels = self.CONGESTION_LABELS
-                counts = [
-                    (r < t[0]).sum(),
-                    ((r >= t[0]) & (r < t[1])).sum(),
-                    ((r >= t[1]) & (r < t[2])).sum(),
-                    (r >= t[2]).sum(),
+                bins = [
+                    r < t[0],
+                    (r >= t[0]) & (r < t[1]),
+                    (r >= t[1]) & (r < t[2]),
+                    r >= t[2],
                 ]
-                logger.info(f"  {label} congestion — " +
-                            ", ".join(f"{labels[i]} ({counts[i]:,})" for i in range(4)) +
-                            f", no traffic: {len(no_traffic):,}")
+                pct = [100.0 * km[b].sum() / total_km if total_km > 0 else 0.0 for b in bins]
+                logger.info(f"  {label} congestion, share of {total_km:,.0f} highway km with traffic — " +
+                            ", ".join(f"{labels[i]} {pct[i]:.1f}%" for i in range(4)) +
+                            f"; no traffic: {len(no_traffic):,} links")
+                ax.text(0.02, 0.02,
+                        f"Highway km with traffic: {total_km:,.0f}\n"
+                        f"speed < 0.5 of free: {pct[0]:.1f}%\n"
+                        f"0.5-0.75: {pct[1]:.1f}%   0.75-0.9: {pct[2]:.1f}%\n"
+                        f"free flow (>= 0.9): {pct[3]:.1f}%",
+                        transform=ax.transAxes, fontsize=10, va='bottom', ha='left',
+                        bbox=dict(boxstyle='round', facecolor='white', alpha=0.85),
+                        zorder=10)
 
             if save:
                 plot_path = self.evaluation_dir / filename
