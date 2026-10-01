@@ -1074,7 +1074,7 @@ def _build_evaluation_section(evaluation_metrics: Dict) -> Dict:
                                      'level: GEH grows with volume, so averaging it across stations of different '
                                      'size measures station size as much as model error, and the result is not '
                                      'the GEH of any real count. Individual per-station GEH values are in the '
-                                     'device reports and spatial_overview.png.',
+                                     'device reports and the hourly count_error_hXX.png maps.',
 
         # ── 5. Station-hour metrics — volume-sensitive, read with care ────
         'num_devices': evaluation_metrics.get('num_devices'),

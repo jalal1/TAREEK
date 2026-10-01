@@ -1516,63 +1516,6 @@ class SimulationEvaluator:
         logger.info(f"Saved {written} log-log scatter plot(s) to {self.evaluation_dir}")
         return written
 
-    def plot_spatial_maps(self, matched_devices: pd.DataFrame, linkstats: pd.DataFrame,
-                          comparison_df: pd.DataFrame, save: bool = True,
-                          hours: Optional[List[int]] = None):
-        """
-        Create spatial overview map showing network traffic
-
-        Args:
-            matched_devices: Devices matched to links with ground truth
-            linkstats: Simulation linkstats
-            comparison_df: Comparison results
-            save: Whether to save plots to evaluation directory
-        """
-        if self.network_links is None or self.link_geometries is None:
-            logger.warning("Network not loaded, cannot generate spatial maps")
-            return None
-
-        if len(matched_devices) == 0:
-            logger.warning("No matched devices, cannot generate spatial maps")
-            return None
-
-        if comparison_df is None or len(comparison_df) == 0:
-            logger.warning("No comparison data available, cannot generate spatial maps")
-            return None
-
-        fig, ax = plt.subplots(figsize=(14, 12))
-        ax.set_title(f'Spatial Overview - {self.experiment_dir.name}',
-                     fontsize=16, fontweight='bold')
-
-        # Prepare link data
-        # Get total simulated volume for each link (sum across all hours)
-        hour_cols = [f'HRS{i}-{i+1}avg' for i in range(24)]
-        linkstats_with_total = linkstats.copy()
-        linkstats_with_total['total_volume'] = linkstats[hour_cols].sum(axis=1)
-
-        # Merge network links with linkstats
-        links_with_volume = self.network_links.merge(
-            linkstats_with_total[['link_id', 'total_volume']],
-            on='link_id',
-            how='left'
-        )
-        links_with_volume['total_volume'] = links_with_volume['total_volume'].fillna(0)
-
-        # --- GEH device markers on gray network ---
-        self._plot_traffic_heatmap(ax, links_with_volume, matched_devices, comparison_df)
-
-        if save:
-            plot_path = self.evaluation_dir / 'spatial_overview.png'
-            plt.savefig(plot_path, dpi=300, bbox_inches='tight', pad_inches=0.1)
-            logger.info(f"Saved spatial overview to {plot_path}")
-            plt.close(fig)
-
-        self.plot_hourly_pct_error_maps(matched_devices, comparison_df,
-                                        hours=hours if hours is not None else [7, 8, 15, 16],
-                                        save=save)
-
-        return fig
-
     def plot_hourly_pct_error_maps(self, matched_devices: pd.DataFrame, comparison_df: pd.DataFrame,
                                     hours: list = None, save: bool = True):
         """
@@ -1681,75 +1624,7 @@ class SimulationEvaluator:
                 logger.info(f"Saved hourly pct-error map to {plot_path}")
                 plt.close(fig)
 
-    def _plot_traffic_heatmap(self, ax, links_with_volume: pd.DataFrame,
-                              matched_devices: pd.DataFrame, comparison_df: pd.DataFrame):
-        """Plot network as gray background with GEH-colored device markers."""
-
-        # Draw all links as gray background
-        segments = self._link_segments(links_with_volume)
-        lc = LineCollection(segments, colors='#9D9C9C', linewidths=0.8, alpha=0.5)
-        ax.add_collection(lc)
-
-        # Draw county boundary polygons
-        self._draw_county_boundaries(ax)
-
-        # Colour each station by the GEH of its DAILY TOTAL, not the mean of
-        # its 24 hourly GEH values. GEH scales with volume, so hourly GEH is
-        # small simply because hourly counts are small; averaging 24 of them
-        # produces a number that is not the GEH of anything and is not
-        # comparable to the GEH < 5 convention this legend cites.
-        device_geh = self._expand_combined_ids(self._station_daily_geh(comparison_df))
-        devices_with_geh = matched_devices.merge(
-            device_geh, left_on='LOCAL_ID', right_on='device_id', how='left')
-
-        self._draw_station_arrows(ax, devices_with_geh, 'geh', self._geh_color)
-
-        ax.set_aspect('equal')
-        ax.set_xlabel('UTM X (m)')
-        ax.set_ylabel('UTM Y (m)')
-        ax.grid(True, alpha=0.3)
-
-        # Legend below the map
-        legend_elements = [
-            mpatches.Patch(facecolor='#2ECC40', label='GEH < 5 (Good)', edgecolor='black'),
-            mpatches.Patch(facecolor='#FFDC00', label='GEH 5-10 (Acceptable)', edgecolor='black'),
-            mpatches.Patch(facecolor='#FF4136', label='GEH > 10 (Poor)', edgecolor='black'),
-            Line2D([0], [0], color='#555555', lw=5, solid_capstyle='butt',
-                   label='One bar per direction, offset from the road'),
-            mpatches.Patch(facecolor='none', edgecolor='blue', linestyle='--',
-                           linewidth=2, label='County Boundary'),
-        ]
-        ax.legend(handles=legend_elements, loc='upper right', framealpha=0.9,
-                  fontsize=9)
-
     # ── Station rendering helpers ────────────────────────────────────────
-
-    @staticmethod
-    def _station_daily_geh(comparison_df: pd.DataFrame) -> pd.DataFrame:
-        """GEH of each station's 24-hour totals — a real GEH of a real count.
-
-        Returns a DataFrame with columns device_id, geh, observed, simulated.
-        """
-        totals = (comparison_df.groupby('device_id')[['observed', 'simulated']]
-                  .sum().reset_index())
-        denom = totals['simulated'] + totals['observed']
-        totals['geh'] = np.where(
-            denom > 0,
-            np.sqrt(2 * (totals['simulated'] - totals['observed']) ** 2
-                    / denom.where(denom > 0, 1)),
-            np.nan,
-        )
-        return totals
-
-    @staticmethod
-    def _geh_color(geh: float) -> str:
-        if geh is None or (isinstance(geh, float) and np.isnan(geh)):
-            return '#BBBBBB'
-        if geh < 5:
-            return '#2ECC40'
-        if geh < 10:
-            return '#FFDC00'
-        return '#FF4136'
 
     @classmethod
     def _signed_geh_color(cls, geh_signed: float) -> str:
@@ -1847,57 +1722,6 @@ class SimulationEvaluator:
                            .translate(cx, cy) + ax.transData),
             )
             ax.add_patch(rect)
-
-    def _plot_traffic_heatmap_clean(self, ax, links_with_volume: pd.DataFrame):
-        """Plot network as gray background (no count stations or GEH)."""
-
-        # Draw all links as gray
-        segments = self._link_segments(links_with_volume)
-        lc = LineCollection(segments, colors='#9D9C9C', linewidths=0.8, alpha=0.5)
-        ax.add_collection(lc)
-
-        self._draw_county_boundaries(ax)
-
-        ax.set_aspect('equal')
-        ax.set_xlabel('UTM X (m)')
-        ax.set_ylabel('UTM Y (m)')
-        ax.grid(True, alpha=0.3)
-
-    def plot_heatmap_only(self, linkstats: pd.DataFrame, save: bool = True):
-        """
-        Create heatmap-only spatial map (no count stations or GEH).
-
-        Args:
-            linkstats: Simulation linkstats
-            save: Whether to save to evaluation directory
-        """
-        if self.network_links is None:
-            logger.warning("Network not loaded, cannot generate heatmap")
-            return None
-
-        hour_cols = [f'HRS{i}-{i+1}avg' for i in range(24)]
-        linkstats_with_total = linkstats.copy()
-        linkstats_with_total['total_volume'] = linkstats[hour_cols].sum(axis=1)
-
-        links_with_volume = self.network_links.merge(
-            linkstats_with_total[['link_id', 'total_volume']],
-            on='link_id', how='left'
-        )
-        links_with_volume['total_volume'] = links_with_volume['total_volume'].fillna(0)
-
-        fig, ax = plt.subplots(figsize=(14, 12))
-        ax.set_title(f'Network Overview - {self.experiment_dir.name}',
-                     fontsize=16, fontweight='bold')
-
-        self._plot_traffic_heatmap_clean(ax, links_with_volume)
-
-        if save:
-            plot_path = self.evaluation_dir / 'heatmap_daily.png'
-            plt.savefig(plot_path, dpi=300, bbox_inches='tight', pad_inches=0.1)
-            logger.info(f"Saved heatmap to {plot_path}")
-            plt.close(fig)
-
-        return fig
 
     @staticmethod
     def _smooth_congestion(hw_data: pd.DataFrame, method: str = 'neighbor') -> pd.DataFrame:
@@ -2733,16 +2557,16 @@ class SimulationEvaluator:
 
         hours = self.report_hours()
 
-        # Generate spatial maps if requested and we have matched devices
+        # Per-hour station error maps. The whole-day spatial_overview.png
+        # (one daily-GEH colour per station) and heatmap_daily.png (a grey
+        # network that never showed volume) are no longer drawn: the report
+        # had already dropped both, see FIGURE_SECTIONS in
+        # scripts/experiment_report.py.
         if generate_spatial_maps and len(matched_devices) > 0:
-            logger.info("Generating spatial overview maps...")
-            self.plot_spatial_maps(matched_devices, linkstats, comparison_df,
-                                   hours=hours)
+            logger.info("Generating hourly count station error maps...")
+            self.plot_hourly_pct_error_maps(matched_devices, comparison_df, hours=hours)
 
-        # Always generate heatmap-only and peak hour highway maps when spatial maps are requested
         if generate_spatial_maps:
-            logger.info("Generating heatmap-only map...")
-            self.plot_heatmap_only(linkstats)
             # Congestion heatmaps follow report_hours like the other two
             # per-hour views, so each hour tab carries the same three figures.
             #

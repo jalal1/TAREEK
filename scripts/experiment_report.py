@@ -215,6 +215,9 @@ FIGURE_SECTIONS: List[Tuple[str, str, List[Tuple[str, str]]]] = [
     # network background and never reads the total_volume passed to it. The
     # figure is the road layout and the county boundary — the name and caption
     # promised a heatmap the code was never written to draw.
+    #
+    # The evaluator stopped writing both files on 2026-10-01; the
+    # per-hour count_error_hXX.png maps carry the station view.
     ("Where the Error Sits",
      "The aggregate ratio and the CV are one number each; this is the "
      "distribution behind them. It answers the question the scalars cannot: "
@@ -1368,9 +1371,10 @@ def build_markdown(run: Dict[str, Any], baseline: Optional[Dict[str, Any]],
     L.extend(hour_lines)
     used |= hour_used
 
-    # Figures the evaluator still writes but the report deliberately omits.
-    # Without this they would come back through the catch-all below, which
-    # picks up every PNG not already placed in a section.
+    # Figures the report deliberately omits. The evaluator no longer writes
+    # them, but runs evaluated before 2026-10-01 still have them, and without
+    # this they would come back through the catch-all below, which picks up
+    # every PNG not already placed in a section.
     suppressed = {"spatial_overview.png", "heatmap_daily.png"}
     extras = sorted(p for p in eval_dir.glob("*.png")
                     if p.name not in used and p.name not in suppressed) \
