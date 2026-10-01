@@ -122,7 +122,10 @@ used, the results, and a full `report.html` for each run. Now it has
 
 The [Twin Cities TBI example](examples/twincities-tbi-jalal-20260930/) uses a custom local
 household travel survey (TBI 2023) in place of NHTS, and compares the two surveys on the
-same region.
+same region. The [Birmingham local survey example](examples/birmingham-localsurvey-jalal-20261001/)
+is a first run with a small local survey (451 people). It uses survey roles: the local survey
+gives the chains, times and modes, and NHTS gives only the person-days. More tuning is needed.
+Custom surveys live in [`data/surveys/`](data/surveys/).
 
 You can also add your own region. See [examples/CONTRIBUTING.md](examples/CONTRIBUTING.md).
 
