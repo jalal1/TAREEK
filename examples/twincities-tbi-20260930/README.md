@@ -1,10 +1,10 @@
-# Twin Cities, MN-WI — TBI 2023 custom local survey — Jalal, 2026-09-30
+# Twin Cities, MN-WI — TBI 2023 custom local survey — 2026-09-30
 
 > **This example uses a custom local household travel survey, not NHTS.**
 > The demand comes from the **Travel Behavior Inventory (TBI) 2023** of the Metropolitan
 > Council, the household travel survey of the Twin Cities region. NHTS 2022 is loaded
 > but has weight 0. Compare it with the NHTS example of the same region,
-> [`twincities-jalal-20260928`](../twincities-jalal-20260928/).
+> [`twincities-20260928`](../twincities-20260928/).
 
 A full Tareek run for the 15-county Minneapolis–Saint Paul region, compared against FHA
 directional traffic counts. Tareek uses NHTS as the fallback survey for any US region. A
@@ -130,7 +130,7 @@ into the `config/` folder and start it:
 
 ```bash
 # from the repository root, with the virtualenv activated
-cp examples/twincities-tbi-jalal-20260930/config_used.json config/twincities_tbi.json
+cp examples/twincities-tbi-20260930/config_used.json config/twincities_tbi.json
 python run_experiment.py --config config/twincities_tbi.json
 ```
 
@@ -192,7 +192,7 @@ keys in the config are **optional** — see [Optional API keys](#optional-api-ke
 | `counts.fha.month` | 10 | October 2024 counts |
 
 All the other values are the same as in the NHTS example
-[`twincities-jalal-20260928`](../twincities-jalal-20260928/).
+[`twincities-20260928`](../twincities-20260928/).
 
 ### Scenario scale
 

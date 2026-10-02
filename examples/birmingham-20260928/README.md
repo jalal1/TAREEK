@@ -1,8 +1,8 @@
-# Birmingham, AL experiment — Jalal, 2026-09-28
+# Birmingham, AL experiment — 2026-09-28
 
 A full Tareek run for the Birmingham metro core, compared against FHA directional
 traffic counts. It uses person-first demand, freight and the Hermes mobsim, in the same
-way as the [Twin Cities example](../twincities-jalal-20260928/).
+way as the [Twin Cities example](../twincities-20260928/).
 
 - **Experiment ID:** `bham_pf_hermes_w12_nw20_fr03_10iter`
 - **Region:** 2 Alabama counties — Jefferson (`01073`, Birmingham) and Shelby (`01117`)
@@ -61,7 +61,7 @@ run it again, copy the config into the `config/` folder and start it:
 
 ```bash
 # from the repository root, with the virtualenv activated
-cp examples/birmingham-jalal-20260928/config_used.json config/birmingham.json
+cp examples/birmingham-20260928/config_used.json config/birmingham.json
 python run_experiment.py --config config/birmingham.json
 ```
 

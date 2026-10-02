@@ -1,8 +1,8 @@
-# Madison, WI experiment — Jalal, 2026-09-28
+# Madison, WI experiment — 2026-09-28
 
 A full Tareek run for Dane County (Madison), compared against FHA directional traffic
 counts. It uses person-first demand, freight and the Hermes mobsim, in the same way as
-the [Twin Cities example](../twincities-jalal-20260928/).
+the [Twin Cities example](../twincities-20260928/).
 
 - **Experiment ID:** `madison_pf_hermes_w11_nw18_fr03_10iter`
 - **Region:** 1 Wisconsin county — Dane (`55025`, Madison)
@@ -64,7 +64,7 @@ into the `config/` folder and start it:
 
 ```bash
 # from the repository root, with the virtualenv activated
-cp examples/madison-jalal-20260928/config_used.json config/madison.json
+cp examples/madison-20260928/config_used.json config/madison.json
 python run_experiment.py --config config/madison.json
 ```
 

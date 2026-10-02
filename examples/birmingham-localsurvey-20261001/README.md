@@ -1,11 +1,11 @@
-# Birmingham, AL — local survey (first run) — Jalal, 2026-10-01
+# Birmingham, AL — local survey (first run) — 2026-10-01
 
 > **This is the first run with the Birmingham custom local survey. More tuning is needed.**
 > The demand shape comes from a **local Birmingham travel survey** (`bham_local`, 451 people,
 > [published online](https://almt0.github.io/background_traffic/index.html)), not from NHTS.
 > NHTS 2022 still sets *how many* people travel (person-days), because the local survey
 > has no no-travel days and no children. Every other setting is the same as in the NHTS
-> example of the region, [`birmingham-jalal-20260928`](../birmingham-jalal-20260928/).
+> example of the region, [`birmingham-20260928`](../birmingham-20260928/).
 > The knobs were tuned for NHTS, not for this survey.
 
 A full Tareek run for Jefferson and Shelby counties, compared against FHA directional
@@ -107,7 +107,7 @@ This run used [`config_used.json`](config_used.json). To run it again:
 
 ```bash
 # from the repository root, with the virtualenv activated
-cp examples/birmingham-localsurvey-jalal-20261001/config_used.json config/bham_local.json
+cp examples/birmingham-localsurvey-20261001/config_used.json config/bham_local.json
 python run_experiment.py --config config/bham_local.json
 ```
 
@@ -155,7 +155,7 @@ this folder. The run makes them again from the config. For the setup steps, see 
 
 ### Against the NHTS example (same stations)
 
-> **Read this before you compare with [`birmingham-jalal-20260928`](../birmingham-jalal-20260928/).**
+> **Read this before you compare with [`birmingham-20260928`](../birmingham-20260928/).**
 > The count set was rebuilt after that run (parallel-roadway counts): 41 stations here,
 > 36 there. The road network is the same. The table below uses only the 1,152
 > station-hours that both runs share, so it shows the effect of the survey alone.

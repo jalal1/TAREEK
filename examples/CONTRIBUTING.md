@@ -3,7 +3,9 @@
 Sharing an experiment is easy.
 
 1. **Fork the repo** and create a folder named `examples/<region>-<author>-<YYYYMMDD>/`
-   (e.g. `examples/seattle-jalal-20260623/`).
+   (e.g. `examples/seattle-jdoe-20260623/`).
+   Examples from the Tareek maintainers do not include the author:
+   `examples/<region>-<YYYYMMDD>/`.
 
 2. **Add a `README.md`** showing whatever you want about your experiment — the region,
    what you ran, your configuration, and your results (plots and numbers welcome).

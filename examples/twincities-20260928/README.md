@@ -1,4 +1,4 @@
-# Twin Cities, MN-WI experiment — Jalal, 2026-09-28
+# Twin Cities, MN-WI experiment — 2026-09-28
 
 A full Tareek run for the 15-county Minneapolis–Saint Paul region, compared against FHA
 directional traffic counts. This is the first Twin Cities example, and the first example
@@ -77,7 +77,7 @@ into the `config/` folder and start it:
 
 ```bash
 # from the repository root, with the virtualenv activated
-cp examples/twincities-jalal-20260928/config_used.json config/twincities.json
+cp examples/twincities-20260928/config_used.json config/twincities.json
 python run_experiment.py --config config/twincities.json
 ```
 
