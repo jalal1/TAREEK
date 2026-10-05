@@ -319,6 +319,87 @@ def test_proximity_beats_bearing():
     assert out['distance_m'].max() < 50  # near, not ~600 m away
 
 
+def _freeway_ramp_and_pt():
+    """A 4-lane freeway pair 30 m away, a 2-lane ramp pair and a pt-only link
+    at the sensor (all freeway-grade, so all pass the Interstate class floor)."""
+    return pd.DataFrame([
+        {'link_id': 'pt_1', 'from_node': 'p1', 'to_node': 'p2',
+         'from_x': 501, 'from_y': 520, 'to_x': 501, 'to_y': 480,
+         'capacity': 9999.0, 'freespeed': 22.0},
+        {'link_id': 'rampN', 'from_node': 'r1', 'to_node': 'r2',
+         'from_x': 500, 'from_y': 480, 'to_x': 500, 'to_y': 520,
+         'capacity': 3000.0, 'freespeed': 22.2},
+        {'link_id': 'rampS', 'from_node': 'r2', 'to_node': 'r1',
+         'from_x': 500, 'from_y': 520, 'to_x': 500, 'to_y': 480,
+         'capacity': 3000.0, 'freespeed': 22.2},
+        {'link_id': 'fwyN', 'from_node': 'w1', 'to_node': 'w2',
+         'from_x': 530, 'from_y': 480, 'to_x': 530, 'to_y': 520,
+         'capacity': 8000.0, 'freespeed': 26.8},
+        {'link_id': 'fwyS', 'from_node': 'w2', 'to_node': 'w1',
+         'from_x': 530, 'from_y': 520, 'to_x': 530, 'to_y': 480,
+         'capacity': 8000.0, 'freespeed': 26.8},
+    ])
+
+
+def _primary(out):
+    """Matched rows without the parallel-roadway split rows (<station>-p<k>_<dir>)."""
+    return out[~out['LOCAL_ID'].astype(str).str.contains('-p')]
+
+
+def _load_with_modes(g, links):
+    _load_links(g, links)
+    g._link_modes = {lid: ({'pt', 'artificial'} if lid.startswith('pt_') else {'car'})
+                     for lid in links['link_id']}
+
+
+@pytest.mark.smoke
+def test_capacity_is_converted_to_vehicles_per_hour(tmp_path):
+    """Link capacity is per capperiod; matching compares it in veh/h."""
+    net = tmp_path / 'network.xml'
+    net.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n<network>\n<nodes>\n'
+        '<node id="a" x="0" y="0"/><node id="b" x="0" y="100"/>\n</nodes>\n'
+        '<links capperiod="24:00:00">\n'
+        '<link id="l1" from="a" to="b" length="100" freespeed="27" capacity="48000" '
+        'permlanes="2" modes="car"/>\n</links>\n</network>\n', encoding='utf-8')
+    g = _make_generator()
+    g.load_network(net)
+    assert g._link_attributes['l1'][0] == pytest.approx(2000.0)
+
+
+@pytest.mark.smoke
+def test_pt_only_link_is_never_a_count_link():
+    """A pt-only link passes any class floor but carries no cars."""
+    g = _make_generator()
+    _load_with_modes(g, _freeway_ramp_and_pt())
+    # Small volume: the ramp at the sensor is the counted road.
+    volumes, stations = _station_rows('FHA_36_000299', [(1, 500), (5, 500)], f_system='1U')
+    out = g.match_fha_directional_to_links(volumes, stations)
+    assert 'pt_1' not in set(out['matched_link_id'])
+    assert set(_primary(out)['matched_link_id']) == {'rampN', 'rampS'}
+
+
+@pytest.mark.smoke
+def test_link_below_observed_peak_is_passed_over():
+    """A 3,000 veh/h ramp cannot be the road of a 5,000 veh/h count."""
+    g = _make_generator()
+    _load_with_modes(g, _freeway_ramp_and_pt())
+    volumes, stations = _station_rows('FHA_36_000191', [(1, 5000), (5, 5000)], f_system='1U')
+    out = g.match_fha_directional_to_links(volumes, stations)
+    assert set(_primary(out)['matched_link_id']) == {'fwyN', 'fwyS'}
+
+
+@pytest.mark.smoke
+def test_no_link_carries_peak_keeps_nearest():
+    """When even the freeway is below the peak (a direction split over two
+    roadways), the nearest eligible match is kept as before."""
+    g = _make_generator()
+    _load_with_modes(g, _freeway_ramp_and_pt())
+    volumes, stations = _station_rows('FHA_17_001125', [(1, 9000), (5, 9000)], f_system='1U')
+    out = g.match_fha_directional_to_links(volumes, stations)
+    assert set(_primary(out)['matched_link_id']) == {'rampN', 'rampS'}
+
+
 # ---------------------------------------------------------------------------
 # Evaluator: countscompare reader + station-base stripping
 # ---------------------------------------------------------------------------

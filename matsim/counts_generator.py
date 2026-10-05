@@ -82,6 +82,17 @@ FSYSTEM_MIN_LINK = {
 # reaching an unrelated parallel road.
 CLASS_MATCH_RADIUS_M = 60.0
 
+# A ramp beside a freeway also passes the class floor (a 2-lane motorway_link
+# at 80 km/h is 3,000 veh/h, 22 m/s) and at an interchange it can sit closer to
+# the sensor than the mainline. New York 2026-10-04: Cross Bronx (FHA_36_000191)
+# dir 5, 78,000 veh/day, bound to a 3,000 veh/h ramp and simulated 0.22. But
+# some sensors really are on a ramp or collector that carries the Interstate's
+# functional class (Birmingham FHA_01_001465, 10,000 veh/day), so capacity alone
+# cannot pick the road. The observed peak hour decides: a link whose capacity is
+# below the station's observed peak hourly volume cannot be the road the sensor
+# counts, and the nearest link that can carry it is taken instead.
+PEAK_CAPACITY_RATIO = 1.0
+
 # Parallel roadways of one direction. Some freeways carry one direction on two
 # separate roadways, e.g. local and express lanes (Chicago Dan Ryan: 3 local +
 # 3-4 express lanes, 25-60 m apart). A TMAS station counts the whole
@@ -333,6 +344,22 @@ class CountsGenerator:
 
         root = tree.getroot()
 
+        # Link capacity is per <links capperiod>. The class floors and the
+        # observed-peak check compare it with hourly volumes, so convert it to
+        # veh/h (pt2matsim writes 01:00:00, but other networks need not).
+        per_hour = 1.0
+        links_el = root.find('links')
+        capperiod = links_el.get('capperiod') if links_el is not None else None
+        if capperiod:
+            try:
+                h, m, s = (float(p) for p in capperiod.split(':'))
+                period_s = h * 3600 + m * 60 + s
+                if period_s > 0:
+                    per_hour = 3600.0 / period_s
+            except ValueError:
+                logger.warning(f"Unreadable network capperiod {capperiod!r}; "
+                               f"link capacity is taken as veh/h")
+
         nodes = {}
         for node in root.findall('.//node'):
             node_id = node.get('id')
@@ -366,10 +393,11 @@ class CountsGenerator:
 
                 link_geometries[link_id] = LineString([(from_x, from_y), (to_x, to_y)])
                 link_modes[link_id] = set((link.get('modes') or 'car').split(','))
-                # Capacity/freespeed drive facility-class matching; missing or
-                # malformed values become 0 so the link fails any class floor.
+                # Capacity (veh/h) and freespeed drive facility-class matching;
+                # missing or malformed values become 0 so the link fails any
+                # class floor.
                 try:
-                    link_attributes[link_id] = (float(link.get('capacity') or 0.0),
+                    link_attributes[link_id] = (float(link.get('capacity') or 0.0) * per_hour,
                                                 float(link.get('freespeed') or 0.0))
                 except (TypeError, ValueError):
                     link_attributes[link_id] = (0.0, 0.0)
@@ -549,14 +577,21 @@ class CountsGenerator:
 
     def find_station_carriageways(self, x: float, y: float,
                                   fsys: Optional[int],
-                                  radius_m: float = CLASS_MATCH_RADIUS_M
+                                  radius_m: float = CLASS_MATCH_RADIUS_M,
+                                  peak_vph: Optional[float] = None
                                   ) -> Tuple[List[str], float, str]:
         """Find the carriageway links a station's road is represented by.
 
         Unlike plain nearest-link matching, this searches every link within
         *radius_m* and keeps only those plausible for the station's functional
         class, so an Interstate sensor cannot bind to the frontage road it
-        happens to sit closest to.
+        happens to sit closest to. Only car links are candidates.
+
+        *peak_vph* is the observed peak hourly volume of the station's lighter
+        direction. For a class-constrained station, a link that cannot carry
+        it is passed over for the nearest one that can (see
+        PEAK_CAPACITY_RATIO); when no link can, the nearest is kept, so a
+        direction split over parallel roadways still matches as before.
 
         Returns:
             (candidate_link_ids, distance_m, method) where method is
@@ -565,7 +600,11 @@ class CountsGenerator:
             'none' when nothing suitable was found.
         """
         point = Point(x, y)
-        nearby = self._nearby_link_ids(x, y, buffer_m=radius_m)
+        # Only links cars can use: a pt-only link (pt2matsim artificial link,
+        # capacity 9999) passes any class floor but never carries a car.
+        link_modes = getattr(self, '_link_modes', {})
+        nearby = [lid for lid in self._nearby_link_ids(x, y, buffer_m=radius_m)
+                  if 'car' in link_modes.get(lid, {'car'})]
         if not nearby:
             return [], float('inf'), 'none'
 
@@ -586,22 +625,36 @@ class CountsGenerator:
             eligible = ranked
             method = 'nearest'
 
-        best_dist, best_id = eligible[0]
+        # A link too small for the observed peak cannot be the counted road
+        # (see PEAK_CAPACITY_RATIO). Only class-constrained stations, and only
+        # when some eligible link can carry the peak.
+        need = (peak_vph * PEAK_CAPACITY_RATIO
+                if constrained and peak_vph and peak_vph > 0 else None)
+
+        def _carries(lid):
+            return need is None or self._link_attrs(lid)[0] >= need
+
+        best_dist, best_id = next(((d, lid) for d, lid in eligible if _carries(lid)),
+                                  eligible[0])
 
         # The two carriageways are the chosen link plus its antiparallel
         # partner. Take the partner from the eligible set as well, so both
         # directions are measured on the same physical facility.
         candidates = [best_id]
         partner = self.get_reverse_link_id(best_id)
-        if partner and partner != best_id and (not constrained
-                                               or self.link_matches_fsystem(partner, fsys)):
+        if (partner and partner != best_id
+                and (not constrained or self.link_matches_fsystem(partner, fsys))
+                and (not constrained or 'car' in link_modes.get(partner, {'car'}))
+                and _carries(partner)):
             candidates.append(partner)
         else:
-            # No usable reverse from the node/suffix rules: fall back to the
-            # closest eligible link pointing the opposite way.
+            # No usable reverse from the node/suffix/spatial rules: fall back
+            # to the closest eligible link pointing the opposite way, preferring
+            # one that can carry the observed peak.
             bx, by, tx, ty = self._link_endpoints[best_id]
             best_bearing = self._link_bearing(bx, by, tx, ty)
             if best_bearing is not None:
+                opposite = []
                 for d, lid in eligible:
                     if lid == best_id:
                         continue
@@ -610,8 +663,16 @@ class CountsGenerator:
                     if b is None:
                         continue
                     if self._angular_diff(b, best_bearing) >= 135.0:
-                        candidates.append(lid)
-                        break
+                        opposite.append((d, lid))
+                pick = next((lid for _, lid in opposite if _carries(lid)), None)
+                if pick is None and partner and partner != best_id and (
+                        not constrained or (self.link_matches_fsystem(partner, fsys)
+                                            and 'car' in link_modes.get(partner, {'car'}))):
+                    pick = partner  # nothing carries the peak: keep the old choice
+                if pick is None and opposite:
+                    pick = opposite[0][1]
+                if pick is not None:
+                    candidates.append(pick)
 
         return candidates, best_dist, method
 
@@ -828,8 +889,16 @@ class CountsGenerator:
             fsys = parse_f_system(rows[0][1].get('f_system'))
 
             # Carriageways of the facility this station measures, constrained
-            # by its functional class.
-            candidates, nearest_dist, method = self.find_station_carriageways(x, y, fsys)
+            # by its functional class and by its observed peak hour. The
+            # lighter direction's peak is used: both carriageways must carry
+            # at least that, and a heavy direction must not reject the correct
+            # smaller carriageway of a light one.
+            dir_peaks = [max((float(r[h]) for h in HOUR_COLS_UPPER
+                              if h in r.index and pd.notna(r[h])), default=0.0)
+                         for _, r in rows]
+            peak_vph = min(dir_peaks) if dir_peaks else None
+            candidates, nearest_dist, method = self.find_station_carriageways(
+                x, y, fsys, peak_vph=peak_vph)
             if not candidates:
                 for _, row in rows:
                     n_dropped += 1
