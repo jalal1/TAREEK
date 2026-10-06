@@ -1,0 +1,765 @@
+{
+  "region": {
+    "counties": [
+      "06037",
+      "06059"
+    ]
+  },
+  "data": {
+    "data_dir": "/media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/data",
+    "day_type": "weekday",
+    "survey_months": "regular",
+    "_survey_months_help": "Survey months used for day types, chains and times: 'regular' (Mar-May, Sep-Nov), 'all', or a list of months. Keep counts.fha.month inside it.",
+    "_day_type_help": "Which travel days to model: 'weekday' (default), 'weekend' or 'all'. Both counts loaders filter to Mon-Fri, so a weekday demand model is what the validation compares against. Measured on NHTS 2022: 07-09 holds 21.3% of weekday departures but 12.2% of weekend ones, and a median School stay is 414 min on a weekday against 105 on a weekend.",
+    "census_api_key": "YOUR_CENSUS_API_KEY_HERE",
+    "_census_api_key_help": "Free API key from https://api.census.gov/data/key_signup.html. Used by demand_estimator.py to fetch ACS commute data (B08301, B08303) for calibration",
+    "lodes": {
+      "year": 2023,
+      "job_type": "JT00",
+      "segment": "S000"
+    },
+    "surveys": [
+      {
+        "type": "nhts",
+        "year": "2022",
+        "file": "nhts/csv/tripv2pub.csv",
+        "weight": 1,
+        "person_file": "nhts/csv/perv2pub.csv"
+      }
+    ]
+  },
+  "gtfs": {
+    "_comment": "GTFS transit feed discovery and caching. Feeds are auto-discovered from the Mobility Database catalog by intersecting feed bounding boxes with the configured region counties",
+    "catalog_url": "https://files.mobilitydatabase.org/feeds_v2.csv",
+    "_catalog_url_help": "URL to the Mobility Database CSV catalog of GTFS feeds worldwide",
+    "catalog_max_age_days": 7,
+    "_catalog_max_age_days_help": "Re-download the catalog CSV if the local copy is older than this many days",
+    "feed_max_age_days": 30,
+    "_feed_max_age_days_help": "Re-download individual GTFS feed zips if the cached copy is older than this many days",
+    "cache_dir": "data/gtfs",
+    "_cache_dir_help": "Local directory for cached catalog CSV and extracted GTFS feed folders (e.g., data/gtfs/{feed_id}/)",
+    "country_filter": "US",
+    "_country_filter_help": "Only consider feeds from this country code when filtering the catalog",
+    "api_keys": {
+      "_help": "API keys for GTFS feeds that require authentication, keyed by domain. Register free at https://developer.wmata.com/",
+      "wmata.com": "YOUR_WMATA_API_KEY"
+    }
+  },
+  "modes": {
+    "_comment": "Transportation modes. Each key is a mode name. Set 'enabled': false to disable a mode without removing its config. Modes are flat \u2014 bus and rail are separate entries, not sub-modes of 'pt'",
+    "_enabled_help": "Set to false to disable this mode. Disabled modes are excluded from mode choice, availability checking, GTFS setup, and MATSim transit config. Default is true if omitted",
+    "_matsim_mode_help": "The mode string written to MATSim plans.xml legs. Multiple modes can map to the same MATSim mode (e.g., bus and rail both map to 'pt')",
+    "_availability_help": "How to determine if a mode is available for a given OD pair. String 'universal' = always available. Object with 'type' key: 'gtfs' = available if GTFS stops exist near both origin and destination, 'distance' = available if OD distance is within max, 'zone_list' = available if both locations are in specified zones",
+    "_survey_rate_help": "Mode share rate from survey data. 'auto' = compute from TBI/NHTS survey data, or specify a float (e.g., 0.85 for 85%)",
+    "_config_rate_help": "Target mode share rate for blending with survey rate. null = no blending (use survey rate only)",
+    "_blend_weight_help": "Weight for blending survey_rate and config_rate: 0.0 = pure survey rate, 1.0 = pure config rate, 0.5 = average both",
+    "_share_adjustment_help": "Additive adjustment to the final mode share in percentage points (e.g., 0.05 adds 5%, -0.1 subtracts 10%). Applied after blending",
+    "car": {
+      "enabled": true,
+      "matsim_mode": "car",
+      "availability": "universal",
+      "survey_rate": "auto",
+      "config_rate": null,
+      "blend_weight": 0,
+      "share_adjustment": 0.0
+    },
+    "bus": {
+      "enabled": true,
+      "matsim_mode": "pt",
+      "availability": {
+        "type": "gtfs",
+        "route_types": [
+          3,
+          11
+        ],
+        "_route_types_help": "GTFS route_type codes: 3=Bus, 11=Trolleybus. See GTFS spec for full list",
+        "access_buffer_meters": 1000,
+        "_access_buffer_meters_help": "CTA bus network is dense in Cook County; 1000m reflects realistic walking catchment for Chicago's grid street pattern"
+      },
+      "survey_rate": "auto",
+      "config_rate": 0.06,
+      "blend_weight": 1.0,
+      "share_adjustment": 0.0
+    },
+    "rail": {
+      "enabled": true,
+      "matsim_mode": "pt",
+      "availability": {
+        "type": "gtfs",
+        "route_types": [
+          0,
+          1,
+          2,
+          12
+        ],
+        "_route_types_help": "GTFS route_type codes: 0=Tram/Light Rail, 1=Subway/Metro, 2=Commuter Rail, 12=Monorail",
+        "access_buffer_meters": 1500,
+        "_access_buffer_meters_help": "CTA L stations and Metra stops are spaced farther apart; 1500m reflects realistic catchment for rail in Chicago"
+      },
+      "survey_rate": "auto",
+      "config_rate": 0.03,
+      "blend_weight": 1.0,
+      "share_adjustment": 0.0
+    },
+    "walk": {
+      "enabled": true,
+      "matsim_mode": "walk",
+      "availability": {
+        "type": "distance",
+        "max_distance_meters": 2000,
+        "_max_distance_meters_help": "Maximum OD distance (meters) for this mode to be available. Walk trips beyond this distance are not generated"
+      },
+      "survey_rate": "auto",
+      "config_rate": null,
+      "blend_weight": 0.0,
+      "share_adjustment": 0.0
+    },
+    "bike": {
+      "enabled": false,
+      "matsim_mode": "bike",
+      "availability": {
+        "type": "distance",
+        "max_distance_meters": 8000,
+        "_max_distance_meters_help": "Maximum OD distance (meters) for bike trips. Bike trips beyond 8km are not generated"
+      },
+      "survey_rate": "auto",
+      "config_rate": null,
+      "blend_weight": 0.0,
+      "share_adjustment": 0.0
+    },
+    "_ny_acs_help": "NY mode rates calibrated to ACS 2023 B08301 (10 counties, commuters excl. WFH: car 44.4%, transit 42.5%, walk 8.8%). Rates car 0.38/rail 0.30/bus 0.12/walk 0.20 gave work legs car 56.2%, pt 34.9%, walk 8.8% (availability moves trips to car); car lowered by the odds ratio."
+  },
+  "mode_choice": {
+    "_comment": "Controls how transportation mode is selected for each trip leg",
+    "method": "survey_rates",
+    "_method_help": "Mode choice method. 'survey_rates' = sample from survey-derived mode shares, filtered by availability and adjusted by blend/share settings",
+    "fallback_mode": "car",
+    "_fallback_mode_help": "Mode to use when no other mode is available for an OD pair (e.g., rural area with no transit and distance too far for walk/bike)",
+    "chain_consistency": true,
+    "_chain_consistency_help": "If true, all legs in an activity chain use the same mode (e.g., home\u2192work\u2192home both by car). Mode is sampled once using modes available for ALL legs",
+    "min_samples_per_purpose": 30,
+    "_min_samples_per_purpose_help": "Minimum survey trips needed per trip purpose to compute purpose-specific mode shares. Below this threshold, falls back to overall 'all' rates",
+    "max_chain_mode_retries": 10,
+    "_max_chain_mode_retries_help": "Maximum attempts to find a mode available for all legs in a chain before falling back to fallback_mode"
+  },
+  "plan_generation": {
+    "target_plans": "all",
+    "scaling_factor": 0.1,
+    "work_scaling_multiplier": 1.1,
+    "random_seed": 42,
+    "skip_if_exists": false,
+    "supported_chain_types": [
+      "home_work_home"
+    ],
+    "chain_sampling_method": "direct",
+    "max_chain_retries": 10,
+    "num_processes": 60,
+    "default_mode": "car",
+    "cache_demand": false
+  },
+  "od_matrix": {
+    "source": "auto",
+    "_source_help": "auto (default) prefers observed LODES OD and falls back to the gravity model with a loud log line when the region has no LODES coverage; lodes_od requires observed flows and fails if absent; gravity forces the estimated model",
+    "boundary_policy": "anchor",
+    "_boundary_policy_help": "drop (interim) discards I-E/E-I commutes and reports the counts; anchor re-points the out-of-region end at the in-region zone the trip crosses, so the in-region leg still loads the network. Anchor is the decided target (proposal D4) - switch once stage 3 is validated against counts",
+    "alpha": 0.1,
+    "friction": "power",
+    "_friction_help": "power (legacy default) is d^-beta - unbounded as distance approaches zero, which is the dominant gravity defect; exponential exp(-beta*d) and gamma d^alpha*exp(-beta*d) are bounded. Bounded forms need distance='cosine_km' and a refitted beta in 1/km - see scripts/fit_gravity_beta.py",
+    "beta": 1.5,
+    "_beta_help": "distance decay. Units depend on friction: dimensionless for power, 1/km for exponential/gamma. Refit per form.",
+    "distance": "cosine_km",
+    "_distance_help": "cosine_km (default) measures pair distances in km with a latitude cosine correction and sets intrazonal distance from zone area; legacy_degrees reproduces pre-stage-1 behaviour (raw degrees, 0.1deg zero-guard) for ablation arm A",
+    "intrazonal_factor": 0.5,
+    "_intrazonal_factor_help": "intrazonal distance = factor * sqrt(zone area); zone area is estimated from the spread of member block points",
+    "max_iterations": 200,
+    "convergence_threshold": 0.03
+  },
+  "time_models": {
+    "kde_bandwidth": "scott",
+    "max_time_retries": 10,
+    "max_duration_sample_attempts": 100,
+    "first_departure_source": "first_of_day"
+  },
+  "duration_constraints": {
+    "activity_durations": {
+      "_trim_priority_help": "Controls trimming order when schedule exceeds 24h. Higher = trimmed first (discretionary before mandatory). 1=mandatory, 2=default, 3=discretionary",
+      "Home": {
+        "min_minutes": 10,
+        "max_minutes": 600,
+        "trim_priority": 1,
+        "blend_weight": 0
+      },
+      "Work": {
+        "min_minutes": 10,
+        "max_minutes": 600,
+        "trim_priority": 1,
+        "target_mean_minutes": 480,
+        "target_std_minutes": 60,
+        "blend_weight": 0
+      },
+      "School": {
+        "min_minutes": 10,
+        "max_minutes": 600,
+        "trim_priority": 1,
+        "target_mean_minutes": 390,
+        "target_std_minutes": 60,
+        "blend_weight": 0
+      },
+      "Shopping": {
+        "min_minutes": 5,
+        "max_minutes": 300,
+        "trim_priority": 3,
+        "target_mean_minutes": 45,
+        "target_std_minutes": 20,
+        "blend_weight": 0
+      },
+      "Escort": {
+        "min_minutes": 5,
+        "max_minutes": 300,
+        "trim_priority": 3,
+        "target_mean_minutes": 15,
+        "target_std_minutes": 10,
+        "blend_weight": 0
+      },
+      "Dining": {
+        "min_minutes": 5,
+        "max_minutes": 180,
+        "trim_priority": 3,
+        "blend_weight": 0
+      },
+      "Social": {
+        "min_minutes": 10,
+        "max_minutes": 300,
+        "trim_priority": 3,
+        "blend_weight": 0
+      },
+      "Other": {
+        "min_minutes": 5,
+        "max_minutes": 300,
+        "trim_priority": 3,
+        "blend_weight": 0
+      }
+    },
+    "trip_durations": {
+      "default": {
+        "min_minutes": 1,
+        "max_minutes": 180
+      }
+    },
+    "max_travel_buffer_minutes": 180,
+    "min_evening_home_minutes": 0,
+    "trim_jitter_minutes": 15,
+    "_trim_jitter_minutes_help": "Random jitter (\u00b1minutes) added to trimmed activity durations to prevent departure clustering. 0 = no jitter",
+    "departure_jitter_minutes": 5,
+    "_departure_jitter_minutes_help": "Random jitter (\u00b1minutes) added to first departure time to prevent clustering at KDE peaks. 0 = no jitter",
+    "over_budget": "resample"
+  },
+  "poi_assignment": {
+    "initial_radius_m": 4000,
+    "radius_increment_m": 1000,
+    "max_poi_retries": 10
+  },
+  "coordinates": {
+    "precision_decimal_places": 2,
+    "utm_epsg": "EPSG:26911"
+  },
+  "chains": {
+    "home_boost_factor": 1.0,
+    "use_weighted_chains": true,
+    "max_length": null,
+    "_max_length_help": "Maximum activities per chain. null = sample from survey chain-length distribution (recommended). Set an integer (e.g. 8) to hard-cap.",
+    "min_length": 3,
+    "_min_length_help": "Minimum activities per chain. 3 = smallest valid chain (Home-X-Home). Raise to force longer chains.",
+    "max_work_activities": 2,
+    "_max_work_activities_help": "Maximum Work activities allowed per work chain. 1 = simple commute only, 2 = allows split-shift or lunch-at-home patterns.",
+    "early_stop_exponent": 2.0
+  },
+  "logging": {
+    "level": "DEBUG",
+    "show_progress_bar": true,
+    "log_to_file": true,
+    "log_to_console": true,
+    "verbose": false
+  },
+  "network": {
+    "clean_network": true,
+    "rebuild_network": false,
+    "_rebuild_network_help": "If true, force regeneration of the network even if a cached version exists. Useful when the cached network has issues. After a successful rebuild, set back to false to re-enable caching"
+  },
+  "matsim": {
+    "version": "matsim_25",
+    "mode": "basic",
+    "run_simulation": true,
+    "heap_size_gb": 200,
+    "transit_network": true,
+    "_transit_network_help": "If true, use pt2matsim pipeline to generate a multimodal network (road + transit) from OSM + GTFS. If false, use the default road-only network generator",
+    "gtfs_sample_day": "dayWithMostTrips",
+    "_gtfs_sample_day_help": "Which day to sample GTFS schedules for. 'dayWithMostTrips' auto-selects the busiest service day. Can also be a specific date string for reproducibility",
+    "pt2matsim": {
+      "_comment": "Parameters for pt2matsim PublicTransitMapper (Step 3: mapping GTFS schedule to network). These control how transit routes are mapped to network links",
+      "numOfThreads": 32,
+      "_numOfThreads_help": "Number of parallel threads for mapping transit routes to the network. Higher = faster for large networks",
+      "candidateDistanceMultiplier": 1.6,
+      "_candidateDistanceMultiplier_help": "When fewer than nLinkThreshold candidate links are found, the search radius is expanded by this multiplier. Higher = more aggressive fallback search in sparse/rural areas",
+      "maxLinkCandidateDistance": 90.0,
+      "_maxLinkCandidateDistance_help": "Maximum distance (meters) to search for candidate network links near a transit stop. Increase for suburban/rural areas where roads are farther from stops",
+      "maxTravelCostFactor": 5.0,
+      "_maxTravelCostFactor_help": "Maximum allowed cost ratio (mapped route vs free-speed shortest path) for a route segment. Lower = stricter but forces more artificial links which can cause link-order mismatches. Higher = allows pt2matsim to find real-network paths. Range: 1.5 (very strict) to 5.0 (permissive). Our post-validation catches truly bad routes anyway",
+      "nLinkThreshold": 6,
+      "_nLinkThreshold_help": "Minimum number of candidate links to find within maxLinkCandidateDistance before expanding search by candidateDistanceMultiplier",
+      "travelCostType": "linkLength",
+      "_travelCostType_help": "Cost metric for routing during schedule-to-network mapping. 'linkLength' = use link distance, 'travelTime' = use free-speed travel time",
+      "removeNotUsedStopFacilities": true,
+      "_removeNotUsedStopFacilities_help": "Remove stop facilities that could not be mapped to the network. Prevents orphan stops from causing errors",
+      "routingWithCandidateDistance": true,
+      "_routingWithCandidateDistance_help": "If true, uses candidate-distance-based search for routing (faster). If false, routes on the full network (slower but more thorough)",
+      "scheduleFreespeedModes": "artificial",
+      "_scheduleFreespeedModes_help": "Transit modes for which schedule-based free-speed is applied during routing. 'artificial' = pt2matsim connector links"
+    },
+    "configurable_params": {
+      "coordinateSystem": "auto",
+      "lastIteration": 10,
+      "outputDirectory": "output",
+      "controller.mobsim": "hermes",
+      "_controller.mobsim_help": "qsim | hermes. hermes is faster but is a simplified queue model that ignores trafficDynamics, linkDynamics and full stuckTime semantics. Use qsim for any congestion- or mode-choice-sensitive experiment.",
+      "global.numberOfThreads": 60,
+      "qsim.numberOfThreads": 60,
+      "qsim.flowCapacityFactor": 0.1,
+      "qsim.storageCapacityFactor": 0.18,
+      "qsim.stuckTime": 10.0,
+      "_qsim.stuckTime_help": "Seconds the frontmost vehicle on a link may fail to move before it is pushed onto the next link. Gridlock escape valve: HIGHER = waits LONGER. Mersini & Ziemke (2026): stuckTime = 30s / sample_share (30.0 at 100%). Only qsim honours this; hermes ignores it.",
+      "linkStats.averageLinkStatsOverIterations": 5,
+      "scoring.modeParams.pt.constant": 1,
+      "scoring.waitingPt": -3.0,
+      "scoring.modeParams.walk.constant": -1.0,
+      "transitRouter.searchRadius": 1500.0,
+      "transitRouter.extensionRadius": 300.0,
+      "transitRouter.maxBeelineWalkConnectionDistance": 400.0,
+      "transitRouter.directWalkFactor": 1.3,
+      "hermes.endTime": "36:00:00"
+    },
+    "write_intermediate_output": false,
+    "network_heap_size_gb": 120,
+    "heap_ram_fraction": 0.85,
+    "_survey_typical_durations": {
+      "Dining": 30.0,
+      "Home": 720.0,
+      "Other": 60.0,
+      "School": 420.0,
+      "Shopping": 25.0,
+      "Social": 95.0,
+      "Work": 450.0
+    },
+    "_survey_activity_params": {
+      "Dining": {
+        "opening_hour": 9.0,
+        "closing_hour": 21.0,
+        "minimal_duration_minutes": 5.0
+      },
+      "Other": {
+        "opening_hour": 7.416666666666667,
+        "closing_hour": 20.916666666666664,
+        "minimal_duration_minutes": 5.0
+      },
+      "School": {
+        "opening_hour": 7.083333333333333,
+        "closing_hour": 18.75,
+        "minimal_duration_minutes": 60.0
+      },
+      "Shopping": {
+        "opening_hour": 7.916666666666667,
+        "closing_hour": 19.5,
+        "minimal_duration_minutes": 5.0
+      },
+      "Social": {
+        "opening_hour": 7.0,
+        "closing_hour": 21.5,
+        "minimal_duration_minutes": 20.0
+      },
+      "Work": {
+        "opening_hour": 6.0,
+        "closing_hour": 21.25,
+        "minimal_duration_minutes": 30.0
+      }
+    }
+  },
+  "counts": {
+    "enabled": true,
+    "rebuild": false,
+    "_rebuild_help": "If true, regenerate counts.xml and matched_devices.csv even if they already exist. Set to false to reuse cached files",
+    "fha": {
+      "data_dir": "data/FHA_counts",
+      "_data_dir_help": "Directory containing FHA/TMAS zip archives ({year}_station_data.zip and {mon}_{year}_ccs_data.zip)",
+      "year": 2024,
+      "month": 10,
+      "_month_help": "Month of volume data to use (1-12). FHA distributes one zip per month",
+      "weight": 1,
+      "_weight_help": "Blending weight for FHA data when both FHA and custom sources match the same network link"
+    },
+    "custom": {
+      "enabled": false,
+      "_enabled_help": "If true, look for counts_stations.csv and counts_volumes.csv in the evaluation folder. If files are missing or invalid, falls back to FHA-only with a warning",
+      "weight": 0,
+      "_weight_help": "Blending weight for custom data when both sources match the same network link"
+    }
+  },
+  "evaluation": {
+    "run_evaluation": true,
+    "ground_truth_data_dir": "data/evaluation",
+    "generate_spatial_maps": true,
+    "generate_per_device_reports": true,
+    "report_tolerances": {
+      "volume_ratio_band": 0.1,
+      "trips_per_person_band": 0.1,
+      "station_cv_uniform": 0.35,
+      "correlation_min": 0.85,
+      "geh_lt5_pct_min": 85.0,
+      "mode_share_flag_pp": 2.0
+    }
+  },
+  "nonwork_purposes": {
+    "nonwork_trip_share": 2.0,
+    "_nonwork_trip_share_help": "Factor on the survey travel probability of non-commute days (all segments). 1.0 = use the surveys as they are.",
+    "Shopping": {
+      "enabled": true,
+      "trip_generation": {
+        "_comment": "Controls what percentage of non-employees make shopping trips per day",
+        "survey_rate": "auto",
+        "_survey_rate_help": "Trip rate from TBI survey data. Use 'auto' to calculate from survey, or specify a float value (e.g., 0.35 for 35%)",
+        "config_rate": 0.25,
+        "_config_rate_help": "Target/expected trip rate (e.g., 0.30 means 30% of non-employees make shopping trips)",
+        "blend_weight": 0,
+        "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both (recommended)"
+      },
+      "od_matrix": {
+        "beta": 1.3,
+        "alpha": 0.1
+      },
+      "poi_weighting": {
+        "enabled": true,
+        "has_name": 1.5,
+        "brand_names": {
+          "Target": 3.0,
+          "Walmart": 3.0,
+          "Costco": 2.5,
+          "Aldi": 2.0,
+          "Kroger": 2.5,
+          "default": 1.0
+        },
+        "shop_type": {
+          "supermarket": 2.5,
+          "mall": 2.0,
+          "department_store": 2.0,
+          "convenience": 1.0,
+          "default": 1.0
+        }
+      }
+    },
+    "School": {
+      "enabled": true,
+      "trip_generation": {
+        "_comment": "Controls what percentage of non-employees make school trips per day",
+        "survey_rate": "auto",
+        "_survey_rate_help": "Trip rate from TBI survey data. Use 'auto' to calculate from survey, or specify a float value",
+        "config_rate": 0.25,
+        "_config_rate_help": "Target/expected trip rate (e.g., 0.20 means 20% of non-employees make school trips)",
+        "blend_weight": 0,
+        "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
+      },
+      "od_matrix": {
+        "beta": 2.0,
+        "alpha": 0.15
+      },
+      "poi_weighting": {
+        "enabled": true,
+        "has_name": 1.5,
+        "school_type": {
+          "university": 3.0,
+          "college": 2.5,
+          "high_school": 2.0,
+          "middle_school": 1.8,
+          "elementary": 1.5,
+          "school": 1.5,
+          "default": 1.0
+        },
+        "brand_names": {
+          "default": 1.0
+        }
+      }
+    },
+    "Social": {
+      "enabled": true,
+      "trip_generation": {
+        "_comment": "Controls what percentage of non-employees make social/recreation trips per day",
+        "survey_rate": "auto",
+        "_survey_rate_help": "Trip rate from TBI survey data. Use 'auto' to calculate from survey, or specify a float value",
+        "config_rate": 0.15,
+        "_config_rate_help": "Target/expected trip rate (e.g., 0.25 means 25% of non-employees make social/recreation trips)",
+        "blend_weight": 0,
+        "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
+      },
+      "od_matrix": {
+        "beta": 1.2,
+        "alpha": 0.1
+      },
+      "poi_weighting": {
+        "enabled": true,
+        "has_name": 1.5,
+        "amenity_type": {
+          "park": 2.0,
+          "gym": 2.0,
+          "sports_centre": 2.0,
+          "cinema": 2.5,
+          "theatre": 2.0,
+          "community_centre": 1.5,
+          "default": 1.0
+        }
+      }
+    },
+    "Dining": {
+      "enabled": true,
+      "trip_generation": {
+        "_comment": "Controls what percentage of non-employees make dining trips per day",
+        "survey_rate": "auto",
+        "_survey_rate_help": "Trip rate from TBI survey data. Use 'auto' to calculate from survey, or specify a float value",
+        "config_rate": 0.15,
+        "_config_rate_help": "Target/expected trip rate (e.g., 0.20 means 20% of non-employees make dining trips)",
+        "blend_weight": 0,
+        "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
+      },
+      "od_matrix": {
+        "beta": 1.2,
+        "alpha": 0.1
+      },
+      "poi_weighting": {
+        "enabled": true,
+        "has_name": 1.5,
+        "amenity_type": {
+          "restaurant": 2.5,
+          "fast_food": 2.0,
+          "cafe": 1.5,
+          "bar": 1.5,
+          "default": 1.0
+        }
+      }
+    },
+    "Other": {
+      "enabled": true,
+      "trip_generation": {
+        "_comment": "Controls what percentage of non-employees make other trips per day",
+        "survey_rate": "auto",
+        "_survey_rate_help": "Trip rate from TBI survey data. Use 'auto' to calculate from survey, or specify a float value",
+        "config_rate": 0.2,
+        "_config_rate_help": "Target/expected trip rate (e.g., 0.15 means 15% of non-employees make other trips)",
+        "blend_weight": 0,
+        "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
+      },
+      "od_matrix": {
+        "beta": 1.2,
+        "alpha": 0.1
+      },
+      "poi_weighting": {
+        "enabled": true
+      }
+    }
+  },
+  "freight": {
+    "_help": "Boundary truck trips (E-I, I-E, E-E). See docs/freight/design.md",
+    "enabled": true,
+    "demand_source": "hpms_cordon",
+    "_demand_source_help": "hpms_cordon | car_share | absolute",
+    "truck_share": null,
+    "_truck_share_help": "null = resolve from HPMS/national table; a number pins it",
+    "demand_scale": 0.18,
+    "_demand_scale_help": "fraction of observed boundary freight to simulate. 1.0 = the full HPMS-derived volume. NOT a calibration target - the cordon screenline cannot judge it, because its yardstick is the same cordon weighting the demand comes from. Lower it only as a deliberate throttle.",
+    "trips_per_day": null,
+    "hpms": {
+      "enabled": true,
+      "service_url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/hpms_v2_view/FeatureServer/0",
+      "cache_dir": "data/hpms",
+      "cache_days": 90,
+      "timeout_seconds": 30
+    },
+    "hpms_match": {
+      "_help": "Stage 9: match each cordon to its HPMS segment so weights come from observed truck AADT instead of capacity. Any failure falls back to capacity; it never stops a run.",
+      "radius_m": 150.0,
+      "_radius_m_help": "how far from a cordon to look for an HPMS centreline; must exceed a carriageway separation without reaching a different road",
+      "bearing_tolerance_deg": 45.0,
+      "_bearing_tolerance_help": "direction agreement required. Without it an inbound cordon takes the opposing carriageway's volume ~half the time",
+      "bbox_pad_km": 5.0,
+      "min_truck_aadt": 50.0,
+      "_min_truck_aadt_help": "skip segments below this truck AADT server-side; they cannot inform a truck weight and they dominate the payload",
+      "timeout_seconds": 120
+    },
+    "class_shares": {
+      "external_to_internal": 0.35,
+      "internal_to_external": 0.35,
+      "through": 0.3
+    },
+    "cordon": {
+      "min_freespeed_ms": 22.0,
+      "min_capacity_vph": 1500,
+      "min_peripherality": 0.6,
+      "_min_peripherality_help": "1.0 = on the network envelope; 0.4-0.8 is the usable range",
+      "dedupe_radius_m": 1500,
+      "envelope_bins": 36,
+      "envelope_percentile": 99.0,
+      "weight_by": "hpms_truck_aadt",
+      "_weight_by_help": "hpms_truck_aadt | capacity. Observed truck volume where a cordon matched HPMS, capacity elsewhere; 'capacity' ignores observations entirely (ablation control)",
+      "fail_if_none_found": true
+    },
+    "internal_attractor": "freight_employment",
+    "_internal_attractor_help": "employment (all jobs weighted equally) | freight_employment (weighted goods-producing/handling CNS* sectors - a warehouse and an office of equal headcount are no longer equal). Falls back to employment with a warning if the work-location ETL predates the sector columns.",
+    "od_matrix": {
+      "friction": "exponential",
+      "beta": 0.02,
+      "_beta_help": "1/KM, not the QRFM 1/minute - see design.md section 2"
+    },
+    "departure_distribution": {
+      "_help": "24 hourly weights each; normalised on load, need not sum to 1",
+      "business_day": null,
+      "through": null
+    },
+    "mode": "car",
+    "subpopulation": "freight",
+    "require_events": true,
+    "_require_events_help": "sets writeEventsInterval so tier-2 validation can isolate trucks",
+    "vehicle_mix": {
+      "single_unit": 0.45,
+      "combination": 0.55
+    },
+    "pce": {
+      "enabled": false,
+      "_help": "stage 6: write vehicles.xml and set vehiclesSource. Must be its own run.",
+      "single_unit": 1.5,
+      "combination": 2.5,
+      "car": 1.0
+    }
+  },
+  "_config_dir": "config/USA/LA",
+  "_demand_budget": {
+    "p_commute_workers": 0.52535,
+    "segment_population": {
+      "worker": 6099744,
+      "student": 2068589,
+      "nonworker_adult": 4339671,
+      "child_0_4": 697520
+    },
+    "segment_probs": {
+      "worker": {
+        "other_travel": 0.31555,
+        "no_travel": 0.15909,
+        "person_days": 2867.0,
+        "travel": 0.84091,
+        "commute": 0.52535
+      },
+      "student": {
+        "other_travel": 0.83872,
+        "no_travel": 0.15964,
+        "person_days": 898.0,
+        "travel": 0.84036,
+        "commute": 0.00164
+      },
+      "nonworker_adult": {
+        "other_travel": 0.59351,
+        "no_travel": 0.38327,
+        "person_days": 2544.0,
+        "travel": 0.61673,
+        "commute": 0.02322
+      }
+    },
+    "segment_probs_by_source": {
+      "nhts": {
+        "worker": {
+          "travel": 0.84091,
+          "commute": 0.52535,
+          "other_travel": 0.31555,
+          "no_travel": 0.15909,
+          "person_days": 2867.0
+        },
+        "student": {
+          "travel": 0.84036,
+          "commute": 0.00164,
+          "other_travel": 0.83872,
+          "no_travel": 0.15964,
+          "person_days": 898.0
+        },
+        "nonworker_adult": {
+          "travel": 0.61673,
+          "commute": 0.02322,
+          "other_travel": 0.59351,
+          "no_travel": 0.38327,
+          "person_days": 2544.0
+        }
+      }
+    },
+    "purpose_mix": {
+      "worker": {
+        "Shopping": 0.33905,
+        "Other": 0.10632,
+        "Dining": 0.15241,
+        "School": 0.0867,
+        "Social": 0.31553
+      },
+      "student": {
+        "Shopping": 0.09711,
+        "Other": 0.01412,
+        "Dining": 0.00798,
+        "School": 0.82028,
+        "Social": 0.06052
+      },
+      "nonworker_adult": {
+        "Shopping": 0.4248,
+        "Other": 0.13877,
+        "Dining": 0.13067,
+        "School": 0.08465,
+        "Social": 0.22111
+      }
+    },
+    "purpose_rates_per_person_day": {
+      "worker": {
+        "Shopping": 0.10699,
+        "School": 0.02736,
+        "Social": 0.09957,
+        "Dining": 0.04809,
+        "Other": 0.03355
+      },
+      "student": {
+        "Shopping": 0.08144,
+        "School": 0.68798,
+        "Social": 0.05076,
+        "Dining": 0.00669,
+        "Other": 0.01184
+      },
+      "nonworker_adult": {
+        "Shopping": 0.25212,
+        "School": 0.05024,
+        "Social": 0.13123,
+        "Dining": 0.07755,
+        "Other": 0.08236
+      }
+    },
+    "nonwork_persons_unscaled": {
+      "Shopping": 3830444,
+      "School": 3616072,
+      "Social": 2563660,
+      "Dining": 1287521,
+      "Other": 1173084
+    },
+    "knob_factors": {
+      "Shopping": 2.0,
+      "School": 2.0,
+      "Social": 2.0,
+      "Dining": 2.0,
+      "Other": 2.0
+    },
+    "age_split_source": "ACS 2023 B01001 (cache)",
+    "p_commute_reported_by_source": {},
+    "person_day_weights": {
+      "nhts": 1.0
+    },
+    "notes": [
+      "nonworker_adult: 2.3% of days are commute days; work plans come from LODES workers only, so these are not generated"
+    ]
+  }
+}

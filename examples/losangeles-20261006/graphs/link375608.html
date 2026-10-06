@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript"/>
+<meta http-equiv="Content-Style-Type" content="text/css"/>
+<title> MATSim validation </title>
+<script type="text/javascript" src="div/overlib.js"></script>
+<link rel="stylesheet" type="text/css" href="div/style1.css"/>
+</head>
+<body>
+<div id="overDiv" style="Z-INDEX: 1; POSITION: absolute"></div>
+<div id="header">
+<div id="logo">
+<img src="div/logo.png" width="224" height="52" style="border:none;" alt="logo"/><br>Multi-Agent Transport Simulation Toolkit
+</div>
+<h3>Counting Volumes</h3>
+</div>
+<div id="footer">
+6.
+10.
+2026	 
+exouser
+</div>
+<div id="links">
+<h3>sim and real volumes:<br /></h3><a href="simVsRealVolumesHour1Iteration10.html">hour: 1</a><br />
+<a href="simVsRealVolumesHour2Iteration10.html">hour: 2</a><br />
+<a href="simVsRealVolumesHour3Iteration10.html">hour: 3</a><br />
+<a href="simVsRealVolumesHour4Iteration10.html">hour: 4</a><br />
+<a href="simVsRealVolumesHour5Iteration10.html">hour: 5</a><br />
+<a href="simVsRealVolumesHour6Iteration10.html">hour: 6</a><br />
+<a href="simVsRealVolumesHour7Iteration10.html">hour: 7</a><br />
+<a href="simVsRealVolumesHour8Iteration10.html">hour: 8</a><br />
+<a href="simVsRealVolumesHour9Iteration10.html">hour: 9</a><br />
+<a href="simVsRealVolumesHour10Iteration10.html">hour: 10</a><br />
+<a href="simVsRealVolumesHour11Iteration10.html">hour: 11</a><br />
+<a href="simVsRealVolumesHour12Iteration10.html">hour: 12</a><br />
+<a href="simVsRealVolumesHour13Iteration10.html">hour: 13</a><br />
+<a href="simVsRealVolumesHour14Iteration10.html">hour: 14</a><br />
+<a href="simVsRealVolumesHour15Iteration10.html">hour: 15</a><br />
+<a href="simVsRealVolumesHour16Iteration10.html">hour: 16</a><br />
+<a href="simVsRealVolumesHour17Iteration10.html">hour: 17</a><br />
+<a href="simVsRealVolumesHour18Iteration10.html">hour: 18</a><br />
+<a href="simVsRealVolumesHour19Iteration10.html">hour: 19</a><br />
+<a href="simVsRealVolumesHour20Iteration10.html">hour: 20</a><br />
+<a href="simVsRealVolumesHour21Iteration10.html">hour: 21</a><br />
+<a href="simVsRealVolumesHour22Iteration10.html">hour: 22</a><br />
+<a href="simVsRealVolumesHour23Iteration10.html">hour: 23</a><br />
+<a href="simVsRealVolumesHour24Iteration10.html">hour: 24</a><br />
+<h3>errors:<br /></h3><a href="errors.html">errors</a><br />
+<a href="biasErrors.html">biasErrors</a><br />
+<h3>link volumes:<br /></h3><a href="link1021322.html">link1021322</a><br />
+<a href="link1047591.html">link1047591</a><br />
+<a href="link120593.html">link120593</a><br />
+<a href="link145671.html">link145671</a><br />
+<a href="link145673.html">link145673</a><br />
+<a href="link174004.html">link174004</a><br />
+<a href="link18558.html">link18558</a><br />
+<a href="link231024.html">link231024</a><br />
+<a href="link273145.html">link273145</a><br />
+<a href="link301615.html">link301615</a><br />
+<a href="link318055.html">link318055</a><br />
+<a href="link343598.html">link343598</a><br />
+<a href="link367556.html">link367556</a><br />
+<a href="link374186.html">link374186</a><br />
+<a href="link375608.html">link375608</a><br />
+<a href="link382420.html">link382420</a><br />
+<a href="link410511.html">link410511</a><br />
+<a href="link429919.html">link429919</a><br />
+<a href="link4512.html">link4512</a><br />
+<a href="link452332.html">link452332</a><br />
+<a href="link47252.html">link47252</a><br />
+<a href="link548927.html">link548927</a><br />
+<a href="link647729.html">link647729</a><br />
+<a href="link647734.html">link647734</a><br />
+<a href="link661734.html">link661734</a><br />
+<a href="link757704.html">link757704</a><br />
+<a href="link784993.html">link784993</a><br />
+<a href="link839652.html">link839652</a><br />
+<a href="link839654.html">link839654</a><br />
+<a href="link862620.html">link862620</a><br />
+<a href="link866457.html">link866457</a><br />
+<a href="link88205.html">link88205</a><br />
+<a href="link895369.html">link895369</a><br />
+<a href="link895562.html">link895562</a><br />
+<a href="link89969.html">link89969</a><br />
+<h3>average working day sim and count volumes:<br /></h3><a href="simVsRealVolumes24Iteration10.html">simVsRealVolumes24Iteration10</a><br />
+</div>
+<div id="contents">
+<p>
+<map id="chart" name="chart">
+<area shape="rect" coords="742,447,751,510" onMouseOver="return overlib('(Count Volumes, 24) = 1,170');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="733,352,742,510" onMouseOver="return overlib('(Sim Volumes, 24) = 2,913');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="715,405,724,510" onMouseOver="return overlib('(Count Volumes, 23) = 1,948');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="706,310,715,510" onMouseOver="return overlib('(Sim Volumes, 23) = 3,689');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="688,359,697,510" onMouseOver="return overlib('(Count Volumes, 22) = 2,797');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="679,231,688,510" onMouseOver="return overlib('(Sim Volumes, 22) = 5,155');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="661,318,670,510" onMouseOver="return overlib('(Count Volumes, 21) = 3,556');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="652,168,661,510" onMouseOver="return overlib('(Sim Volumes, 21) = 6,313');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="634,272,643,510" onMouseOver="return overlib('(Count Volumes, 20) = 4,402');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="625,164,634,510" onMouseOver="return overlib('(Sim Volumes, 20) = 6,390');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="607,207,616,510" onMouseOver="return overlib('(Count Volumes, 19) = 5,592');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="598,103,607,510" onMouseOver="return overlib('(Sim Volumes, 19) = 7,510');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="580,181,589,510" onMouseOver="return overlib('(Count Volumes, 18) = 6,072');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="571,89,580,510" onMouseOver="return overlib('(Sim Volumes, 18) = 7,762');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="553,183,562,510" onMouseOver="return overlib('(Count Volumes, 17) = 6,046');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="544,89,553,510" onMouseOver="return overlib('(Sim Volumes, 17) = 7,770');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="526,186,535,510" onMouseOver="return overlib('(Count Volumes, 16) = 5,981');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="517,88,526,510" onMouseOver="return overlib('(Sim Volumes, 16) = 7,792');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="499,200,508,510" onMouseOver="return overlib('(Count Volumes, 15) = 5,722');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="490,130,499,510" onMouseOver="return overlib('(Sim Volumes, 15) = 7,020');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="472,226,481,510" onMouseOver="return overlib('(Count Volumes, 14) = 5,237');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="463,143,472,510" onMouseOver="return overlib('(Sim Volumes, 14) = 6,768');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="445,250,454,510" onMouseOver="return overlib('(Count Volumes, 13) = 4,795');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="436,132,445,510" onMouseOver="return overlib('(Sim Volumes, 13) = 6,984');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="419,265,428,510" onMouseOver="return overlib('(Count Volumes, 12) = 4,534');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="409,102,418,510" onMouseOver="return overlib('(Sim Volumes, 12) = 7,525');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="392,272,401,510" onMouseOver="return overlib('(Count Volumes, 11) = 4,400');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="382,95,391,510" onMouseOver="return overlib('(Sim Volumes, 11) = 7,668');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="365,273,374,510" onMouseOver="return overlib('(Count Volumes, 10) = 4,385');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="355,97,364,510" onMouseOver="return overlib('(Sim Volumes, 10) = 7,615');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="338,238,347,510" onMouseOver="return overlib('(Count Volumes, 9) = 5,022');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="328,64,337,510" onMouseOver="return overlib('(Sim Volumes, 9) = 8,240');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="311,244,320,510" onMouseOver="return overlib('(Count Volumes, 8) = 4,919');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="301,60,310,510" onMouseOver="return overlib('(Sim Volumes, 8) = 8,305');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="284,293,293,510" onMouseOver="return overlib('(Count Volumes, 7) = 4,019');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="274,114,283,510" onMouseOver="return overlib('(Sim Volumes, 7) = 7,304');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="257,352,266,510" onMouseOver="return overlib('(Count Volumes, 6) = 2,920');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="247,299,256,510" onMouseOver="return overlib('(Sim Volumes, 6) = 3,898');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="230,442,239,510" onMouseOver="return overlib('(Count Volumes, 5) = 1,264');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="220,476,229,510" onMouseOver="return overlib('(Sim Volumes, 5) = 628');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="203,483,212,510" onMouseOver="return overlib('(Count Volumes, 4) = 505');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="193,503,202,510" onMouseOver="return overlib('(Sim Volumes, 4) = 132');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="176,494,185,510" onMouseOver="return overlib('(Count Volumes, 3) = 304');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="166,506,175,510" onMouseOver="return overlib('(Sim Volumes, 3) = 77');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="149,491,158,510" onMouseOver="return overlib('(Count Volumes, 2) = 358');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="139,506,148,510" onMouseOver="return overlib('(Sim Volumes, 2) = 84');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="122,478,131,510" onMouseOver="return overlib('(Count Volumes, 1) = 590');" onMouseOut="return nd();" nohref="nohref"/>
+<area shape="rect" coords="112,494,121,510" onMouseOver="return overlib('(Sim Volumes, 1) = 298');" onMouseOut="return nd();" nohref="nohref"/>
+</map>
+<img src="png/link375608.png" width="800" height="600" style="border:none;" alt="graph" usemap="#chart"/>
+</p>
+</div>
+</body>
+</html>
