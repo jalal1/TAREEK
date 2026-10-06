@@ -300,6 +300,43 @@ class NetworkGenerator:
             writer = csv.writer(f)
             writer.writerows(rows)
 
+    @staticmethod
+    def _fix_gtfs_for_pt2matsim(feed_dir: Path, feed_label: str = '') -> None:
+        """Fix valid GTFS that pt2matsim's GtfsFeedImpl cannot read.
+
+        - transfers.txt with an empty transfer_type (Big Blue Bus, mdb-37):
+          the spec reads empty as 0, pt2matsim calls Integer.parseInt("").
+          Empty values are set to 0.
+        - shapes.txt with no shape_id column in trips.txt (Metrolink, mdb-96):
+          pt2matsim looks up the missing column and fails with a
+          NullPointerException in loadTrips. No trip can use the shapes, so
+          shapes.txt is removed (it is optional).
+        """
+        import csv
+        transfers = feed_dir / 'transfers.txt'
+        if transfers.exists():
+            rows, fields = _read_gtfs_rows(transfers)
+            if 'transfer_type' in fields:
+                n_empty = sum(1 for r in rows if not (r.get('transfer_type') or '').strip())
+                if n_empty:
+                    for r in rows:
+                        if not (r.get('transfer_type') or '').strip():
+                            r['transfer_type'] = '0'
+                    with open(transfers, 'w', newline='', encoding='utf-8') as f:
+                        writer = csv.DictWriter(f, fieldnames=fields)
+                        writer.writeheader()
+                        writer.writerows(rows)
+                    logger.info(f"    {feed_label}: set empty transfer_type to 0 in {n_empty} transfers")
+
+        shapes = feed_dir / 'shapes.txt'
+        trips = feed_dir / 'trips.txt'
+        if shapes.exists() and trips.exists():
+            with open(trips, 'r', encoding='utf-8-sig', newline='') as f:
+                header = next(csv.reader(f, skipinitialspace=True), [])
+            if 'shape_id' not in [h.strip() for h in header]:
+                shapes.unlink()
+                logger.info(f"    {feed_label}: removed shapes.txt (trips.txt has no shape_id)")
+
     def _filter_gtfs_feed_to_bbox(
         self,
         feed_dir: Path,
@@ -965,6 +1002,7 @@ class NetworkGenerator:
                 except Exception as exc:
                     logger.warning(f"  Removing malformed shapes.txt for {feed_id}: {exc}")
                     shapes_file.unlink()
+            self._fix_gtfs_for_pt2matsim(effective_feed_dir, feed_label)
 
             schedule_out = per_feed_dir / f'schedule_{feed_id}.xml'
             vehicles_out = per_feed_dir / f'vehicles_{feed_id}.xml'
