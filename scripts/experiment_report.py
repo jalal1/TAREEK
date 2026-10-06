@@ -1704,8 +1704,9 @@ def markdown_to_html(md_text: str, title: str,
             # Per-hour figures are displayed two or three across inside a tab
             # panel, so they never need the full-width budget the whole-day
             # figures get. With 48 of them in a run, embedding each at 1400 px
-            # put the HTML above 30 MB for pixels no one can see.
-            per_hour = path.name.startswith(("count_error_h", "counts_loglog_h"))
+            # put the HTML above 30 MB for pixels no one can see. The 22
+            # heatmap_hXX tabs did the same: New York's report was 41 MB.
+            per_hour = path.name.startswith(("count_error_h", "counts_loglog_h", "heatmap_h"))
             return f'src="{_image_data_uri(path, max_width=620 if per_hour else 1400)}"'
         body = re.sub(r'src="([^"]+)"', inline, body)
     return (f"<!DOCTYPE html>\n<html><head><meta charset='utf-8'/>"
