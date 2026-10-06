@@ -296,6 +296,8 @@
     "heap_size_gb": 4,
     "transit_network": true,
     "_transit_network_help": "If true, use pt2matsim pipeline to generate a multimodal network (road + transit) from OSM + GTFS. If false, use the default road-only network generator",
+    "scale_transit_pce": true,
+    "_scale_transit_pce_help": "If true, multiply the passenger car equivalents (PCE) of every transit vehicle type in the experiment's transitVehicles.xml by qsim.flowCapacityFactor. Transit runs the full real schedule on a capacity-scaled network, so without this one bus (pce 2.8) takes the road space of ~28 sampled cars at a 10% sample. The network cache copy is not changed. Idempotent: transit_pce_scaling.json records the original values",
     "gtfs_sample_day": "dayWithMostTrips",
     "_gtfs_sample_day_help": "Which day to sample GTFS schedules for. 'dayWithMostTrips' auto-selects the busiest service day. Can also be a specific date string for reproducibility",
     "pt2matsim": {

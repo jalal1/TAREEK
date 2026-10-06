@@ -860,6 +860,37 @@ class ExperimentRunner:
             logger.error(f"Network setup failed: {e}")
             raise RuntimeError(f"Network setup failed: {e}")
 
+    def _scale_transit_pce(self) -> None:
+        """Scale the experiment's transit vehicle PCE by qsim.flowCapacityFactor.
+
+        Without this, a full-schedule bus (pce 2.8) on a 10% network takes the
+        road space of ~28 sampled cars, because Hermes applies PCE. Only the
+        experiment copy of transitVehicles.xml is edited: the network cache
+        copy is shared by runs with different sample sizes. Idempotent through
+        a transit_pce_scaling.json marker (see matsim/transit_pce.py).
+        """
+        matsim_cfg = self.config.get('matsim', {})
+        if not matsim_cfg.get('transit_network', False):
+            return
+        if not matsim_cfg.get('scale_transit_pce', True):
+            logger.info("scale_transit_pce=false: transit vehicle PCE left at full size")
+            return
+
+        vehicles_path = self.experiment_dir / 'transitVehicles.xml'
+        if not vehicles_path.exists():
+            logger.debug("No transitVehicles.xml in experiment dir, skipping PCE scaling")
+            return
+
+        # Hermes uses one PCE for both flow and storage capacity. When the two
+        # factors differ (e.g. storage = flow^0.75), the flow factor is the one
+        # that matches the sample size, so it drives the PCE.
+        factor = float(matsim_cfg.get('configurable_params', {})
+                       .get('qsim.flowCapacityFactor', 1.0))
+
+        from matsim.transit_pce import scale_transit_pce
+        logger.info(f"Scaling transit vehicle PCE by flowCapacityFactor={factor}")
+        scale_transit_pce(vehicles_path, factor)
+
     def _thin_transit_schedule(self) -> None:
         """
         Thin transit routes and vehicles to match the simulation scaling factor.
@@ -1814,6 +1845,9 @@ class ExperimentRunner:
 
             # Step 3c: Thin transit schedule to match scaling factor
             # self._thin_transit_schedule()
+
+            # Step 3d: Scale transit vehicle PCE to the sample size
+            self._scale_transit_pce()
 
             # Step 3b: Generate counts.xml (for MATSim validation)
             self.generate_counts()
