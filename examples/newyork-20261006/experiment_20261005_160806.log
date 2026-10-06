@@ -1,0 +1,349 @@
+2026-10-05 16:08:03 - data_sources.base_survey_trip - INFO - Logging to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/logs/plan_generation_20261005_160803.log
+2026-10-05 16:08:05 - __main__ - INFO - ============================================================
+2026-10-05 16:08:05 - __main__ - INFO - STEP 1: VALIDATING CONFIGURATION
+2026-10-05 16:08:05 - __main__ - INFO - ============================================================
+2026-10-05 16:08:05 - utils.config_validator - INFO - Loaded config from: config/USA/NewYork/config_10iter_ny_s10_modes28_pce.json
+2026-10-05 16:08:05 - utils.config_validator - INFO - Validating configuration...
+2026-10-05 16:08:05 - utils.config_validator - INFO - Network config: Using 10 counties
+2026-10-05 16:08:05 - utils.config_validator - INFO - MATSim config: mode=basic, run_simulation=True
+2026-10-05 16:08:05 - utils.config_validator - INFO - Plan generation config: target_plans=all, scaling_factor=0.1
+2026-10-05 16:08:05 - utils.config_validator - INFO - Data directory validated: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/data
+2026-10-05 16:08:05 - utils.config_validator - INFO - Counts config: enabled=True, custom=False
+2026-10-05 16:08:05 - utils.config_validator - WARNING - plan_generation.work_scaling_multiplier = 1.1 (neutral = 1.0): this scales the survey value
+2026-10-05 16:08:05 - utils.config_validator - WARNING - nonwork_purposes.nonwork_trip_share = 2.0 (neutral = 1.0): this scales the survey value
+2026-10-05 16:08:05 - utils.config_validator - INFO - External tools found: java
+2026-10-05 16:08:05 - utils.config_validator - INFO - Configuration validation passed
+2026-10-05 16:08:05 - __main__ - INFO - Configuration file: config/USA/NewYork/config_10iter_ny_s10_modes28_pce.json
+2026-10-05 16:08:05 - __main__ - INFO - Experiment ID: ny_s10_modes28_pce_10iter
+2026-10-05 16:08:05 - __main__ - INFO - 
+2026-10-05 16:08:05 - __main__ - INFO - ============================================================
+2026-10-05 16:08:05 - __main__ - INFO - DETECTING COORDINATE SYSTEM
+2026-10-05 16:08:05 - __main__ - INFO - ============================================================
+2026-10-05 16:08:06 - __main__ - INFO -   Counties: Westchester, Richmond, Queens, Kings, New York, Bronx, Union, Hudson, Essex, Bergen
+2026-10-05 16:08:06 - __main__ - INFO -   Average centroid: (40.7767, -74.0209)
+2026-10-05 16:08:06 - __main__ - INFO -   Detected UTM EPSG: EPSG:26918
+2026-10-05 16:08:06 - __main__ - INFO -   All downstream components will use EPSG:26918
+2026-10-05 16:08:06 - __main__ - INFO - 
+2026-10-05 16:08:06 - __main__ - INFO - ============================================================
+2026-10-05 16:08:06 - __main__ - INFO - STEP 2: SETTING UP EXPERIMENT DIRECTORY
+2026-10-05 16:08:06 - __main__ - INFO - ============================================================
+2026-10-05 16:08:06 - utils.logger - INFO - Logging reconfigured from /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/logs/plan_generation_20261005_160803.log to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/experiment_20261005_160806.log
+2026-10-05 16:08:06 - utils.logger - INFO - Removed temporary log file: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/logs/plan_generation_20261005_160803.log
+2026-10-05 16:08:06 - __main__ - INFO - Reusing existing experiment directory: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter
+2026-10-05 16:08:06 - __main__ - INFO - All experiment logs will be saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/experiment_20261005_160806.log
+2026-10-05 16:08:06 - __main__ - INFO - 
+2026-10-05 16:08:06 - __main__ - INFO - ============================================================
+2026-10-05 16:08:06 - __main__ - INFO - STEP 2b: GENERATING MATSIM config.xml
+2026-10-05 16:08:06 - __main__ - INFO - ============================================================
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Generating MATSim config for mode: basic
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Using config template: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/configs/basic/config.xml
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Auto-set writeLinkStatsInterval = 10 (matches lastIteration)
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Auto-set write*Interval = 10 (bulky per-iteration output written only at the final iteration; set matsim.write_intermediate_output=true to write every iteration)
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Auto-set counts.countsScaleFactor = 10.0 (1/0.1 flowCapacityFactor)
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Auto-set counts.writeCountsInterval = 10 (matches lastIteration)
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: controller.mobsim = hermes
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: global.numberOfThreads = 60
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: qsim.numberOfThreads = 60
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: qsim.flowCapacityFactor = 0.1
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Mirrored qsim.flowCapacityFactor -> hermes.flowCapacityFactor = 0.1
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: qsim.storageCapacityFactor = 0.18
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Mirrored qsim.storageCapacityFactor -> hermes.storageCapacityFactor = 0.18
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: qsim.stuckTime = 10.0
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: linkStats.averageLinkStatsOverIterations = 5
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied scoring.modeParams.pt.constant = 1.5
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied scoring.waitingPt = -1.0
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied scoring.modeParams.walk.constant = -1.5
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: transitRouter.searchRadius = 1500.0
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: transitRouter.extensionRadius = 300.0
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: transitRouter.maxBeelineWalkConnectionDistance = 400.0
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: transitRouter.directWalkFactor = 2.0
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied configurable param: hermes.endTime = 36:00:00
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Mirrored qsim.flowCapacityFactor -> hermes.flowCapacityFactor = 0.1
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Mirrored qsim.storageCapacityFactor -> hermes.storageCapacityFactor = 0.18
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied scoring.modeParams.pt.constant = 1.5
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied scoring.waitingPt = -1.0
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Applied scoring.modeParams.walk.constant = -1.5
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Enabled transit module with transitModes=pt (from enabled modes: ['bus', 'rail']) (preserved existing params on: transitRouter)
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'Dining'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'Home'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'Other'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'School'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'Shopping'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'Social'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'Work'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Activity typicalDuration from survey: Dining=30min, Home=720min, Other=60min, School=420min, Shopping=25min, Social=95min, Work=450min
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Activity scoring windows from survey: Dining=9.00-21.00h/min5m, Other=7.42-20.92h/min5m, School=7.08-18.75h/min60m, Shopping=7.92-19.50h/min5m, Social=7.00-21.50h/min20m, Work=6.00-21.25h/min30m
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'freight_origin'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Registered scoring activityParams for 'freight_destination'
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Set replanning strategies for freight: ChangeExpBeta=0.8, ReRoute=0.2
+2026-10-05 16:08:06 - matsim.config_manager - INFO - Freight: writeEventsInterval = 10 so the final iteration emits events (needed to isolate the truck stream)
+2026-10-05 16:08:45 - matsim.config_manager - INFO - Activity params cover all 9 activity types in plans.xml: ['Dining', 'Home', 'Other', 'School', 'Shopping', 'Social', 'Work', 'freight_destination', 'freight_origin']
+2026-10-05 16:08:45 - matsim.config_manager - INFO - Config saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/config.xml
+2026-10-05 16:08:45 - models.freight.vehicles - INFO - Freight PCE is off; no vehicles.xml written (pce=1.0 run)
+2026-10-05 16:08:45 - __main__ - INFO -   Generated: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/config.xml
+2026-10-05 16:08:45 - __main__ - INFO - 
+2026-10-05 16:08:45 - __main__ - INFO - ============================================================
+2026-10-05 16:08:45 - __main__ - INFO - STEP 3: SETTING UP NETWORK
+2026-10-05 16:08:45 - __main__ - INFO - ============================================================
+2026-10-05 16:08:45 - __main__ - INFO - Found existing network.xml in experiment directory
+2026-10-05 16:08:45 - __main__ - INFO -   File: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/network.xml
+2026-10-05 16:09:07 - __main__ - INFO -   Size: 387.07 MB
+2026-10-05 16:09:07 - __main__ - INFO -   Nodes: 318445
+2026-10-05 16:09:07 - __main__ - INFO -   Links: 745284
+2026-10-05 16:09:07 - __main__ - INFO - Reusing existing network.xml
+2026-10-05 16:09:07 - __main__ - INFO - 
+2026-10-05 16:09:09 - __main__ - INFO - Scaling transit vehicle PCE by flowCapacityFactor=0.1
+2026-10-05 16:09:09 - matsim.transit_pce - INFO -   Bus: pce 2.8 -> 0.28
+2026-10-05 16:09:09 - matsim.transit_pce - INFO -   Rail: pce 27.1 -> 2.71
+2026-10-05 16:09:09 - matsim.transit_pce - INFO -   Subway: pce 4.4 -> 0.44
+2026-10-05 16:09:09 - matsim.transit_pce - INFO -   Tram: pce 5.2 -> 0.52
+2026-10-05 16:09:09 - __main__ - INFO - ============================================================
+2026-10-05 16:09:09 - __main__ - INFO - STEP 3b: GENERATING COUNTS FILE
+2026-10-05 16:09:09 - __main__ - INFO - ============================================================
+2026-10-05 16:09:09 - __main__ - INFO - Found existing counts.xml in experiment directory
+2026-10-05 16:09:09 - __main__ - INFO -   File: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/counts.xml
+2026-10-05 16:09:09 - __main__ - INFO -   Size: 41.23 KB
+2026-10-05 16:09:09 - __main__ - INFO - Reusing existing counts.xml (counts.rebuild = false)
+2026-10-05 16:09:09 - __main__ - INFO - 
+2026-10-05 16:09:09 - __main__ - INFO - ============================================================
+2026-10-05 16:09:09 - __main__ - INFO - STEP 4: GENERATING ACTIVITY PLANS (WORK + NON-WORK)
+2026-10-05 16:09:09 - __main__ - INFO - ============================================================
+2026-10-05 16:09:09 - __main__ - INFO - Found existing plans.xml in experiment directory
+2026-10-05 16:09:09 - __main__ - INFO -   File: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/plans.xml
+2026-10-05 16:09:44 - __main__ - INFO -   Size: 769.56 MB
+2026-10-05 16:09:44 - __main__ - INFO - Skipping plan generation (skip_if_exists=true)
+2026-10-05 16:09:44 - __main__ - INFO -   (set skip_if_exists=false to regenerate)
+2026-10-05 16:09:44 - __main__ - INFO - 
+2026-10-05 16:09:44 - __main__ - INFO - ============================================================
+2026-10-05 16:09:44 - __main__ - INFO - STEP 5: RUNNING MATSIM SIMULATION
+2026-10-05 16:09:44 - __main__ - INFO - ============================================================
+2026-10-05 16:09:45 - __main__ - INFO - Released plan-generation memory before MATSim: 0.3 GB -> 0.3 GB RSS (freed 0.0 GB)
+2026-10-05 16:09:45 - matsim.osm_downloader - INFO - OSM cache directory: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/data/osm_cache
+2026-10-05 16:09:45 - matsim.orchestrator - INFO - MATSim Orchestrator initialized
+2026-10-05 16:09:45 - __main__ - INFO - MATSim mode: basic
+2026-10-05 16:09:45 - __main__ - INFO - Custom parameters: {'coordinateSystem': 'auto', 'lastIteration': 10, 'outputDirectory': 'output', 'controller.mobsim': 'hermes', '_controller.mobsim_help': 'qsim | hermes. hermes is faster but is a simplified queue model that ignores trafficDynamics, linkDynamics and full stuckTime semantics. Use qsim for any congestion- or mode-choice-sensitive experiment.', 'global.numberOfThreads': 60, 'qsim.numberOfThreads': 60, 'qsim.flowCapacityFactor': 0.1, 'qsim.storageCapacityFactor': 0.18, 'qsim.stuckTime': 10.0, '_qsim.stuckTime_help': 'Seconds the frontmost vehicle on a link may fail to move before it is pushed onto the next link. Gridlock escape valve: HIGHER = waits LONGER. Mersini & Ziemke (2026): stuckTime = 30s / sample_share (30.0 at 100%). Only qsim honours this; hermes ignores it.', 'linkStats.averageLinkStatsOverIterations': 5, 'scoring.modeParams.pt.constant': 1.5, 'scoring.waitingPt': -1.0, 'scoring.modeParams.walk.constant': -1.5, 'transitRouter.searchRadius': 1500.0, 'transitRouter.extensionRadius': 300.0, 'transitRouter.maxBeelineWalkConnectionDistance': 400.0, 'transitRouter.directWalkFactor': 2.0, 'hermes.endTime': '36:00:00'}
+2026-10-05 16:09:45 - __main__ - INFO - 
+2026-10-05 16:09:45 - matsim.orchestrator - INFO - Setting up experiment: ny_s10_modes28_pce_10iter
+2026-10-05 16:09:45 - matsim.orchestrator - INFO - Created experiment directory: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter
+2026-10-05 16:09:45 - matsim.orchestrator - INFO - Plans file already exists at destination: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/plans.xml
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Generating MATSim config for mode: basic
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Using config template: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/configs/basic/config.xml
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Auto-set writeLinkStatsInterval = 10 (matches lastIteration)
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Auto-set write*Interval = 10 (bulky per-iteration output written only at the final iteration; set matsim.write_intermediate_output=true to write every iteration)
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Auto-set counts.countsScaleFactor = 10.0 (1/0.1 flowCapacityFactor)
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Auto-set counts.writeCountsInterval = 10 (matches lastIteration)
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: controller.mobsim = hermes
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: global.numberOfThreads = 60
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: qsim.numberOfThreads = 60
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: qsim.flowCapacityFactor = 0.1
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Mirrored qsim.flowCapacityFactor -> hermes.flowCapacityFactor = 0.1
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: qsim.storageCapacityFactor = 0.18
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Mirrored qsim.storageCapacityFactor -> hermes.storageCapacityFactor = 0.18
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: qsim.stuckTime = 10.0
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: linkStats.averageLinkStatsOverIterations = 5
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied scoring.modeParams.pt.constant = 1.5
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied scoring.waitingPt = -1.0
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied scoring.modeParams.walk.constant = -1.5
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: transitRouter.searchRadius = 1500.0
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: transitRouter.extensionRadius = 300.0
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: transitRouter.maxBeelineWalkConnectionDistance = 400.0
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: transitRouter.directWalkFactor = 2.0
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied configurable param: hermes.endTime = 36:00:00
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Mirrored qsim.flowCapacityFactor -> hermes.flowCapacityFactor = 0.1
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Mirrored qsim.storageCapacityFactor -> hermes.storageCapacityFactor = 0.18
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied scoring.modeParams.pt.constant = 1.5
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied scoring.waitingPt = -1.0
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Applied scoring.modeParams.walk.constant = -1.5
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Enabled transit module with transitModes=pt (from enabled modes: ['bus', 'rail']) (preserved existing params on: transitRouter)
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'Dining'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'Home'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'Other'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'School'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'Shopping'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'Social'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'Work'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Activity typicalDuration from survey: Dining=30min, Home=720min, Other=60min, School=420min, Shopping=25min, Social=95min, Work=450min
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Activity scoring windows from survey: Dining=9.00-21.00h/min5m, Other=7.42-20.92h/min5m, School=7.08-18.75h/min60m, Shopping=7.92-19.50h/min5m, Social=7.00-21.50h/min20m, Work=6.00-21.25h/min30m
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'freight_origin'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Registered scoring activityParams for 'freight_destination'
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Set replanning strategies for freight: ChangeExpBeta=0.8, ReRoute=0.2
+2026-10-05 16:09:45 - matsim.config_manager - INFO - Freight: writeEventsInterval = 10 so the final iteration emits events (needed to isolate the truck stream)
+2026-10-05 16:10:22 - matsim.config_manager - INFO - Activity params cover all 9 activity types in plans.xml: ['Dining', 'Home', 'Other', 'School', 'Shopping', 'Social', 'Work', 'freight_destination', 'freight_origin']
+2026-10-05 16:10:22 - matsim.config_manager - INFO - Config saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/config.xml
+2026-10-05 16:10:22 - matsim.orchestrator - INFO - Experiment setup complete: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter
+2026-10-05 16:10:22 - matsim.orchestrator - INFO - Validating MATSim setup...
+2026-10-05 16:10:22 - matsim.runner - INFO - Validating MATSim setup...
+2026-10-05 16:10:22 - matsim.runner - INFO - Java version: openjdk
+2026-10-05 16:10:22 - matsim.runner - INFO - Using JAR file: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25/matsim_25.jar
+2026-10-05 16:10:22 - matsim.runner - INFO - No lib directory found in /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25 (may not be needed)
+2026-10-05 16:10:22 - matsim.runner - INFO - MATSim setup validation passed
+2026-10-05 16:10:22 - matsim.orchestrator - INFO - Validating experiment configuration...
+2026-10-05 16:10:22 - matsim.config_manager - INFO - Found network.xml: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/network.xml
+2026-10-05 16:10:22 - matsim.config_manager - INFO - Found plans.xml: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/plans.xml
+2026-10-05 16:10:22 - matsim.config_manager - INFO - Found transitScheduleFile: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/transitSchedule.xml
+2026-10-05 16:10:22 - matsim.config_manager - INFO - Found vehiclesFile: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/transitVehicles.xml
+2026-10-05 16:10:22 - matsim.orchestrator - INFO - Starting MATSim simulation. Log file: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/matsim_output.log
+2026-10-05 16:10:22 - matsim.runner - INFO - Starting MATSim simulation with config: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/config.xml
+2026-10-05 16:10:22 - matsim.runner - INFO - Using JAR file: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25/matsim_25.jar
+2026-10-05 16:10:22 - matsim.runner - INFO - No lib directory found in /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25 (may not be needed)
+2026-10-05 16:10:22 - matsim.runner - INFO - Command: java -Xmx200g -Xms200g -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./heap_dumps -cp /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/matsim/matsim_25/matsim_25.jar org.matsim.core.controler.Controler /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/config.xml
+2026-10-05 16:10:22 - matsim.runner - INFO - Waiting for simulation to complete...
+2026-10-06 00:39:25 - matsim.runner - INFO - Simulation completed in 30542.20 seconds
+2026-10-06 00:39:25 - matsim.runner - INFO - Simulation completed successfully
+2026-10-06 00:39:25 - matsim.orchestrator - INFO - Simulation completed
+2026-10-06 00:39:25 - __main__ - INFO - 
+2026-10-06 00:39:25 - __main__ - INFO - Simulation status: completed
+2026-10-06 00:39:25 - __main__ - INFO - 
+2026-10-06 00:39:25 - __main__ - INFO - ============================================================
+2026-10-06 00:39:25 - __main__ - INFO - STEP 6: EVALUATING SIMULATION
+2026-10-06 00:39:25 - __main__ - INFO - ============================================================
+2026-10-06 00:39:25 - __main__ - INFO - Initializing evaluator with ground truth data from: data/evaluation
+2026-10-06 00:39:25 - __main__ - INFO - Running evaluation...
+2026-10-06 00:39:25 - __main__ - INFO - 
+2026-10-06 00:39:25 - matsim.trip_timing - INFO - Trip timing figures: planned schedule (output/ITERS/it.0/0.plans.xml.gz) against iteration 10
+2026-10-06 00:44:03 - matsim.trip_timing - INFO - Saved dep_arr_by_activity_demand.png
+2026-10-06 00:44:04 - matsim.trip_timing - INFO - Saved dep_arr_by_activity_sim.png
+2026-10-06 00:44:16 - matsim.trip_timing - INFO - Saved trip_duration_by_hour_demand.png
+2026-10-06 00:44:17 - matsim.trip_timing - INFO - Saved trip_duration_by_hour_sim.png
+2026-10-06 00:44:26 - matsim.trip_timing - INFO -   it.10 activity durations: left out 596619 open-ended rows that are not a Home-to-Home overnight stay, and 0 all-day stays
+2026-10-06 00:44:35 - matsim.trip_timing - INFO - Saved activity_duration_by_type.png
+2026-10-06 00:44:36 - matsim.evaluator - INFO - Loading matched devices from: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/matched_devices.csv
+2026-10-06 00:44:36 - matsim.evaluator - INFO - Loaded 49 devices matched to network links
+2026-10-06 00:44:36 - matsim.evaluator - INFO - Using MATSim countscompare file: output/ITERS/it.10/10.countscompare.txt
+2026-10-06 00:44:36 - matsim.evaluator - INFO - Auto-detected network file: output/output_network.xml.gz
+2026-10-06 00:44:36 - matsim.evaluator - INFO - Auto-detected linkstats file: output/ITERS/it.10/10.linkstats.txt.gz
+2026-10-06 00:44:36 - matsim.evaluator - INFO - Loading scaling factors from experiment config...
+2026-10-06 00:44:36 - matsim.evaluator - INFO - Loaded scaling factors: population=0.1, flow=0.1, storage=0.18
+2026-10-06 00:44:36 - matsim.evaluator - INFO - Loading network for spatial visualization...
+2026-10-06 00:45:42 - matsim.evaluator - INFO - Loaded 745,284 links
+2026-10-06 00:45:42 - matsim.evaluator - INFO - Loading linkstats...
+2026-10-06 00:45:53 - matsim.evaluator - INFO - Scaled simulated volumes by 10.00x (1/0.1 population scaling)
+2026-10-06 00:45:53 - matsim.evaluator - INFO - Loaded 745,284 links from linkstats
+2026-10-06 00:45:53 - matsim.evaluator - INFO - Comparing volumes from MATSim countscompare.txt...
+2026-10-06 00:45:53 - matsim.evaluator - INFO - Read 1,104 station-hour comparisons from 10.countscompare.txt (46 stations)
+2026-10-06 00:45:53 - matsim.evaluator - INFO - Generated 1,104 station-hour comparisons
+2026-10-06 00:45:53 - matsim.evaluator - INFO - Calculating summary metrics...
+2026-10-06 00:45:53 - matsim.evaluator - INFO - Saved comparison results to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/volume_comparison.csv
+2026-10-06 00:45:53 - matsim.evaluator - INFO - Saved hourly relative-error box plot to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/hourly_relative_error_box.png
+2026-10-06 00:45:54 - matsim.evaluator - INFO - Saved hourly bias plot to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/hourly_bias.png
+2026-10-06 00:45:54 - matsim.evaluator - INFO - Saved station ratio dot plot to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/station_ratio_dotplot.png
+2026-10-06 00:45:54 - matsim.evaluator - INFO - Generating hourly count station error maps...
+2026-10-06 00:45:57 - utils.region_utils - INFO - Loaded 10 county boundary polygons
+2026-10-06 00:46:01 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h00.png
+2026-10-06 00:46:09 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h01.png
+2026-10-06 00:46:17 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h02.png
+2026-10-06 00:46:24 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h03.png
+2026-10-06 00:46:32 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h04.png
+2026-10-06 00:46:40 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h05.png
+2026-10-06 00:46:48 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h06.png
+2026-10-06 00:46:56 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h07.png
+2026-10-06 00:47:04 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h08.png
+2026-10-06 00:47:11 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h09.png
+2026-10-06 00:47:19 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h10.png
+2026-10-06 00:47:27 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h11.png
+2026-10-06 00:47:34 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h12.png
+2026-10-06 00:47:42 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h13.png
+2026-10-06 00:47:50 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h14.png
+2026-10-06 00:47:58 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h15.png
+2026-10-06 00:48:06 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h16.png
+2026-10-06 00:48:13 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h17.png
+2026-10-06 00:48:22 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h18.png
+2026-10-06 00:48:29 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h19.png
+2026-10-06 00:48:37 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h20.png
+2026-10-06 00:48:45 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h21.png
+2026-10-06 00:48:53 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h22.png
+2026-10-06 00:49:01 - matsim.evaluator - INFO - Saved hourly pct-error map to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/count_error_h23.png
+2026-10-06 00:49:01 - matsim.evaluator - INFO - Generating highway congestion heatmaps for 24 hour(s)...
+2026-10-06 00:49:12 - matsim.evaluator - INFO -   Highway links for peak heatmaps: 81,835 (of 745,284 total)
+2026-10-06 00:49:12 - matsim.evaluator - INFO -   Free travel time offset (p90 of recorded - rounded free time, near-empty links in the quietest hour h1): +1.00 s
+2026-10-06 00:49:54 - matsim.evaluator - INFO -   12 AM congestion, share of 6,568 highway km with traffic — Severe 0.0%, Congested 0.1%, Moderate 0.3%, Free flow 99.6%; no traffic: 25,638 links
+2026-10-06 00:49:58 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h00_highways.png
+2026-10-06 00:50:36 - matsim.evaluator - INFO -   1 AM congestion, share of 5,722 highway km with traffic — Severe 0.0%, Congested 0.0%, Moderate 0.0%, Free flow 99.9%; no traffic: 35,280 links
+2026-10-06 00:50:40 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h01_highways.png
+2026-10-06 00:51:20 - matsim.evaluator - INFO -   2 AM congestion, share of 6,423 highway km with traffic — Severe 0.0%, Congested 0.0%, Moderate 0.0%, Free flow 100.0%; no traffic: 27,773 links
+2026-10-06 00:51:24 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h02_highways.png
+2026-10-06 00:52:05 - matsim.evaluator - INFO -   3 AM congestion, share of 6,644 highway km with traffic — Severe 0.0%, Congested 0.0%, Moderate 0.1%, Free flow 99.9%; no traffic: 25,431 links
+2026-10-06 00:52:09 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h03_highways.png
+2026-10-06 00:52:53 - matsim.evaluator - INFO -   4 AM congestion, share of 7,466 highway km with traffic — Severe 0.0%, Congested 0.0%, Moderate 0.2%, Free flow 99.8%; no traffic: 17,692 links
+2026-10-06 00:52:57 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h04_highways.png
+2026-10-06 00:53:41 - matsim.evaluator - INFO -   5 AM congestion, share of 7,983 highway km with traffic — Severe 0.3%, Congested 0.6%, Moderate 1.2%, Free flow 97.9%; no traffic: 13,335 links
+2026-10-06 00:53:45 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h05_highways.png
+2026-10-06 00:54:31 - matsim.evaluator - INFO -   6 AM congestion, share of 8,224 highway km with traffic — Severe 1.2%, Congested 1.4%, Moderate 2.6%, Free flow 94.8%; no traffic: 10,852 links
+2026-10-06 00:54:35 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h06_highways.png
+2026-10-06 00:55:22 - matsim.evaluator - INFO -   7 AM congestion, share of 8,542 highway km with traffic — Severe 5.4%, Congested 4.2%, Moderate 5.5%, Free flow 85.0%; no traffic: 8,116 links
+2026-10-06 00:55:26 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h07_highways.png
+2026-10-06 00:56:13 - matsim.evaluator - INFO -   8 AM congestion, share of 8,574 highway km with traffic — Severe 8.9%, Congested 4.5%, Moderate 5.8%, Free flow 80.7%; no traffic: 7,460 links
+2026-10-06 00:56:17 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_8am_highways.png
+2026-10-06 00:57:05 - matsim.evaluator - INFO -   9 AM congestion, share of 8,587 highway km with traffic — Severe 8.0%, Congested 3.3%, Moderate 4.8%, Free flow 83.9%; no traffic: 7,511 links
+2026-10-06 00:57:09 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h09_highways.png
+2026-10-06 00:57:55 - matsim.evaluator - INFO -   10 AM congestion, share of 8,548 highway km with traffic — Severe 8.3%, Congested 3.6%, Moderate 4.9%, Free flow 83.2%; no traffic: 7,712 links
+2026-10-06 00:57:59 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h10_highways.png
+2026-10-06 00:58:45 - matsim.evaluator - INFO -   11 AM congestion, share of 8,586 highway km with traffic — Severe 7.9%, Congested 3.1%, Moderate 4.3%, Free flow 84.7%; no traffic: 7,421 links
+2026-10-06 00:58:49 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h11_highways.png
+2026-10-06 00:59:35 - matsim.evaluator - INFO -   12 PM congestion, share of 8,636 highway km with traffic — Severe 7.4%, Congested 2.8%, Moderate 4.1%, Free flow 85.7%; no traffic: 7,282 links
+2026-10-06 00:59:39 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h12_highways.png
+2026-10-06 01:00:26 - matsim.evaluator - INFO -   1 PM congestion, share of 8,576 highway km with traffic — Severe 7.0%, Congested 2.9%, Moderate 4.3%, Free flow 85.8%; no traffic: 7,300 links
+2026-10-06 01:00:30 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h13_highways.png
+2026-10-06 01:01:17 - matsim.evaluator - INFO -   2 PM congestion, share of 8,542 highway km with traffic — Severe 7.3%, Congested 3.2%, Moderate 4.5%, Free flow 84.9%; no traffic: 7,696 links
+2026-10-06 01:01:21 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h14_highways.png
+2026-10-06 01:02:08 - matsim.evaluator - INFO -   3 PM congestion, share of 8,586 highway km with traffic — Severe 7.5%, Congested 3.4%, Moderate 4.8%, Free flow 84.3%; no traffic: 7,784 links
+2026-10-06 01:02:12 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h15_highways.png
+2026-10-06 01:03:00 - matsim.evaluator - INFO -   4 PM congestion, share of 8,648 highway km with traffic — Severe 7.6%, Congested 3.3%, Moderate 4.7%, Free flow 84.3%; no traffic: 6,963 links
+2026-10-06 01:03:04 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h16_highways.png
+2026-10-06 01:03:51 - matsim.evaluator - INFO -   5 PM congestion, share of 8,527 highway km with traffic — Severe 7.2%, Congested 2.9%, Moderate 4.3%, Free flow 85.6%; no traffic: 7,999 links
+2026-10-06 01:03:55 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_5pm_highways.png
+2026-10-06 01:04:41 - matsim.evaluator - INFO -   6 PM congestion, share of 8,512 highway km with traffic — Severe 6.9%, Congested 2.5%, Moderate 3.9%, Free flow 86.6%; no traffic: 8,115 links
+2026-10-06 01:04:45 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h18_highways.png
+2026-10-06 01:05:31 - matsim.evaluator - INFO -   7 PM congestion, share of 8,430 highway km with traffic — Severe 6.3%, Congested 2.0%, Moderate 3.4%, Free flow 88.2%; no traffic: 9,074 links
+2026-10-06 01:05:35 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h19_highways.png
+2026-10-06 01:06:22 - matsim.evaluator - INFO -   8 PM congestion, share of 8,459 highway km with traffic — Severe 5.6%, Congested 1.5%, Moderate 3.0%, Free flow 89.9%; no traffic: 8,917 links
+2026-10-06 01:06:26 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h20_highways.png
+2026-10-06 01:07:13 - matsim.evaluator - INFO -   9 PM congestion, share of 8,352 highway km with traffic — Severe 5.0%, Congested 1.3%, Moderate 2.5%, Free flow 91.1%; no traffic: 9,376 links
+2026-10-06 01:07:17 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h21_highways.png
+2026-10-06 01:08:04 - matsim.evaluator - INFO -   10 PM congestion, share of 8,393 highway km with traffic — Severe 4.3%, Congested 1.1%, Moderate 2.2%, Free flow 92.4%; no traffic: 9,254 links
+2026-10-06 01:08:08 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h22_highways.png
+2026-10-06 01:08:54 - matsim.evaluator - INFO -   11 PM congestion, share of 8,272 highway km with traffic — Severe 3.8%, Congested 1.0%, Moderate 1.8%, Free flow 93.5%; no traffic: 10,350 links
+2026-10-06 01:08:58 - matsim.evaluator - INFO - Saved congestion heatmap to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/heatmap_h23_highways.png
+2026-10-06 01:09:05 - matsim.evaluator - INFO - Saved 24 log-log scatter plot(s) to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation
+2026-10-06 01:09:05 - matsim.evaluator - INFO - Generating per-device reports...
+2026-10-06 01:09:05 - matsim.evaluator - INFO - Generating per-device reports for 49 devices...
+2026-10-06 01:09:35 - matsim.evaluator - INFO - Per-device reports saved to /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation/device_reports
+2026-10-06 01:09:35 - __main__ - INFO - 
+2026-10-06 01:09:35 - __main__ - INFO - ============================================================
+2026-10-06 01:09:35 - __main__ - INFO - EVALUATION RESULTS
+2026-10-06 01:09:35 - __main__ - INFO - ============================================================
+2026-10-06 01:09:35 - __main__ - INFO - Devices validated: 33
+2026-10-06 01:09:35 - __main__ - INFO - Total comparisons: 1,104
+2026-10-06 01:09:35 - __main__ - INFO - Mean Absolute Error (MAE): 896.50 vehicles
+2026-10-06 01:09:35 - __main__ - INFO - Root Mean Square Error (RMSE): 1205.71 vehicles
+2026-10-06 01:09:35 - __main__ - INFO - GEH < 5 (hourly counts, target >=85%): 11.2%
+2026-10-06 01:09:35 - __main__ - INFO - GEH < 5 (station daily totals): 0.0%
+2026-10-06 01:09:35 - __main__ - INFO - Correlation: 0.659
+2026-10-06 01:09:35 - __main__ - INFO - Peak-hour correlation (6-9,15-18): 0.473
+2026-10-06 01:09:35 - __main__ - INFO - 
+2026-10-06 01:09:35 - __main__ - INFO - Results saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/evaluation
+2026-10-06 01:09:35 - __main__ - INFO - ============================================================
+2026-10-06 01:09:35 - __main__ - INFO - 
+2026-10-06 01:15:52 - validate_demand - INFO - Survey sources in DB: {('bham_local', 'undated'): np.int64(1071), ('nhts', '2022'): np.int64(30462)}
+2026-10-06 01:15:52 - validate_demand - INFO - Ignoring survey 'bham_local': not declared by this run's config. It belongs to a different region, so it is not a valid reference here.
+2026-10-06 01:15:52 - validate_demand - INFO - No local survey for this region — comparing against national NHTS only. A metro-specific household travel survey is the better reference; add one to config data.surveys with weight > 0.
+2026-10-06 01:15:52 - validate_demand - INFO - Simulated trips: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/output/ITERS/it.10/10.trips.csv.gz
+2026-10-06 01:17:25 - __main__ - INFO -   Demand validation vs survey added to summary
+2026-10-06 01:17:25 - __main__ - INFO - Experiment summary saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/experiment_summary.json
+2026-10-06 01:17:29 - __main__ - INFO - Experiment report saved to: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter/report.html
+2026-10-06 01:17:29 - __main__ - INFO -   For a PDF: python scripts/experiment_report.py --html-to-pdf <that file>  (needs a browser)
+2026-10-06 01:17:29 - __main__ - INFO - Experiment tracked in: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/experiment_comparison.csv
+2026-10-06 01:17:29 - __main__ - INFO - Suggestion: Increase iterations from 10 to 15-20 for better convergence.
+2026-10-06 01:17:29 - __main__ - INFO - ============================================================
+2026-10-06 01:17:29 - __main__ - INFO - EXPERIMENT COMPLETE
+2026-10-06 01:17:29 - __main__ - INFO - ============================================================
+2026-10-06 01:17:29 - __main__ - INFO - Experiment ID: ny_s10_modes28_pce_10iter
+2026-10-06 01:17:29 - __main__ - INFO - Experiment directory: /media/volume/Tareek-instance_vol-1/Tareek-work/Tareek/experiments/ny_s10_modes28_pce_10iter
+2026-10-06 01:17:29 - __main__ - INFO - Status: completed
+2026-10-06 01:17:29 - __main__ - INFO - 
+2026-10-06 01:17:29 - __main__ - INFO - Results available at:
+2026-10-06 01:17:29 - __main__ - INFO -   Network: network.xml
+2026-10-06 01:17:29 - __main__ - INFO -   Plans: plans.xml
+2026-10-06 01:17:29 - __main__ - INFO -   Output: output/
+2026-10-06 01:17:29 - __main__ - INFO -   Evaluation: evaluation/
+2026-10-06 01:17:29 - __main__ - INFO - ============================================================

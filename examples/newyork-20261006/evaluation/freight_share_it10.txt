@@ -1,0 +1,18 @@
+block           obs    sim all        car   freight      pt  ratio ratio w/o fr freight % of sim freight/obs
+night         82909      27040      20190      6850       0  0.326        0.244            25.3%        8.3%
+morning      575350     578370     557830     15900    4640  1.005        0.978             2.7%        2.8%
+midday       919838     854570     820320     32200    2050  0.929        0.894             3.8%        3.5%
+evening      466402     481450     462270     16990    2190  1.032        0.996             3.5%        3.6%
+all         2044499    1941430    1860610     71940    8880  0.950        0.914             3.7%        3.5%
+
+per station-direction freight % of sim: median 3.1, p90 14.8, max 22.9, n=46
+top 8 (freight %, station, sim/obs):
+   22.9%  FHA_34_000017_5  0.26
+   22.9%  FHA_34_W02123_7  0.09
+   18.1%  FHA_34_000287_1  0.39
+   17.8%  FHA_34_000287_5  0.33
+   14.8%  FHA_34_E02123_3  0.11
+    8.1%  FHA_34_0080DL-p2_7  0.61
+    5.9%  FHA_36_000598_1  3.76
+    5.8%  FHA_34_E03123_3  0.57
+stations with zero freight: 2

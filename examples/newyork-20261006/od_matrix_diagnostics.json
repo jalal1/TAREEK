@@ -1,0 +1,96 @@
+{
+  "source_requested": "auto",
+  "source_used": "lodes_od",
+  "fallback_reason": null,
+  "geo_level": "block_group",
+  "lodes": {
+    "year": 2023,
+    "version": "LODES8",
+    "job_type": "JT00",
+    "segment": "S000",
+    "states": [
+      "34",
+      "36"
+    ],
+    "files": {
+      "nj_main": 3505459,
+      "nj_aux": 405268,
+      "ny_main": 7720403,
+      "ny_aux": 809356
+    },
+    "aux_sourced_ii": 413183,
+    "aux_sourced_ii_share": 0.0861
+  },
+  "flows": {
+    "internal_ii": 4799253,
+    "outbound_ie": 756167,
+    "inbound_ei": 1551320,
+    "internal_share": 0.8639,
+    "job_side_share": 0.7557,
+    "two_sided_share": 0.6753
+  },
+  "matrix": {
+    "rows": 9601,
+    "cols": 9548,
+    "nonzero_pairs": 3088476,
+    "density": 0.033691,
+    "total_trips": 7106740.0,
+    "zero_rows": 0,
+    "zero_cols": 0,
+    "residents_in_zero_rows": 0,
+    "jobs_in_zero_cols": 0
+  },
+  "comparison_to_gravity_base": {
+    "gravity_total": 5690056.0,
+    "ratio": 1.249,
+    "agent_delta_pct": 24.9,
+    "observed_ii_total": 4799253,
+    "observed_vs_gravity_ratio": 0.8434,
+    "implied_agent_delta_pct": -15.66,
+    "internal_share": 0.8638866188334995
+  },
+  "survey_blend": {
+    "branch": "blended",
+    "alpha_configured": 0.1,
+    "alpha_effective": 0.1,
+    "cells_changed": 0,
+    "effective_no_op": true
+  },
+  "trip_length": {
+    "mean_km": 19.42,
+    "median_km": 13.48,
+    "p25_km": 6.3,
+    "p75_km": 26.1,
+    "intrazonal_share": 0.0054
+  },
+  "boundary": {
+    "policy": "anchor",
+    "outbound_ie": 756167,
+    "inbound_ei": 1551320,
+    "internal_share": 0.8638866188334995,
+    "anchored_ie": 756167.0,
+    "anchored_ei": 1551320.0,
+    "anchored_total": 2307487.0,
+    "source": "derived_from_totals"
+  },
+  "demand_coverage": {
+    "scaling_factor": 0.1,
+    "work_scaling_multiplier": 1.1,
+    "compensation_applied": false,
+    "note": "agent drop kept deliberately: observed flows give a work trip only to residents who work in-region, so the gravity model's extra agents were invented \u2014 see design.md \u00a72"
+  },
+  "runtime_seconds": {
+    "observed_od_load": 28.68,
+    "blend": 7.13
+  },
+  "reconciliation": {
+    "matrix_total": 7106740.0,
+    "direct_aggregation_total": 7106740.0,
+    "internal_ii_total": 4799253.0,
+    "anchored_total": 2307487.0,
+    "delta": 0.0,
+    "tolerance": 7106.7,
+    "within_tolerance": true,
+    "aux_sourced_ii": 413183
+  }
+}
