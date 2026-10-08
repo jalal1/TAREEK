@@ -9,7 +9,7 @@ This script runs complete experiments by:
 4. Running MATSim simulation
 
 Usage:
-    python run_experiment.py --config config/config.json [--experiment-id my_experiment]
+    python run_experiment.py --config config/config_local.json [--experiment-id my_experiment]
 
 Arguments:
     --config: Path to configuration JSON file (required)
