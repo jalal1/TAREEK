@@ -139,7 +139,7 @@ You can also add your own region. See [examples/CONTRIBUTING.md](examples/CONTRI
 ### 1. Prerequisites
 
 - Python 3.12+
-- Java 17+ (for MATSim)
+- Java 21+ (for MATSim)
 - `osmium-tool` (necessary for network generation; see [docs/osm-tools-installation.md](docs/osm-tools-installation.md))
 
 ### 2. Setup
@@ -222,7 +222,7 @@ When the wizard makes your `config.json`, put it in the `config/` folder and run
 experiment from the command line:
 
 ```bash
-python run_experiment.py --config config/config.json
+python run_experiment.py --config config/config_local.json
 ```
 
 > **Coming soon:** run simulations directly from the web app.
