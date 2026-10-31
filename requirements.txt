@@ -3,7 +3,7 @@ attrs==25.4.0
 bleach==6.4.0
 bokeh==3.8.2
 branca==0.8.2
-certifi==2025.10.5
+certifi==2026.10.18
 charset-normalizer==3.4.4
 choreographer==1.2.1
 colorama==0.4.6
