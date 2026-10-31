@@ -19,7 +19,7 @@ et_xmlfile==2.0.0
 executing==2.2.0
 fastapi==0.115.12
 fastjsonschema==2.21.2
-filelock==3.25.0
+filelock==4.2.1
 folium==0.20.0
 fonttools==4.61.0
 geopandas==1.1.2
