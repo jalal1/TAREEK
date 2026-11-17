@@ -9,14 +9,46 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 # IDs are exact example directory names, never client-supplied filesystem paths.
 # Coordinates are approximate regional locations (latitude, longitude) for map markers.
 PRESETS = {
-    'losangeles-20261006': ('Los Angeles — NHTS', 'Los Angeles', 'Los Angeles and Orange counties with NHTS demand.', (34.05, -118.24)),
-    'newyork-20261006': ('New York — NHTS', 'New York', 'New York metropolitan experiment spanning New York and New Jersey.', (40.71, -74.01)),
-    'madison-20260928': ('Madison — NHTS', 'Madison', 'Dane County experiment with NHTS demand.', (43.07, -89.4)),
-    'chicago-20261003': ('Chicago — NHTS', 'Chicago', 'Cook, DuPage and Lake counties with NHTS demand.', (41.88, -87.63)),
-    'twincities-20260928': ('Twin Cities — NHTS', 'Twin Cities', 'Minnesota/Wisconsin metropolitan experiment using NHTS.', (44.98, -93.27)),
-    'twincities-tbi-20260930': ('Twin Cities — TBI', 'Twin Cities', 'Same metropolitan region using the 2023 Travel Behavior Inventory.', (44.98, -93.27)),
-    'birmingham-20260928': ('Birmingham — NHTS', 'Birmingham', 'Jefferson and Shelby counties with NHTS demand.', (33.52, -86.8)),
-    'birmingham-localsurvey-20261001': ('Birmingham — local survey', 'Birmingham', 'Local survey for trips, with NHTS person-days for demand estimation.', (33.52, -86.8)),
+    'losangeles-20261006': {
+        'name': 'Los Angeles — NHTS', 'region': 'Los Angeles',
+        'description': 'Los Angeles and Orange counties with NHTS demand.',
+        'location': (34.05, -118.24),
+    },
+    'newyork-20261006': {
+        'name': 'New York — NHTS', 'region': 'New York',
+        'description': 'New York metropolitan experiment spanning New York and New Jersey.',
+        'location': (40.71, -74.01),
+    },
+    'madison-20260928': {
+        'name': 'Madison — NHTS', 'region': 'Madison',
+        'description': 'Dane County experiment with NHTS demand.',
+        'location': (43.07, -89.4),
+    },
+    'chicago-20261003': {
+        'name': 'Chicago — NHTS', 'region': 'Chicago',
+        'description': 'Cook, DuPage and Lake counties with NHTS demand.',
+        'location': (41.88, -87.63),
+    },
+    'twincities-20260928': {
+        'name': 'Twin Cities — NHTS', 'region': 'Twin Cities',
+        'description': 'Minnesota/Wisconsin metropolitan experiment using NHTS.',
+        'location': (44.98, -93.27),
+    },
+    'twincities-tbi-20260930': {
+        'name': 'Twin Cities — TBI', 'region': 'Twin Cities',
+        'description': 'Same metropolitan region using the 2023 Travel Behavior Inventory.',
+        'location': (44.98, -93.27),
+    },
+    'birmingham-20260928': {
+        'name': 'Birmingham — NHTS', 'region': 'Birmingham',
+        'description': 'Jefferson and Shelby counties with NHTS demand.',
+        'location': (33.52, -86.8),
+    },
+    'birmingham-localsurvey-20261001': {
+        'name': 'Birmingham — local survey', 'region': 'Birmingham',
+        'description': 'Local survey for trips, with NHTS person-days for demand estimation.',
+        'location': (33.52, -86.8),
+    },
 }
 
 
@@ -72,10 +104,11 @@ class PresetService:
             raise KeyError(preset_id)
         result = self.config_service.load_example(preset_id)
         config, redacted = public_config(result.config)
-        name, region, description, location = PRESETS[preset_id]
+        preset = PRESETS[preset_id]
+        location = preset['location']
         metadata = {
-            'id': preset_id, 'display_name': name, 'region': region,
-            'description': description,
+            'id': preset_id, 'display_name': preset['name'], 'region': preset['region'],
+            'description': preset.get('description', ''),
             'location': {'lat': location[0], 'lng': location[1]},
             'source_file': f'examples/{preset_id}/config_used.json',
             'characteristics': {
