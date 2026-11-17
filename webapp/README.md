@@ -34,17 +34,19 @@ The server starts at **http://localhost:8000**.
 ## First Startup
 
 On first launch, the backend will:
-1. Convert the county shapefile to simplified GeoJSON (~30s)
-2. Fetch county population data from the Census API (~10s)
+1. Convert the county shapefile to simplified GeoJSON
+2. Fetch county population data from the Census API
 
-These are cached to `data/counties/counties.geojson` and `data/counties/county_population.json` so subsequent starts are instant.
+These are cached to `data/counties/counties.geojson` and `data/counties/county_population.json` and reused on subsequent starts.
 
 ## Structure
 
 ```
 webapp/
   backend/
-    main.py              # FastAPI server, API endpoints, config assembly
+    main.py              # FastAPI routes, county data, static hosting
+    config_service.py    # Configuration loading, migrations, validation/export
+    preset_service.py    # Registered experiments and public preset metadata
     requirements.txt     # Backend dependencies
   frontend/
     index.html           # Main wizard page
@@ -56,7 +58,7 @@ webapp/
 
 ## Wizard Panels
 
-1. **Region** — Select a regional experiment from a map pin or customize counties on the map.
+1. **Select Region** — Select a regional experiment from a map pin or customize counties on the map.
 2. **Surveys** — Review survey weights and regional input paths on the execution host.
 3. **Transportation Modes** — Enable/disable car, bus, rail, walk, bike with per-mode settings.
 4. **Transit** — GTFS feed settings and pt2matsim mapping parameters.
@@ -64,8 +66,8 @@ webapp/
 6. **Time & Duration** — Activity duration constraints, time model settings.
 7. **Simulation** — MATSim iterations, capacity factors, traffic counts, evaluation settings.
 8. **Review & Export** — Compare user edits with the normalized starting config,
-    see load/export migrations separately, validate, and review portability notes
-    before downloading the complete `config.json`.
+    download the complete `config.json`, and see export diagnostics. Validation
+    runs automatically when exporting; there is no separate validation action.
 
 The selected experiment's complete configuration stays in memory. Controls update
 only their corresponding fields; freight, MATSim settings, survey roles,
@@ -84,3 +86,34 @@ execution-host checks.
 The final step validates and exports `config.json` for `run_experiment.py`; the
 wizard does not execute simulations. Source examples and the maintained baseline
 are never written by the frontend. The frontend has no Node installation or build step.
+
+## Adding an Experiment to the Map
+
+1. Add the experiment configuration at
+   `examples/myregion-20261117/config_used.json` (relative to the repository root).
+   The configuration must pass the backend's structural validation.
+2. Add an entry to `PRESETS` in [`backend/preset_service.py`](backend/preset_service.py):
+
+   ```python
+   'myregion-20261117': (
+       'My Region — NHTS',
+       'My Region',
+       'Example experiment description.',
+       (43.07, -89.40),
+   ),
+   ```
+
+   The key must match the example folder name exactly. The tuple contains the
+   display name, region name, description, and marker coordinates in
+   `(latitude, longitude)` order.
+3. Let the development server reload (or restart the backend), then refresh
+   the page. The frontend fetches the registered experiments automatically;
+   no frontend code changes are needed.
+
+A new region name creates a new marker. Reusing an existing region name adds
+another experiment button to that marker's popup. Use the same region text and
+coordinates for experiments that share a marker. Adding a folder under
+`examples` alone does not register it with the map.
+
+For developer architecture, state flow, API contracts, and testing guidance, see
+[`DOCS/WEBAPP_GUIDE.md`](DOCS/WEBAPP_GUIDE.md).
