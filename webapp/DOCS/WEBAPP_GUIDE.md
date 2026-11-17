@@ -142,7 +142,9 @@ Existing backend compatibility remains: prepare/export also accept supported sou
 
 ### Preset service
 
-`PRESETS` is the explicit allowlist of example IDs and their public metadata. Experiment registration instructions are in the [README](../README.md#adding-an-experiment-to-the-map). The frontend groups entries by the exact region string and takes the first entry's coordinates for each marker.
+`PRESETS` is the explicit allowlist of example IDs and their public metadata. Experiment registration instructions are in the [README](../README.md#adding-an-experiment-to-the-map). Each registry entry is a dictionary. Missing metadata keys default to the preset ID for `name`, `"Unknown"` for `region`, an empty string for `description`, and `None` for `location` (JSON `null`). These defaults apply to omitted keys; malformed values are not validated by this fallback logic. The example configuration must still exist and load successfully.
+
+The frontend excludes presets with a null or absent location before grouping entries by the exact region string. Each marker uses the first remaining entry's coordinates. A preset without coordinates is excluded from popup lists as well; it never borrows another preset's location.
 
 `PresetService.load()` calls the configuration service, redacts credential values, and returns source metadata, survey/scaling characteristics, migrations, and warnings. Warnings include historical-version uncertainty, data readiness, machine-specific paths, and removed credentials where applicable. `list()` obtains this same information but omits the complete configuration; it loads the registered sources rather than returning a separate hardcoded metadata-only catalog.
 

@@ -252,6 +252,7 @@ async function setupExperimentMarkers() {
     const {presets} = await fetchJSON('/api/config/presets');
     const regions = new Map();
     for (const preset of presets) {
+      if (preset.location == null) continue;
       if (!regions.has(preset.region)) regions.set(preset.region, []);
       regions.get(preset.region).push(preset);
     }

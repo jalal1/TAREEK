@@ -107,6 +107,13 @@ are never written by the frontend. The frontend has no Node installation or buil
    `name` for the display name, `region` for the region label, `description`
    for the description, and `location` for marker coordinates in
    `(latitude, longitude)` order.
+
+   Metadata keys may be omitted: `name` defaults to the preset ID, `region` to
+   `"Unknown"`, `description` to `""`, and `location` to JSON `null`. Missing
+   metadata does not prevent API loading, but the example configuration must
+   still exist and be valid. Presets without a location are excluded from map
+   markers and popup lists, even when another preset shares their region.
+   Supplied coordinates must remain a valid latitude/longitude pair.
 3. Let the development server reload (or restart the backend), then refresh
    the page. The frontend fetches the registered experiments automatically;
    no frontend code changes are needed.

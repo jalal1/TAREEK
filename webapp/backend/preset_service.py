@@ -105,11 +105,12 @@ class PresetService:
         result = self.config_service.load_example(preset_id)
         config, redacted = public_config(result.config)
         preset = PRESETS[preset_id]
-        location = preset['location']
+        location = preset.get('location')
         metadata = {
-            'id': preset_id, 'display_name': preset['name'], 'region': preset['region'],
+            'id': preset_id, 'display_name': preset.get('name', preset_id),
+            'region': preset.get('region', 'Unknown'),
             'description': preset.get('description', ''),
-            'location': {'lat': location[0], 'lng': location[1]},
+            'location': {'lat': location[0], 'lng': location[1]} if location is not None else None,
             'source_file': f'examples/{preset_id}/config_used.json',
             'characteristics': {
                 'counties': deepcopy(config.get('region', {}).get('counties', [])),
