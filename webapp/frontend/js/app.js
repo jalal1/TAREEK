@@ -10,28 +10,74 @@
 const configuration = new ConfigurationState();
 let selectedPresetId = null;
 let presetRequest = 0;
-let presets = [];
 let baselineConfig = null;
-let advancedEditor = null;
 let sourceMigrations = [];
-let sourceWarnings = [];
-let reviewFingerprint = null;
 let reviewRequest = 0;
 
 const STEPS = [
-  { id: 'start', label: 'Start' },
-  { id: 'region',     label: 'Region' },
+  { id: 'region',     label: 'Select Region' },
   { id: 'surveys',    label: 'Surveys' },
   { id: 'modes',      label: 'Modes' },
   { id: 'transit',    label: 'Transit' },
   { id: 'demand',     label: 'Demand' },
   { id: 'time',       label: 'Time' },
   { id: 'simulation', label: 'Simulation' },
-  { id: 'advanced', label: 'Advanced' },
   { id: 'review', label: 'Review' },
 ];
 
 const DURATION_ACTIVITIES = ['Work', 'School', 'Shopping', 'Escort', 'Dining', 'Social', 'Other'];
+
+// Review helpers keep JSON Pointer paths and redact private configuration values.
+const configPointer = path => path.length ? '/' + path.map(key => String(key).replaceAll('~', '~0').replaceAll('/', '~1')).join('/') : '';
+const configType = value => value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
+const credentialConfigKey = key => /apikey|password|passwd|secret|token|credential|authorization|privatekey|accesskey|username|clientid|cookie/i.test(String(key).replace(/[^a-z0-9]/gi, ''));
+function hiddenConfigPath(path) {
+  return path.some(key => String(key).startsWith('_') || credentialConfigKey(key)) ||
+    JSON.stringify(path) === JSON.stringify(['coordinates', 'utm_epsg']);
+}
+function privateConfigURL(value) {
+  if (typeof value !== 'string' || !value.includes('://')) return false;
+  try {
+    const url = new URL(value);
+    return !!(url.username || url.password) || [...url.searchParams.keys()].some(credentialConfigKey);
+  } catch { return true; }
+}
+const CONFIG_METADATA = {
+  '/data/day_type': {enum: ['weekday', 'weekend', 'all']},
+  '/data/survey_months': {types: ['string', 'array']},
+  '/matsim/mode': {enum: ['basic', 'uber']},
+  '/matsim/configurable_params/lastIteration': {minimum: 0, integer: true},
+  '/matsim/configurable_params/qsim.flowCapacityFactor': {exclusiveMinimum: 0},
+  '/matsim/configurable_params/qsim.storageCapacityFactor': {exclusiveMinimum: 0},
+  '/plan_generation/scaling_factor': {exclusiveMinimum: 0},
+  '/plan_generation/num_processes': {minimum: 1, integer: true},
+  '/od_matrix/source': {enum: ['auto', 'lodes_od', 'gravity']},
+  '/od_matrix/boundary_policy': {enum: ['drop', 'anchor']},
+  '/od_matrix/distance': {enum: ['cosine_km', 'legacy_degrees']},
+  '/od_matrix/friction': {enum: ['power', 'exponential', 'gamma']},
+  '/duration_constraints/over_budget': {enum: ['trim', 'resample']},
+  '/time_models/first_departure_source': {enum: ['all_trips', 'first_of_day']},
+  '/network/roundabout_capacity_per_lane': {types: ['null', 'number'], exclusiveMinimum: 0},
+};
+function configDifferences(before, after, path = []) {
+  if (JSON.stringify(before) === JSON.stringify(after)) return [];
+  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (object(before) && object(after)) {
+    return [...new Set([...Object.keys(before), ...Object.keys(after)])].flatMap(key =>
+      hiddenConfigPath([...path, key]) ? [] : configDifferences(before[key], after[key], [...path, key]));
+  }
+  return hiddenConfigPath(path) ? [] : [{path, before, after}];
+}
+function safeReviewValue(value) {
+  function redact(item) {
+    if (privateConfigURL(item)) return '[credential URL hidden]';
+    if (Array.isArray(item)) return item.map(redact);
+    if (item && typeof item === 'object') return Object.fromEntries(Object.entries(item)
+      .filter(([key]) => !hiddenConfigPath([key])).map(([key, child]) => [key, redact(child)]));
+    return item;
+  }
+  return value === undefined ? '(absent)' : JSON.stringify(redact(value), null, 2);
+}
 
 // ==========================================================================
 // State
@@ -41,6 +87,7 @@ let selectedCounties = {};   // { GEOID: { name, population, feature } }
 let countyGeoJSON = null;
 let map = null;
 let countyLayer = null;
+let experimentLayer = null;
 let zoomMessageEl = null;
 
 // ==========================================================================
@@ -113,8 +160,7 @@ function goToStep(stepIndex) {
   if (STEPS[currentStep].id === 'region' && map) {
     setTimeout(() => { map.invalidateSize(); fitSelectedRegion(); }, 100);
   }
-  if (STEPS[currentStep].id === 'advanced') advancedEditor.render();
-  if (STEPS[currentStep].id === 'review') { renderReview(); validateReview(); }
+  if (STEPS[currentStep].id === 'review') renderReview();
 }
 
 function validateStep(stepIndex) {
@@ -123,9 +169,8 @@ function validateStep(stepIndex) {
     if (!input.reportValidity()) return false;
   }
   switch (STEPS[stepIndex].id) {
-    case 'start':
-      return configuration.config !== null && !document.getElementById('btnNext0').disabled;
     case 'region': // Region
+      if (!configuration.config) return false;
       if (Object.keys(selectedCounties).length === 0) {
         alert('Please select at least one county.');
         return false;
@@ -198,6 +243,8 @@ async function initMap() {
   }).addTo(map);
 
   zoomMessageEl = document.getElementById('mapMessage');
+  // Experiment markers load independently of county data and selection.
+  setupExperimentMarkers();
 
   // Load county data
   try {
@@ -206,7 +253,7 @@ async function initMap() {
     if (!resp.ok) throw new Error('County data unavailable');
     addCountyLayer();
     syncSelectedRegion();
-    updatePresetCountyNames();
+    if (selectedPresetId && selectedPresetId !== 'custom') fitSelectedRegion();
   } catch (err) {
     console.error('Failed to load counties:', err);
     zoomMessageEl.textContent = 'Failed to load county data. Is the server running?';
@@ -215,6 +262,165 @@ async function initMap() {
   // Show/hide counties based on zoom
   map.on('zoomend', updateCountyVisibility);
   updateCountyVisibility();
+}
+
+async function setupExperimentMarkers() {
+  experimentLayer = L.layerGroup().addTo(map);
+  try {
+    const {presets} = await fetchJSON('/api/config/presets');
+    const regions = new Map();
+    for (const preset of presets) {
+      const {lat, lng} = preset.location || {};
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+          Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
+      if (!regions.has(preset.region)) regions.set(preset.region, []);
+      regions.get(preset.region).push(preset);
+    }
+    let pickerIndex = 0;
+    for (const [region, experiments] of regions) {
+      const lat = experiments.reduce((sum, preset) => sum + preset.location.lat, 0) / experiments.length;
+      const lng = experiments.reduce((sum, preset) => sum + preset.location.lng, 0) / experiments.length;
+      const popup = document.createElement('div');
+      popup.className = 'experiment-popup';
+      const title = document.createElement('strong');
+      title.className = 'experiment-popup__title';
+      title.textContent = region;
+      const picker = createExperimentPicker(experiments, pickerIndex++);
+      popup.append(title, picker);
+      L.marker([lat, lng], {title: region, bubblingMouseEvents: false})
+        .bindPopup(popup).addTo(experimentLayer);
+    }
+  } catch (error) {
+    console.error('Failed to load experiment markers:', error);
+  }
+}
+
+function createExperimentPicker(experiments, pickerIndex) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'experiment-picker';
+
+  const listId = `experiment-picker-options-${pickerIndex}`;
+  const label = document.createElement('label');
+  label.className = 'experiment-picker__label';
+  label.htmlFor = `experiment-picker-input-${pickerIndex}`;
+  label.textContent = 'Experiment';
+
+  const input = document.createElement('input');
+  input.id = label.htmlFor;
+  input.className = 'experiment-picker__input';
+  input.type = 'text';
+  input.placeholder = 'Search experiments…';
+  input.autocomplete = 'off';
+  input.setAttribute('role', 'combobox');
+  input.setAttribute('aria-autocomplete', 'list');
+  input.setAttribute('aria-controls', listId);
+  input.setAttribute('aria-expanded', 'false');
+
+  const list = document.createElement('div');
+  list.id = listId;
+  list.className = 'experiment-picker__options';
+  list.setAttribute('role', 'listbox');
+  list.hidden = true;
+
+  let filtered = experiments;
+  let activeIndex = -1;
+
+  function setOpen(open) {
+    list.hidden = !open;
+    input.setAttribute('aria-expanded', String(open));
+    if (!open) {
+      activeIndex = -1;
+      input.removeAttribute('aria-activedescendant');
+    }
+  }
+
+  async function choose(experiment) {
+    setOpen(false);
+    input.value = '';
+    try {
+      await selectPreset(experiment);
+    } catch (error) {
+      document.getElementById('configurationStatus').textContent = `Could not load experiment: ${error.message}`;
+    }
+  }
+
+  function setActive(index) {
+    const options = [...list.querySelectorAll('[role="option"]')];
+    options.forEach(option => option.setAttribute('aria-selected', 'false'));
+    if (!options.length) {
+      activeIndex = -1;
+      input.removeAttribute('aria-activedescendant');
+      return;
+    }
+    activeIndex = (index + options.length) % options.length;
+    const active = options[activeIndex];
+    active.setAttribute('aria-selected', 'true');
+    input.setAttribute('aria-activedescendant', active.id);
+    active.scrollIntoView({block: 'nearest'});
+  }
+
+  function renderOptions() {
+    list.replaceChildren();
+    activeIndex = -1;
+    input.removeAttribute('aria-activedescendant');
+    const query = input.value.trim().toLocaleLowerCase();
+    filtered = experiments.filter(experiment =>
+      experiment.display_name.toLocaleLowerCase().includes(query));
+
+    if (!filtered.length) {
+      const empty = document.createElement('p');
+      empty.className = 'experiment-picker__empty';
+      empty.textContent = 'No experiments found';
+      list.appendChild(empty);
+      return;
+    }
+
+    filtered.forEach((experiment, index) => {
+      const option = document.createElement('button');
+      option.id = `${listId}-option-${index}`;
+      option.type = 'button';
+      option.className = 'experiment-picker__option';
+      option.setAttribute('role', 'option');
+      option.setAttribute('aria-selected', 'false');
+      option.textContent = experiment.display_name;
+      option.addEventListener('mouseenter', () => setActive(index));
+      option.addEventListener('click', () => choose(experiment));
+      list.appendChild(option);
+    });
+  }
+
+  function open() {
+    renderOptions();
+    setOpen(true);
+  }
+
+  input.addEventListener('focus', open);
+  input.addEventListener('click', open);
+  input.addEventListener('input', open);
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      setOpen(false);
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (list.hidden) open();
+      setActive(activeIndex + (event.key === 'ArrowDown' ? 1 : -1));
+      return;
+    }
+    if (event.key === 'Enter' && activeIndex >= 0) {
+      event.preventDefault();
+      choose(filtered[activeIndex]);
+    }
+  });
+  wrapper.addEventListener('focusout', () => {
+    setTimeout(() => {
+      if (!wrapper.contains(document.activeElement)) setOpen(false);
+    });
+  });
+
+  wrapper.append(label, input, list);
+  return wrapper;
 }
 
 function addCountyLayer() {
@@ -342,7 +548,7 @@ function removeCounty(geoid) {
 }
 
 function updateRegionSelection() {
-  document.getElementById('btnNext1').disabled = Object.keys(selectedCounties).length === 0;
+  document.getElementById('btnNext0').disabled = !configuration.config || Object.keys(selectedCounties).length === 0;
   if (configuration.config) configuration.set(['region', 'counties'], Object.keys(selectedCounties));
 }
 
@@ -359,7 +565,7 @@ function syncSelectedRegion() {
   updateMapStats();
   updateSelectedCountiesList();
   // Hydration must not rewrite array order or add configuration fields.
-  document.getElementById('btnNext1').disabled = counties.length === 0;
+  document.getElementById('btnNext0').disabled = !configuration.config || counties.length === 0;
 }
 
 function fitSelectedRegion() {
@@ -622,7 +828,7 @@ function togglePurposeCard(purpose) {
 // ==========================================================================
 
 function collectFormData() {
-  if (!configuration.config) throw new Error('Choose a starting configuration first.');
+  if (!configuration.config) throw new Error('Configuration has not loaded yet.');
   return configuration.snapshot();
 }
 
@@ -774,78 +980,26 @@ async function fetchJSON(url) {
   return body;
 }
 
-function renderPresetCards() {
-  const grid = document.getElementById('presetGrid');
-  grid.replaceChildren();
-  const options = [{id: 'custom', display_name: 'Custom Configuration', region: 'Your region',
-    description: 'Start with the maintained baseline and customize your experiment.',
-    characteristics: baselineConfig ? {
-      counties: baselineConfig.region?.counties || [], scaling_factor: baselineConfig.plan_generation?.scaling_factor,
-      surveys: baselineConfig.data?.surveys || [],
-    } : {}}, ...presets];
-  for (const preset of options) {
-    const label = document.createElement('label');
-    label.className = 'card preset-card';
-    const radio = document.createElement('input');
-    radio.type = 'radio'; radio.name = 'startingPreset'; radio.value = preset.id;
-    radio.checked = preset.id === selectedPresetId;
-    radio.disabled = preset.id === 'custom' && !baselineConfig;
-    radio.addEventListener('change', () => selectPreset(preset));
-    label.classList.toggle('card--selected', radio.checked);
-    label.appendChild(radio);
-    const content = document.createElement('div');
-    const region = document.createElement('span');
-    region.className = 'preset-card__region'; region.textContent = preset.region;
-    const title = document.createElement('strong');
-    title.className = 'card__title'; title.textContent = preset.display_name;
-    const description = document.createElement('p');
-    description.className = 'text-sm text-muted'; description.textContent = preset.description;
-    const characteristics = preset.characteristics;
-    const stats = document.createElement('p'); stats.className = 'preset-card__stats';
-    const sources = (characteristics.surveys || []).filter(s => (s.weight ?? 1) > 0 || Object.values(s.roles || {}).some(w => w > 0));
-    stats.textContent = `${characteristics.scaling_factor == null ? '—' : `${Number((characteristics.scaling_factor * 100).toFixed(2))}%`} population · ${sources.map(s => s.type.toUpperCase()).join(' + ') || 'Choose survey'}`;
-    const counties = document.createElement('p'); counties.className = 'text-xs text-muted preset-card__counties';
-    counties.dataset.counties = JSON.stringify(characteristics.counties || []);
-    content.append(region, title, description, stats, counties);
-    label.appendChild(content); grid.appendChild(label);
-  }
-  updatePresetCountyNames();
-}
-
-function updatePresetCountyNames() {
-  document.querySelectorAll('[data-counties]').forEach(el => {
-    const ids = JSON.parse(el.dataset.counties);
-    const names = ids.map(id => countyGeoJSON?.features.find(f => f.properties.GEOID === id)?.properties.name || id);
-    el.textContent = `${ids.length} ${ids.length === 1 ? 'county' : 'counties'}: ${names.join(', ')}`;
-  });
-}
-
 let selectedSnapshot = null;
-async function selectPreset(preset) {
+async function selectPreset(preset, {emptyRegion = false} = {}) {
   if (selectedPresetId === preset.id) {
-    ++presetRequest; // Also cancel a different pending selection.
-    document.getElementById('btnNext0').disabled = false;
-    document.querySelectorAll('input[name="startingPreset"]').forEach(radio => {
-      radio.checked = radio.value === selectedPresetId;
-      radio.closest('.preset-card').classList.toggle('card--selected', radio.checked);
-    });
-    return; // Returning to Start retains edits.
+    ++presetRequest; // Cancel a different pending selection while retaining edits.
+    fitSelectedRegion();
+    return;
   }
   if (selectedSnapshot && JSON.stringify(configuration.config) !== selectedSnapshot &&
       !window.confirm('Changing the starting configuration replaces your current edits. Continue?')) {
-    renderPresetCards(); return;
+    return;
   }
   const requestId = ++presetRequest;
-  document.getElementById('btnNext0').disabled = true;
-  document.getElementById('presetError').textContent = '';
   try {
-    const response = preset.id === 'custom' ? {config: baselineConfig, warnings: []} :
+    const response = preset.id === 'custom' ? {config: structuredClone(baselineConfig), warnings: []} :
       await fetchJSON(`/api/config/presets/${encodeURIComponent(preset.id)}`);
     if (requestId !== presetRequest) return;
-    if (!response.config) throw new Error('Starting configuration is unavailable. Retry presets.');
+    if (!response.config) throw new Error('Starting configuration is unavailable.');
+    if (emptyRegion) response.config.region.counties = [];
     configuration.load(response.config);
     sourceMigrations = response.migrations || [];
-    sourceWarnings = response.warnings || [];
     // Templates are used only when a user explicitly adds an absent source.
     for (const custom of [false, true]) {
       const template = baselineConfig?.data?.surveys.find(s => custom ? s.type !== 'nhts' : s.type === 'nhts');
@@ -853,43 +1007,34 @@ async function selectPreset(preset) {
     }
     selectedPresetId = preset.id;
     selectedSnapshot = JSON.stringify(configuration.config);
-    document.body.classList.add('configuration-selected');
     populateConfiguration();
     document.querySelectorAll('.panel__badge').forEach(el => el.classList.add('hidden'));
-    updateBadge('start', preset.display_name);
-    document.getElementById('selectedPresetName').textContent = preset.display_name;
-    document.getElementById('selectedStartingConfig').classList.remove('hidden');
-    document.getElementById('presetSelectionNote').textContent = `Selected: ${preset.display_name}. Ready to customize.`;
-    const warnings = document.getElementById('presetWarningList'); warnings.replaceChildren();
-    for (const warning of response.warnings || []) {
-      const li = document.createElement('li'); li.textContent = warning.message; warnings.appendChild(li);
-    }
-    document.getElementById('presetWarnings').classList.toggle('hidden', !warnings.children.length);
+    const selectedExperiment = document.getElementById('selectedExperiment');
+    selectedExperiment.textContent = preset.id === 'custom' ? '' : `Selected experiment: ${response.display_name || preset.display_name || preset.id}`;
+    selectedExperiment.classList.toggle('hidden', preset.id === 'custom');
+    document.getElementById('experimentHardwareNote').classList.toggle('hidden', preset.id === 'custom');
+    document.getElementById('configurationStatus').textContent = '';
+    if (preset.id !== 'custom') fitSelectedRegion();
   } catch (error) {
     if (requestId !== presetRequest) return;
-    document.getElementById('presetError').textContent = `Could not select configuration: ${error.message}`;
-  } finally {
-    if (requestId === presetRequest) {
-      document.getElementById('btnNext0').disabled = !configuration.config;
-      // Keep focus on the radio after selection, including keyboard navigation.
-      document.querySelectorAll('input[name="startingPreset"]').forEach(radio => {
-        radio.checked = radio.value === selectedPresetId;
-        radio.closest('.preset-card').classList.toggle('card--selected', radio.checked);
-      });
-    }
+    throw error;
   }
 }
 
-async function setupPresetSelection() {
-  document.getElementById('btnChangePreset').onclick = () => goToStep(0);
-  document.getElementById('btnRetryPresets').onclick = setupPresetSelection;
-  const responses = await Promise.allSettled([fetchJSON('/api/config/presets'), fetchJSON('/api/defaults')]);
-  if (responses[0].status === 'fulfilled') presets = responses[0].value.presets;
-  if (responses[1].status === 'fulfilled') baselineConfig = responses[1].value;
-  const failed = responses.some(result => result.status === 'rejected');
-  document.getElementById('presetError').textContent = failed ? 'Some starting configurations are unavailable. Retry to retrieve them.' : '';
-  document.getElementById('btnRetryPresets').classList.toggle('hidden', !failed);
-  renderPresetCards();
+async function setupConfiguration() {
+  const status = document.getElementById('configurationStatus');
+  const retry = document.getElementById('btnRetryConfiguration');
+  retry.onclick = setupConfiguration;
+  retry.classList.add('hidden');
+  status.textContent = 'Loading configuration…';
+  try {
+    baselineConfig = await fetchJSON('/api/defaults');
+    if (!configuration.config) await selectPreset({id: 'custom'}, {emptyRegion: true});
+    status.textContent = '';
+  } catch (error) {
+    status.textContent = `Could not load configuration: ${error.message}`;
+    retry.classList.remove('hidden');
+  }
 }
 
 function fillReviewList(id, messages) {
@@ -918,11 +1063,10 @@ function renderChangeList(id, changes) {
 function renderReview() {
   renderChangeList('reviewChanges', configDifferences(configuration.original, configuration.config));
   fillReviewList('reviewMigrations', sourceMigrations.length ? sourceMigrations.map(name => `Applied when loading: ${name}`) : ['No migrations were required when loading.']);
-  fillReviewList('reviewSourceWarnings', sourceWarnings.map(warning => warning.message));
 }
 
 function draftValidationErrors() {
-  const errors = advancedEditor?.errorsList() || [];
+  const errors = [];
   for (const input of document.querySelectorAll('input[data-edited], select[data-edited]')) {
     if (!input.disabled && !input.validity.valid) errors.push(`${input.getAttribute('aria-label') || input.id}: ${input.validationMessage}`);
   }
@@ -945,97 +1089,53 @@ function draftValidationErrors() {
 }
 
 function invalidateReview() {
-  reviewFingerprint = null;
   ++reviewRequest;
-  document.getElementById('btnExport').disabled = true;
-  document.getElementById('reviewValidationStatus').textContent = 'Configuration changed. Validate before exporting.';
-}
-
-async function validateReview() {
-  const request = ++reviewRequest;
-  reviewFingerprint = null;
-  document.getElementById('btnExport').disabled = true;
-  renderReview();
-  const errors = draftValidationErrors();
-  fillReviewList('reviewErrors', errors);
+  document.getElementById('btnExport').disabled = !configuration.config;
+  document.getElementById('reviewValidationStatus').textContent = 'The current configuration will be validated when you export.';
+  fillReviewList('reviewErrors', []);
   fillReviewList('reviewWarnings', []);
   renderChangeList('reviewAutomaticChanges', []);
-  if (errors.length) {
-    document.getElementById('reviewValidationStatus').textContent = 'Fix the listed editing errors before export.';
-    return false;
-  }
-  const snapshot = configuration.snapshot(), fingerprint = JSON.stringify(snapshot);
-  try {
-    const response = await fetch('/api/config/prepare', {
-      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({config: snapshot}),
-    });
-    const result = await response.json();
-    if (request !== reviewRequest || fingerprint !== JSON.stringify(configuration.config)) return false;
-    if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'Configuration validation failed.');
-    fillReviewList('reviewWarnings', (result.issues || []).map(issue => `${issue.path ? issue.path + ': ' : ''}${issue.message}`));
-    const migrations = [...sourceMigrations.map(name => `Applied when loading: ${name}`),
-      ...(result.migrations || []).map(name => `Will apply on export: ${name}`)];
-    fillReviewList('reviewMigrations', migrations.length ? migrations : ['No compatibility migrations.']);
-    renderChangeList('reviewAutomaticChanges', configDifferences(snapshot, result.config));
-    document.getElementById('reviewValidationStatus').textContent = 'Structural validation passed. Review warnings; data files and machine readiness have not been checked.';
-    reviewFingerprint = fingerprint;
-    document.getElementById('btnExport').disabled = false;
-    return true;
-  } catch (error) {
-    if (request !== reviewRequest) return false;
-    fillReviewList('reviewErrors', [error.message]);
-    document.getElementById('reviewValidationStatus').textContent = 'Validation did not pass. Fix the configuration or retry.';
-    return false;
-  }
 }
 
-function setupAdvancedAndReview() {
-  advancedEditor = new AdvancedConfigEditor(configuration, document.getElementById('advancedEditor'), {}, () => baselineConfig);
-  const overlaps = (left, right) => left.slice(0, Math.min(left.length, right.length)).every((key, index) => key === right[index]);
-  configuration.subscribe(change => {
-    invalidateReview();
-    if (change.source !== 'advanced') return;
-    for (const [id, path] of Object.entries(CONFIG_BINDINGS)) {
-      if (overlaps(change.path, path)) populateControl(document.getElementById(id), configuration.get(path));
-    }
-    if (overlaps(change.path, ['data', 'surveys'])) populateSurveys();
-    if (overlaps(change.path, ['region', 'counties'])) syncSelectedRegion();
-    if (overlaps(change.path, ['plan_generation', 'target_plans'])) {
-      const target = configuration.get(['plan_generation', 'target_plans']);
-      populateControl(document.getElementById('demand-target_plans'), target === 'all' ? 'all' : 'custom');
-      populateControl(document.getElementById('demand-target_plans_custom'), target === 'all' ? undefined : target);
-    }
-    refreshControlAppearance();
-  });
-  document.getElementById('advancedEditor').addEventListener('editor-validation', invalidateReview);
-  document.getElementById('btnValidateConfig').onclick = validateReview;
+function setupReview() {
+  configuration.subscribe(invalidateReview);
 }
 
 async function exportConfig() {
+  const request = ++reviewRequest;
+  const button = document.getElementById('btnExport');
+  button.disabled = true;
   try {
-    if (!validateStep(currentStep)) return;
-    const inputs = document.querySelectorAll('input[data-edited], select[data-edited]');
-    for (const el of inputs) { if (!el.reportValidity()) return; }
     if (STEPS[currentStep].id !== 'review') {
       goToStep(STEPS.findIndex(step => step.id === 'review'));
       return;
     }
-    if (reviewFingerprint !== JSON.stringify(configuration.config) || advancedEditor.errorsList().length) {
-      await validateReview();
-      return; // The user reviews the result before another explicit export click.
+    const errors = draftValidationErrors();
+    fillReviewList('reviewErrors', errors);
+    if (errors.length) {
+      document.getElementById('reviewValidationStatus').textContent = 'Fix the listed editing errors before export.';
+      return;
     }
-    const formData = collectFormData();
+    const formData = collectFormData(), fingerprint = JSON.stringify(formData);
+    document.getElementById('reviewValidationStatus').textContent = 'Validating configuration…';
     const resp = await fetch('/api/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
     });
     const config = await resp.json();
+    if (request !== reviewRequest || fingerprint !== JSON.stringify(configuration.config)) return;
     if (!resp.ok) {
-      reviewFingerprint = null;
-      document.getElementById('btnExport').disabled = true;
       throw new Error(config.detail || 'Configuration could not be exported.');
     }
+    const issues = JSON.parse(resp.headers?.get('X-Config-Issues') || '[]');
+    const migrations = JSON.parse(resp.headers?.get('X-Config-Migrations') || '[]');
+    fillReviewList('reviewWarnings', issues.filter(issue => issue.code !== 'machine_resource')
+      .map(issue => `${issue.path ? issue.path + ': ' : ''}${issue.message}`));
+    fillReviewList('reviewMigrations', [...sourceMigrations.map(name => `Applied when loading: ${name}`),
+      ...migrations.map(name => `Applied on export: ${name}`)]);
+    renderChangeList('reviewAutomaticChanges', configDifferences(formData, config));
+    document.getElementById('reviewValidationStatus').textContent = 'Configuration validated and downloaded. Run readiness checks on the execution host.';
 
     // Download as file
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
@@ -1048,8 +1148,12 @@ async function exportConfig() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (err) {
+    if (request !== reviewRequest) return;
     console.error('Export failed:', err);
     fillReviewList('reviewErrors', [`Export failed: ${err.message}`]);
+    document.getElementById('reviewValidationStatus').textContent = 'Validation or export failed.';
+  } finally {
+    if (request === reviewRequest) button.disabled = !configuration.config;
   }
 }
 
@@ -1081,8 +1185,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupCollapsibles();
   setupInfoPopups();
   setupConfigurationBindings();
-  setupAdvancedAndReview();
-  setupPresetSelection();
+  setupReview();
+  setupConfiguration();
 
   // Export button
   document.getElementById('btnExport').addEventListener('click', exportConfig);

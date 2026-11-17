@@ -45,6 +45,8 @@ def test_list_metadata_and_variants():
     assert len(twins) == 2
     for preset in presets:
         assert all(preset[k] for k in ('id', 'display_name', 'region', 'description', 'source_file'))
+        assert -90 <= preset['location']['lat'] <= 90
+        assert -180 <= preset['location']['lng'] <= 180
         assert 'config' not in preset
         assert preset['characteristics']['surveys']
         assert preset['warnings']
@@ -56,6 +58,7 @@ def test_detail_preserves_complete_normalized_configuration(preset_id):
     assert status == 200
     expected = main.config_service.load_example(preset_id).config
     safe, _ = public_config(expected)
+    assert response['location'] == dict(zip(('lat', 'lng'), PRESETS[preset_id][3]))
     assert response['config'] == safe
     # Scientific settings are unaffected by credential handling.
     for section in ('freight', 'matsim', 'region', 'plan_generation', 'nonwork_purposes'):

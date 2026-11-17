@@ -6,16 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TAREEK-Web</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- App CSS -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20261105-export-validation">
 </head>
 
 <body>
@@ -80,52 +76,21 @@
       <!-- Filled by JS -->
     </nav>
 
-    <div class="starting-config hidden" id="selectedStartingConfig">
-      <span>Starting configuration: <strong id="selectedPresetName"></strong></span>
-      <button class="btn btn--secondary" id="btnChangePreset" type="button">Change</button>
-    </div>
-
-    <section class="panel panel--active" id="panel-start" data-step="0" aria-labelledby="startingTitle">
-      <div class="panel__header">
-        <div class="panel__number">1</div>
-        <div>
-          <h1 class="panel__title" id="startingTitle" tabindex="-1">Choose a Starting Configuration</h1>
-          <p class="panel__description">Start with a regional experiment or customize the maintained baseline.</p>
-        </div>
-        <span class="panel__badge hidden" id="badge-start"></span>
-      </div>
-      <div class="panel__body">
-        <p class="text-sm text-muted mb-4">Choose an experiment, then adjust its region and settings. Advanced settings stay with your configuration.</p>
-        <fieldset class="preset-options">
-          <legend class="sr-only">Starting configuration</legend>
-          <div class="preset-grid" id="presetGrid"></div>
-        </fieldset>
-        <p id="presetError" class="text-sm preset-error" role="alert"></p>
-        <button type="button" class="btn btn--secondary hidden" id="btnRetryPresets">Retry presets</button>
-        <div id="presetWarnings" class="preset-warnings hidden">
-          <details><summary>Compatibility and portability notes</summary><ul id="presetWarningList"></ul></details>
-        </div>
-        <p class="text-sm text-muted mt-4" id="presetSelectionNote" role="status" aria-live="polite">Choose a starting configuration to continue.</p>
-      </div>
-      <div class="panel__footer">
-        <span class="text-sm text-muted">You can customize every wizard step next.</span>
-        <button class="btn btn--primary" id="btnNext0" type="button" disabled>Customize configuration →</button>
-      </div>
-    </section>
-
     <!-- ================================================================
        PANEL 1 — Region
        ================================================================ -->
-    <div class="panel" id="panel-region" data-step="1">
+    <div class="panel panel--active" id="panel-region" data-step="0">
       <div class="panel__header">
-        <div class="panel__number">2</div>
+        <div class="panel__number">1</div>
         <div>
-          <div class="panel__title">Region</div>
+          <div class="panel__title">Select Region</div>
           <div class="panel__description">Select the counties for your simulation area</div>
         </div>
         <span class="panel__badge hidden" id="badge-region"></span>
       </div>
       <div class="panel__body">
+        <p class="text-sm text-muted mb-4 hidden" id="selectedExperiment" role="status" aria-live="polite"></p>
+        <p class="experiment-hardware-note hidden" id="experimentHardwareNote">Example experiments may need substantial RAM and CPU to run. Check the execution computer before starting a simulation.</p>
         <div class="alert alert--info">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10" />
@@ -152,8 +117,9 @@
         <div class="selected-counties" id="selectedCountiesList"></div>
       </div>
       <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack1">Back</button>
-        <button class="btn btn--primary" id="btnNext1" disabled>
+        <span class="text-sm text-muted" id="configurationStatus" role="status" aria-live="polite">Loading configuration…</span>
+        <button class="btn btn--secondary hidden" id="btnRetryConfiguration" type="button">Retry configuration</button>
+        <button class="btn btn--primary" id="btnNext0" disabled>
           Next: Surveys
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7" />
@@ -165,9 +131,9 @@
     <!-- ================================================================
        PANEL 2 — Surveys
        ================================================================ -->
-    <div class="panel" id="panel-surveys" data-step="2">
+    <div class="panel" id="panel-surveys" data-step="1">
       <div class="panel__header">
-        <div class="panel__number">3</div>
+        <div class="panel__number">2</div>
         <div>
           <div class="panel__title">Travel Surveys</div>
           <div class="panel__description">Choose survey data sources for trip patterns</div>
@@ -263,13 +229,13 @@
         </div>
       </div>
       <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack2">
+        <button class="btn btn--secondary" id="btnBack1">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        <button class="btn btn--primary" id="btnNext2">
+        <button class="btn btn--primary" id="btnNext1">
           Next: Transportation Modes
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7" />
@@ -281,9 +247,9 @@
     <!-- ================================================================
        PANEL 3 — Transportation Modes
        ================================================================ -->
-    <div class="panel" id="panel-modes" data-step="3">
+    <div class="panel" id="panel-modes" data-step="2">
       <div class="panel__header">
-        <div class="panel__number">4</div>
+        <div class="panel__number">3</div>
         <div>
           <div class="panel__title">Transportation Modes</div>
           <div class="panel__description">Configure available travel modes and their parameters</div>
@@ -514,13 +480,13 @@
         </div>
       </div>
       <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack3">
+        <button class="btn btn--secondary" id="btnBack2">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        <button class="btn btn--primary" id="btnNext3">
+        <button class="btn btn--primary" id="btnNext2">
           Next: Transit
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7" />
@@ -532,9 +498,9 @@
     <!-- ================================================================
        PANEL 4 — Transit (GTFS)
        ================================================================ -->
-    <div class="panel" id="panel-transit" data-step="4">
+    <div class="panel" id="panel-transit" data-step="3">
       <div class="panel__header">
-        <div class="panel__number">5</div>
+        <div class="panel__number">4</div>
         <div>
           <div class="panel__title">Transit Configuration</div>
           <div class="panel__description">GTFS feeds and transit network mapping settings</div>
@@ -665,13 +631,13 @@
         </div>
       </div>
       <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack4">
+        <button class="btn btn--secondary" id="btnBack3">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        <button class="btn btn--primary" id="btnNext4">
+        <button class="btn btn--primary" id="btnNext3">
           Next: Travel Demand
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7" />
@@ -683,9 +649,9 @@
     <!-- ================================================================
        PANEL 5 — Travel Demand
        ================================================================ -->
-    <div class="panel" id="panel-demand" data-step="5">
+    <div class="panel" id="panel-demand" data-step="4">
       <div class="panel__header">
-        <div class="panel__number">6</div>
+        <div class="panel__number">5</div>
         <div>
           <div class="panel__title">Travel Demand</div>
           <div class="panel__description">Scaling, work plans, and non-work trip purposes</div>
@@ -1028,13 +994,13 @@
         </div>
       </div>
       <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack5">
+        <button class="btn btn--secondary" id="btnBack4">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        <button class="btn btn--primary" id="btnNext5">
+        <button class="btn btn--primary" id="btnNext4">
           Next: Time & Duration
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7" />
@@ -1046,9 +1012,9 @@
     <!-- ================================================================
        PANEL 6 — Time & Duration Constraints
        ================================================================ -->
-    <div class="panel" id="panel-time" data-step="6">
+    <div class="panel" id="panel-time" data-step="5">
       <div class="panel__header">
-        <div class="panel__number">7</div>
+        <div class="panel__number">6</div>
         <div>
           <div class="panel__title">Time & Duration</div>
           <div class="panel__description">Activity duration constraints and time model settings</div>
@@ -1154,13 +1120,13 @@
         </div>
       </div>
       <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack6">
+        <button class="btn btn--secondary" id="btnBack5">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        <button class="btn btn--primary" id="btnNext6">
+        <button class="btn btn--primary" id="btnNext5">
           Next: Simulation
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M5 12h14M12 5l7 7-7 7" />
@@ -1172,9 +1138,9 @@
     <!-- ================================================================
        PANEL 7 — Simulation
        ================================================================ -->
-    <div class="panel" id="panel-simulation" data-step="7">
+    <div class="panel" id="panel-simulation" data-step="6">
       <div class="panel__header">
-        <div class="panel__number">8</div>
+        <div class="panel__number">7</div>
         <div>
           <div class="panel__title">Simulation</div>
           <div class="panel__description">MATSim parameters, traffic counts, and evaluation settings</div>
@@ -1331,38 +1297,21 @@
         </div>
       </div>
       <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack7">
+        <button class="btn btn--secondary" id="btnBack6">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        <button class="btn btn--primary" id="btnNext7">Next: Advanced configuration →</button>
+        <button class="btn btn--primary" id="btnNext6">Next: Review &amp; Export →</button>
       </div>
     </div>
 
-    <section class="panel" id="panel-advanced" data-step="8" aria-labelledby="advancedTitle">
+    <section class="panel" id="panel-review" data-step="7" aria-labelledby="reviewTitle">
       <div class="panel__header">
-        <div class="panel__number">9</div>
-        <div><h2 class="panel__title" id="advancedTitle" tabindex="-1">Advanced Configuration</h2>
-          <p class="panel__description">Review every editable setting, including freight and advanced MATSim parameters.</p></div>
-        <span class="panel__badge hidden" id="badge-advanced"></span>
-      </div>
-      <div class="panel__body">
-        <p class="text-sm text-muted mb-4">Expand a section to edit its fields. Changes also appear in the wizard. Private credentials, metadata, and execution-only fields are preserved outside this editor.</p>
-        <div id="advancedEditor" class="advanced-editor"></div>
-      </div>
-      <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack8">Back</button>
-        <button class="btn btn--primary" id="btnNext8">Next: Review &amp; Export →</button>
-      </div>
-    </section>
-
-    <section class="panel" id="panel-review" data-step="9" aria-labelledby="reviewTitle">
-      <div class="panel__header">
-        <div class="panel__number">10</div>
+        <div class="panel__number">8</div>
         <div><h2 class="panel__title" id="reviewTitle" tabindex="-1">Review &amp; Export</h2>
-          <p class="panel__description">Compare edits with your starting configuration and validate before downloading.</p></div>
+          <p class="panel__description">Review your edits. Export validates the current configuration before downloading.</p></div>
       </div>
       <div class="panel__body">
         <h3 class="section-title">Your changes</h3>
@@ -1371,15 +1320,13 @@
         <ul id="reviewMigrations" class="review-list"></ul>
         <div id="reviewAutomaticChanges" class="review-changes"></div>
         <h3 class="section-title mt-4">Validation</h3>
-        <p id="reviewValidationStatus" class="text-sm" role="status" aria-live="polite">Validate this configuration before export.</p>
-        <ul id="reviewErrors" class="review-list preset-error" role="alert"></ul>
-        <button class="btn btn--secondary mt-4" id="btnValidateConfig" type="button">Validate configuration</button>
+        <p id="reviewValidationStatus" class="text-sm" role="status" aria-live="polite">The current configuration will be validated when you export.</p>
+        <ul id="reviewErrors" class="review-list review-errors" role="alert"></ul>
         <h3 class="section-title mt-4">Portability and compatibility warnings</h3>
         <ul id="reviewWarnings" class="review-list"></ul>
-        <details class="mt-4"><summary>Notes from the original experiment</summary><ul id="reviewSourceWarnings" class="review-list"></ul></details>
       </div>
       <div class="panel__footer">
-        <button class="btn btn--secondary" id="btnBack9">Back</button>
+        <button class="btn btn--secondary" id="btnBack7">Back</button>
         <button class="btn btn--success btn--lg" id="btnExport" disabled>Export config.json</button>
       </div>
     </section>
@@ -1388,8 +1335,7 @@
 
   <!-- App JS -->
   <script src="js/config-state.js"></script>
-  <script src="js/advanced-editor.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20261105-review-cleanup"></script>
 
 </body>
 

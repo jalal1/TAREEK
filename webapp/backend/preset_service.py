@@ -7,15 +7,16 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 
 # IDs are exact example directory names, never client-supplied filesystem paths.
+# Coordinates are approximate regional locations (latitude, longitude) for map markers.
 PRESETS = {
-    'losangeles-20261006': ('Los Angeles — NHTS', 'Los Angeles', 'Los Angeles and Orange counties with NHTS demand.'),
-    'newyork-20261006': ('New York — NHTS', 'New York', 'New York metropolitan experiment spanning New York and New Jersey.'),
-    'madison-20260928': ('Madison — NHTS', 'Madison', 'Dane County experiment with NHTS demand.'),
-    'chicago-20261003': ('Chicago — NHTS', 'Chicago', 'Cook, DuPage and Lake counties with NHTS demand.'),
-    'twincities-20260928': ('Twin Cities — NHTS', 'Twin Cities', 'Minnesota/Wisconsin metropolitan experiment using NHTS.'),
-    'twincities-tbi-20260930': ('Twin Cities — TBI', 'Twin Cities', 'Same metropolitan region using the 2023 Travel Behavior Inventory.'),
-    'birmingham-20260928': ('Birmingham — NHTS', 'Birmingham', 'Jefferson and Shelby counties with NHTS demand.'),
-    'birmingham-localsurvey-20261001': ('Birmingham — local survey', 'Birmingham', 'Local survey for trips, with NHTS person-days for demand estimation.'),
+    'losangeles-20261006': ('Los Angeles — NHTS', 'Los Angeles', 'Los Angeles and Orange counties with NHTS demand.', (34.05, -118.24)),
+    'newyork-20261006': ('New York — NHTS', 'New York', 'New York metropolitan experiment spanning New York and New Jersey.', (40.71, -74.01)),
+    'madison-20260928': ('Madison — NHTS', 'Madison', 'Dane County experiment with NHTS demand.', (43.07, -89.4)),
+    'chicago-20261003': ('Chicago — NHTS', 'Chicago', 'Cook, DuPage and Lake counties with NHTS demand.', (41.88, -87.63)),
+    'twincities-20260928': ('Twin Cities — NHTS', 'Twin Cities', 'Minnesota/Wisconsin metropolitan experiment using NHTS.', (44.98, -93.27)),
+    'twincities-tbi-20260930': ('Twin Cities — TBI', 'Twin Cities', 'Same metropolitan region using the 2023 Travel Behavior Inventory.', (44.98, -93.27)),
+    'birmingham-20260928': ('Birmingham — NHTS', 'Birmingham', 'Jefferson and Shelby counties with NHTS demand.', (33.52, -86.8)),
+    'birmingham-localsurvey-20261001': ('Birmingham — local survey', 'Birmingham', 'Local survey for trips, with NHTS person-days for demand estimation.', (33.52, -86.8)),
 }
 
 
@@ -71,10 +72,11 @@ class PresetService:
             raise KeyError(preset_id)
         result = self.config_service.load_example(preset_id)
         config, redacted = public_config(result.config)
-        name, region, description = PRESETS[preset_id]
+        name, region, description, location = PRESETS[preset_id]
         metadata = {
             'id': preset_id, 'display_name': name, 'region': region,
             'description': description,
+            'location': {'lat': location[0], 'lng': location[1]},
             'source_file': f'examples/{preset_id}/config_used.json',
             'characteristics': {
                 'counties': deepcopy(config.get('region', {}).get('counties', [])),

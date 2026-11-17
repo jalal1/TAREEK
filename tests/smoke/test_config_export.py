@@ -34,13 +34,8 @@ def test_every_preset_review_export_and_source_integrity(preset_id):
     before = {path: path.read_bytes() for path in sources}
     loaded = asyncio.run(main.get_config_preset(preset_id))['config']
 
-    class ReviewRequest:
-        async def json(self):
-            return {'config': deepcopy(loaded)}
-
-    review = asyncio.run(main.prepare_config(ReviewRequest()))
     exported, _ = export(loaded)
-    assert review['config'] == exported == loaded
+    assert exported == loaded
     assert exported['freight'] == loaded['freight']
     assert exported['matsim']['configurable_params'] == loaded['matsim']['configurable_params']
     assert {path: path.read_bytes() for path in sources} == before
@@ -133,19 +128,19 @@ def test_invalid_input_never_falls_back_to_baseline(payload):
     assert exc.value.status_code == 422
 
 
-def test_legacy_payload_is_explicitly_deprecated():
-    config, headers = export({'counties': ['06037'], 'surveys': []})
-    assert config['region']['counties'] == ['06037']
-    assert headers['x-config-input-format'] == 'legacy-wizard; deprecated'
-    assert any(i['code'] == 'legacy_export_payload' for i in json.loads(headers['x-config-issues']))
-
-
-def test_existing_config_edit_envelope():
-    original = la_preset()
-    config, _ = export({'config': original, 'overrides': {'freight': {'demand_scale': 0.2}}})
-    expected = deepcopy(original)
-    expected['freight']['demand_scale'] = 0.2
-    assert config == expected
+@pytest.mark.parametrize('payload', [
+    {'counties': ['06037'], 'surveys': []},
+    {'example_id': 'losangeles-20261006'},
+    {'config': {'data': {}}, 'overrides': {}},
+])
+def test_partial_payloads_are_rejected_without_loading_defaults(payload, monkeypatch):
+    def forbidden(*args):
+        raise AssertionError('Export must never reconstruct a configuration')
+    monkeypatch.setattr(main.config_service, 'load_baseline', forbidden)
+    monkeypatch.setattr(main.config_service, 'load_example', forbidden)
+    with pytest.raises(HTTPException) as exc:
+        export(payload)
+    assert exc.value.status_code == 422
 
 
 def test_invalid_json():
