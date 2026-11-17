@@ -58,7 +58,7 @@ def test_detail_preserves_complete_normalized_configuration(preset_id):
     assert status == 200
     expected = main.config_service.load_example(preset_id).config
     safe, _ = public_config(expected)
-    assert response['location'] == dict(zip(('lat', 'lng'), PRESETS[preset_id][3]))
+    assert response['location'] == dict(zip(('lat', 'lng'), PRESETS[preset_id]['location']))
     assert response['config'] == safe
     # Scientific settings are unaffected by credential handling.
     for section in ('freight', 'matsim', 'region', 'plan_generation', 'nonwork_purposes'):

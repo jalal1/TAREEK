@@ -95,16 +95,17 @@ are never written by the frontend. The frontend has no Node installation or buil
 2. Add an entry to `PRESETS` in [`backend/preset_service.py`](backend/preset_service.py):
 
    ```python
-   'myregion-20261117': (
-       'My Region — NHTS',
-       'My Region',
-       'Example experiment description.',
-       (43.07, -89.40),
-   ),
+   'myregion-20261117': {
+       'name': 'My Region — NHTS',
+       'region': 'My Region',
+       'description': 'Example experiment description.',
+       'location': (43.07, -89.40),
+   },
    ```
 
-   The key must match the example folder name exactly. The tuple contains the
-   display name, region name, description, and marker coordinates in
+   The key must match the example folder name exactly. Each dictionary uses
+   `name` for the display name, `region` for the region label, `description`
+   for the description, and `location` for marker coordinates in
    `(latitude, longitude)` order.
 3. Let the development server reload (or restart the backend), then refresh
    the page. The frontend fetches the registered experiments automatically;
