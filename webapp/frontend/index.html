@@ -6,12 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TAREEK-Web</title>
 
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- App CSS -->
-  <link rel="stylesheet" href="css/style.css?v=20261105-export-validation">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
@@ -90,7 +94,7 @@
       </div>
       <div class="panel__body">
         <p class="text-sm text-muted mb-4 hidden" id="selectedExperiment" role="status" aria-live="polite"></p>
-        <p class="experiment-hardware-note hidden" id="experimentHardwareNote">Example experiments may need substantial RAM and CPU to run. Check the execution computer before starting a simulation.</p>
+        <p class="text-sm alert alert--warning mb-4 hidden" id="experimentHardwareNote" role="status">Preconfigured experiments may require substantial RAM and CPU. Check the configuration’s memory and process settings against the computer that will run the simulation.</p>
         <div class="alert alert--info">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10" />
@@ -1311,7 +1315,7 @@
       <div class="panel__header">
         <div class="panel__number">8</div>
         <div><h2 class="panel__title" id="reviewTitle" tabindex="-1">Review &amp; Export</h2>
-          <p class="panel__description">Review your edits. Export validates the current configuration before downloading.</p></div>
+          <p class="panel__description">Review your changes and download your configuration.</p></div>
       </div>
       <div class="panel__body">
         <h3 class="section-title">Your changes</h3>
@@ -1319,9 +1323,7 @@
         <h3 class="section-title mt-4">Automatic compatibility migrations</h3>
         <ul id="reviewMigrations" class="review-list"></ul>
         <div id="reviewAutomaticChanges" class="review-changes"></div>
-        <h3 class="section-title mt-4">Validation</h3>
-        <p id="reviewValidationStatus" class="text-sm" role="status" aria-live="polite">The current configuration will be validated when you export.</p>
-        <ul id="reviewErrors" class="review-list review-errors" role="alert"></ul>
+        <ul id="reviewErrors" class="review-list" role="alert"></ul>
         <h3 class="section-title mt-4">Portability and compatibility warnings</h3>
         <ul id="reviewWarnings" class="review-list"></ul>
       </div>
@@ -1335,7 +1337,7 @@
 
   <!-- App JS -->
   <script src="js/config-state.js"></script>
-  <script src="js/app.js?v=20261105-review-cleanup"></script>
+  <script src="js/app.js"></script>
 
 </body>
 

@@ -25,6 +25,17 @@ class ConfigResult:
     migrations: list = field(default_factory=list)
 
 
+def deep_merge(base, overrides):
+    """Copy mappings recursively; lists, scalars and null replace whole values."""
+    result = deepcopy(base)
+    for key, value in overrides.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = deepcopy(value)
+    return result
+
+
 def user_config(config):
     """Remove known execution state, retaining annotations and unknown options."""
     result = deepcopy(config)
@@ -174,9 +185,12 @@ class ConfigService:
             raise ConfigurationError('Example path must remain inside examples')
         return self.prepare(self._read(path), historical=True)
 
-    def prepare(self, config, historical=False):
-        validate_structure(config)
-        result = ConfigResult(user_config(config))
+    def prepare(self, config, overrides=None, historical=False):
+        if not isinstance(config, dict) or (overrides is not None and not isinstance(overrides, dict)):
+            raise ConfigurationError('Configuration and overrides must be objects')
+        merged = deep_merge(config, overrides or {})
+        validate_structure(merged)
+        result = ConfigResult(user_config(merged))
         # Compatibility migration 1: old county location. Keep the original
         # field too; region.counties is the current engine's preferred source.
         network = result.config['network']
@@ -199,6 +213,62 @@ class ConfigService:
                                    'Verify original engine behavior before reproduction; no value was inferred.'})
         result.issues.extend(portability_issues(result.config))
         return result
+
+    def assemble(self, form_data):
+        """Accept the existing wizard payload or a full config editing envelope.
+
+        {"example_id": name, "overrides": {...}} edits an example.
+        {"config": {...}, "overrides": {...}} edits an imported historical input.
+        Flat engine sections and legacy counties/surveys edit the baseline.
+        """
+        if not isinstance(form_data, dict):
+            raise ConfigurationError('Request body must be an object')
+        payload = deepcopy(form_data)
+        for section in ('region', 'data'):
+            if section in payload and not isinstance(payload[section], dict):
+                raise ConfigurationError(f'{section} must be an object')
+        example = payload.pop('example_id', None)
+        imported = payload.pop('config', None)
+        overrides = payload.pop('overrides', {})
+        if not isinstance(overrides, dict):
+            raise ConfigurationError('overrides must be an object')
+        if example is not None and imported is not None:
+            raise ConfigurationError('Choose example_id or config, not both')
+        base = (self.load_example(example).config if example is not None else
+                imported if imported is not None else self.load_baseline().config)
+        if 'counties' in payload:
+            payload.setdefault('region', {})['counties'] = payload.pop('counties')
+        if 'surveys' in payload:
+            payload.setdefault('data', {})['surveys'] = payload.pop('surveys')
+        return self.prepare(base, deep_merge(payload, overrides),
+                            historical=example is not None or imported is not None)
+
+    def export_submission(self, payload):
+        """Export complete inputs without consulting or merging any baseline.
+
+        Existing source/edit envelopes remain supported. Only the legacy wizard
+        shape (top-level counties/surveys) opts into baseline assembly, with an
+        explicit diagnostic so a malformed full config never falls back to it.
+        """
+        if not isinstance(payload, dict):
+            raise ConfigurationError('Request body must be a complete configuration object')
+        # A full engine config is authoritative, including unknown top-level keys.
+        if 'data' in payload or 'region' in payload:
+            if not ('counties' in payload or 'surveys' in payload):
+                return self.prepare(payload, historical=True)
+        if 'config' in payload or 'example_id' in payload:
+            if 'config' in payload and not isinstance(payload['config'], dict):
+                raise ConfigurationError('config must be a complete configuration object')
+            if 'example_id' in payload and not isinstance(payload['example_id'], str):
+                raise ConfigurationError('example_id must be a string')
+            return self.assemble(payload)
+        if 'counties' in payload or 'surveys' in payload:
+            result = self.assemble(payload)
+            result.issues.append({'code': 'legacy_export_payload', 'path': '',
+                'message': 'Deprecated partial wizard payload: assembled against the maintained baseline. '
+                           'Submit the complete loaded configuration to preserve preset settings.'})
+            return result
+        return self.prepare(payload, historical=True)
 
     def check_execution_readiness(self, config, config_path):
         """Opt-in host checks, separate from loading/export and non-mutating.

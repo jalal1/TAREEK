@@ -4,7 +4,7 @@ Config Wizard Backend - FastAPI server for the simulation config builder.
 Serves:
   - Static frontend files
   - /api/counties  -> GeoJSON county boundaries + population
-  - /api/export    -> Validate and download config.json
+  - /api/export    -> Assemble and download config.json
 """
 
 import json
@@ -51,6 +51,8 @@ CENSUS_POP_URL = "https://api.census.gov/data/2022/acs/acs5"
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
+# Default config template (reference)
+DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "config_local.json"
 config_service = ConfigService(PROJECT_ROOT)
 
 
@@ -179,6 +181,7 @@ async def get_counties():
 async def export_config(request: Request):
     """
     Validate and normalize a complete configuration for download.
+    Legacy wizard payloads remain supported with a deprecation diagnostic.
     """
     try:
         form_data = await request.json()
@@ -186,15 +189,17 @@ async def export_config(request: Request):
         raise HTTPException(400, "Invalid JSON body")
 
     try:
-        result = config_service.prepare(form_data, historical=True)
+        result = config_service.export_submission(form_data)
     except (ConfigurationError, TypeError) as exc:
         raise HTTPException(422, str(exc)) from exc
     # Keep the existing frontend download contract; diagnostics are also
-    # returned alongside the configuration in response headers.
+    # available as structured JSON from /api/config/prepare.
     headers = {
         "X-Config-Issues": json.dumps(result.issues, ensure_ascii=True),
         "X-Config-Migrations": json.dumps(result.migrations),
     }
+    if any(issue['code'] == 'legacy_export_payload' for issue in result.issues):
+        headers['X-Config-Input-Format'] = 'legacy-wizard; deprecated'
     return JSONResponse(result.config, headers=headers)
 
 
@@ -208,6 +213,27 @@ async def get_defaults():
 def get_default_config():
     """Return a fresh maintained baseline, without execution state."""
     return config_service.load_baseline().config
+
+
+def assemble_config(form_data: dict) -> dict:
+    """Compatibility wrapper for callers expecting an engine configuration."""
+    return config_service.export_submission(form_data).config
+
+
+@app.get("/api/examples")
+async def get_examples():
+    return {"examples": config_service.list_examples()}
+
+
+@app.post("/api/config/prepare")
+async def prepare_config(request: Request):
+    """Prepare config plus compatibility/portability diagnostics, without I/O preflight."""
+    try:
+        result = config_service.assemble(await request.json())
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {"config": result.config, "issues": result.issues,
+            "migrations": result.migrations}
 
 
 @app.get("/api/config/presets")

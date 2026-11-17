@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from webapp.backend.config_service import (
-    ConfigService, ConfigurationError, user_config, validate_structure,
+    ConfigService, ConfigurationError, deep_merge, user_config, validate_structure,
 )
 
 pytestmark = pytest.mark.smoke
@@ -42,6 +42,8 @@ def test_all_examples_preserved(path):
     assert any(i['path'] == 'matsim.scale_transit_pce' for i in result.issues)
     assert result.config['network']['roundabout_capacity_per_lane'] is None
     assert path.read_bytes() == source_bytes
+    # The web preparation path must retain exactly the same configuration.
+    assert ConfigService(ROOT).assemble({'example_id': path.parent.name}).config == result.config
 
 
 def test_baseline_is_maintained_source_and_independent():
@@ -53,6 +55,43 @@ def test_baseline_is_maintained_source_and_independent():
     first.config['data']['surveys'].clear()
     assert service.load_baseline().config['data']['surveys']
     assert path.read_bytes() == source
+
+
+def test_deep_merge_replaces_arrays_and_copies_inputs():
+    base = {'nested': {'keep': 1, 'array': [{'old': 1}, 2]}, 'other': 3}
+    patch = {'nested': {'array': [{'new': 2}]}}
+    result = deep_merge(base, patch)
+    assert result == {'nested': {'keep': 1, 'array': [{'new': 2}]}, 'other': 3}
+    result['nested']['array'][0]['new'] = 9
+    assert patch['nested']['array'][0]['new'] == 2
+    assert base['nested']['array'] == [{'old': 1}, 2]
+    assert deep_merge(base, {'nested': None})['nested'] is None
+
+
+def test_edit_keeps_hidden_engine_options_and_paths():
+    service = ConfigService(ROOT)
+    original = service.load_example('chicago-20261003').config
+    result = service.assemble({'example_id': 'chicago-20261003', 'overrides': {
+        'freight': {'demand_scale': 0.25},
+        'matsim': {'configurable_params': {'lastIteration': 2}},
+    }})
+    expected = deepcopy(original)
+    expected['freight']['demand_scale'] = 0.25
+    expected['matsim']['configurable_params']['lastIteration'] = 2
+    assert result.config == expected
+    assert any(i['code'] == 'absolute_path' for i in result.issues)
+    assert any(i['code'] == 'machine_resource' for i in result.issues)
+
+
+def test_legacy_wizard_and_unknown_parameters():
+    service = ConfigService(ROOT)
+    surveys = [{'type': 'custom', 'weight': 1, 'roles': {'person_days': 1}}]
+    result = service.assemble({'counties': ['06037'], 'surveys': surveys,
+                               'new_engine_feature': {'enabled': True}})
+    assert result.config['region']['counties'] == ['06037']
+    assert result.config['data']['surveys'] == surveys
+    assert result.config['new_engine_feature'] == {'enabled': True}
+    assert result.config['matsim']['scale_transit_pce'] is True
 
 
 def test_migrations_are_idempotent_and_do_not_infer_behavior():
@@ -94,6 +133,14 @@ def test_structural_checks_do_not_require_execution_host(tmp_path):
     assert config == before
 
 
+@pytest.mark.parametrize('payload', [[], {'overrides': []}, {'region': None},
+    {'config': []}, {'example_id': '../config'},
+    {'example_id': 'chicago-20261003', 'config': {}}])
+def test_invalid_requests(payload):
+    with pytest.raises(ConfigurationError):
+        ConfigService(ROOT).assemble(payload)
+
+
 def test_invalid_structure():
     config = ConfigService(ROOT).load_baseline().config
     config['data']['surveys'] = 'not an array'
@@ -103,17 +150,20 @@ def test_invalid_structure():
 
 def test_backend_export_and_diagnostic_contract():
     import asyncio
-    from webapp.backend.main import export_config, get_default_config
+    from webapp.backend.main import export_config, prepare_config, get_default_config
 
     class Request:
         async def json(self):
-            return ConfigService(ROOT).load_example('birmingham-localsurvey-20261001').config
+            return {'example_id': 'birmingham-localsurvey-20261001'}
 
     response = asyncio.run(export_config(Request()))
     config = json.loads(response.body)
     assert config['freight']['enabled'] is True
     assert config['data']['surveys'][1]['roles'] == {'person_days': 1}
     assert json.loads(response.headers['x-config-issues'])
+    diagnostic = asyncio.run(prepare_config(Request()))
+    assert diagnostic['config'] == config
+    assert diagnostic['issues'] == json.loads(response.headers['x-config-issues'])
     assert get_default_config() == ConfigService(ROOT).load_baseline().config
 
 

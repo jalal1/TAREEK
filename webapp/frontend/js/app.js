@@ -4,6 +4,43 @@
  * Handles: step navigation, map interaction, form state, config export.
  */
 
+/* Recursive JSON editing and review helpers. Never split keys on periods. */
+const configPointer = path => path.length ? '/' + path.map(key => String(key).replaceAll('~', '~0').replaceAll('/', '~1')).join('/') : '';
+const credentialConfigKey = key => /apikey|password|passwd|secret|token|credential|authorization|privatekey|accesskey|username|clientid|cookie/i.test(String(key).replace(/[^a-z0-9]/gi, ''));
+function hiddenConfigPath(path) {
+  return path.some(key => String(key).startsWith('_') || credentialConfigKey(key)) ||
+    JSON.stringify(path) === JSON.stringify(['coordinates', 'utm_epsg']);
+}
+function privateConfigURL(value) {
+  if (typeof value !== 'string' || !value.includes('://')) return false;
+  try {
+    const url = new URL(value);
+    return !!(url.username || url.password) || [...url.searchParams.keys()].some(credentialConfigKey);
+  } catch { return true; }
+}
+
+function configDifferences(before, after, path = []) {
+  if (JSON.stringify(before) === JSON.stringify(after)) return [];
+  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  if (object(before) && object(after)) {
+    return [...new Set([...Object.keys(before), ...Object.keys(after)])].flatMap(key =>
+      hiddenConfigPath([...path, key]) ? [] : configDifferences(before[key], after[key], [...path, key]));
+  }
+  return hiddenConfigPath(path) ? [] : [{path, before, after}];
+}
+
+function safeReviewValue(value) {
+  function redact(item) {
+    if (privateConfigURL(item)) return '[credential URL hidden]';
+    if (Array.isArray(item)) return item.map(redact);
+    if (item && typeof item === 'object') return Object.fromEntries(Object.entries(item)
+      .filter(([key]) => !hiddenConfigPath([key])).map(([key, child]) => [key, redact(child)]));
+    return item;
+  }
+  return value === undefined ? '(absent)' : JSON.stringify(redact(value), null, 2);
+}
+
+
 // ==========================================================================
 // Constants
 // ==========================================================================
@@ -27,58 +64,6 @@ const STEPS = [
 
 const DURATION_ACTIVITIES = ['Work', 'School', 'Shopping', 'Escort', 'Dining', 'Social', 'Other'];
 
-// Review helpers keep JSON Pointer paths and redact private configuration values.
-const configPointer = path => path.length ? '/' + path.map(key => String(key).replaceAll('~', '~0').replaceAll('/', '~1')).join('/') : '';
-const configType = value => value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
-const credentialConfigKey = key => /apikey|password|passwd|secret|token|credential|authorization|privatekey|accesskey|username|clientid|cookie/i.test(String(key).replace(/[^a-z0-9]/gi, ''));
-function hiddenConfigPath(path) {
-  return path.some(key => String(key).startsWith('_') || credentialConfigKey(key)) ||
-    JSON.stringify(path) === JSON.stringify(['coordinates', 'utm_epsg']);
-}
-function privateConfigURL(value) {
-  if (typeof value !== 'string' || !value.includes('://')) return false;
-  try {
-    const url = new URL(value);
-    return !!(url.username || url.password) || [...url.searchParams.keys()].some(credentialConfigKey);
-  } catch { return true; }
-}
-const CONFIG_METADATA = {
-  '/data/day_type': {enum: ['weekday', 'weekend', 'all']},
-  '/data/survey_months': {types: ['string', 'array']},
-  '/matsim/mode': {enum: ['basic', 'uber']},
-  '/matsim/configurable_params/lastIteration': {minimum: 0, integer: true},
-  '/matsim/configurable_params/qsim.flowCapacityFactor': {exclusiveMinimum: 0},
-  '/matsim/configurable_params/qsim.storageCapacityFactor': {exclusiveMinimum: 0},
-  '/plan_generation/scaling_factor': {exclusiveMinimum: 0},
-  '/plan_generation/num_processes': {minimum: 1, integer: true},
-  '/od_matrix/source': {enum: ['auto', 'lodes_od', 'gravity']},
-  '/od_matrix/boundary_policy': {enum: ['drop', 'anchor']},
-  '/od_matrix/distance': {enum: ['cosine_km', 'legacy_degrees']},
-  '/od_matrix/friction': {enum: ['power', 'exponential', 'gamma']},
-  '/duration_constraints/over_budget': {enum: ['trim', 'resample']},
-  '/time_models/first_departure_source': {enum: ['all_trips', 'first_of_day']},
-  '/network/roundabout_capacity_per_lane': {types: ['null', 'number'], exclusiveMinimum: 0},
-};
-function configDifferences(before, after, path = []) {
-  if (JSON.stringify(before) === JSON.stringify(after)) return [];
-  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
-  if (object(before) && object(after)) {
-    return [...new Set([...Object.keys(before), ...Object.keys(after)])].flatMap(key =>
-      hiddenConfigPath([...path, key]) ? [] : configDifferences(before[key], after[key], [...path, key]));
-  }
-  return hiddenConfigPath(path) ? [] : [{path, before, after}];
-}
-function safeReviewValue(value) {
-  function redact(item) {
-    if (privateConfigURL(item)) return '[credential URL hidden]';
-    if (Array.isArray(item)) return item.map(redact);
-    if (item && typeof item === 'object') return Object.fromEntries(Object.entries(item)
-      .filter(([key]) => !hiddenConfigPath([key])).map(([key, child]) => [key, redact(child)]));
-    return item;
-  }
-  return value === undefined ? '(absent)' : JSON.stringify(redact(value), null, 2);
-}
-
 // ==========================================================================
 // State
 // ==========================================================================
@@ -87,7 +72,6 @@ let selectedCounties = {};   // { GEOID: { name, population, feature } }
 let countyGeoJSON = null;
 let map = null;
 let countyLayer = null;
-let experimentLayer = null;
 let zoomMessageEl = null;
 
 // ==========================================================================
@@ -160,7 +144,7 @@ function goToStep(stepIndex) {
   if (STEPS[currentStep].id === 'region' && map) {
     setTimeout(() => { map.invalidateSize(); fitSelectedRegion(); }, 100);
   }
-  if (STEPS[currentStep].id === 'review') renderReview();
+  if (STEPS[currentStep].id === 'review') { renderReview(); }
 }
 
 function validateStep(stepIndex) {
@@ -170,7 +154,6 @@ function validateStep(stepIndex) {
   }
   switch (STEPS[stepIndex].id) {
     case 'region': // Region
-      if (!configuration.config) return false;
       if (Object.keys(selectedCounties).length === 0) {
         alert('Please select at least one county.');
         return false;
@@ -265,162 +248,37 @@ async function initMap() {
 }
 
 async function setupExperimentMarkers() {
-  experimentLayer = L.layerGroup().addTo(map);
   try {
     const {presets} = await fetchJSON('/api/config/presets');
     const regions = new Map();
     for (const preset of presets) {
-      const {lat, lng} = preset.location || {};
-      if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
-          Math.abs(lat) > 90 || Math.abs(lng) > 180) continue;
       if (!regions.has(preset.region)) regions.set(preset.region, []);
       regions.get(preset.region).push(preset);
     }
-    let pickerIndex = 0;
     for (const [region, experiments] of regions) {
-      const lat = experiments.reduce((sum, preset) => sum + preset.location.lat, 0) / experiments.length;
-      const lng = experiments.reduce((sum, preset) => sum + preset.location.lng, 0) / experiments.length;
       const popup = document.createElement('div');
-      popup.className = 'experiment-popup';
       const title = document.createElement('strong');
-      title.className = 'experiment-popup__title';
       title.textContent = region;
-      const picker = createExperimentPicker(experiments, pickerIndex++);
-      popup.append(title, picker);
+      const list = document.createElement('ul');
+      list.className = 'experiment-list';
+      for (const experiment of experiments) {
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn--secondary';
+        button.textContent = experiment.display_name;
+        button.onclick = () => selectPreset(experiment);
+        item.appendChild(button);
+        list.appendChild(item);
+      }
+      popup.append(title, list);
+      const {lat, lng} = experiments[0].location;
       L.marker([lat, lng], {title: region, bubblingMouseEvents: false})
-        .bindPopup(popup).addTo(experimentLayer);
+        .bindPopup(popup).addTo(map);
     }
   } catch (error) {
-    console.error('Failed to load experiment markers:', error);
+    document.getElementById('configurationStatus').textContent = `Could not load experiments: ${error.message}`;
   }
-}
-
-function createExperimentPicker(experiments, pickerIndex) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'experiment-picker';
-
-  const listId = `experiment-picker-options-${pickerIndex}`;
-  const label = document.createElement('label');
-  label.className = 'experiment-picker__label';
-  label.htmlFor = `experiment-picker-input-${pickerIndex}`;
-  label.textContent = 'Experiment';
-
-  const input = document.createElement('input');
-  input.id = label.htmlFor;
-  input.className = 'experiment-picker__input';
-  input.type = 'text';
-  input.placeholder = 'Search experiments…';
-  input.autocomplete = 'off';
-  input.setAttribute('role', 'combobox');
-  input.setAttribute('aria-autocomplete', 'list');
-  input.setAttribute('aria-controls', listId);
-  input.setAttribute('aria-expanded', 'false');
-
-  const list = document.createElement('div');
-  list.id = listId;
-  list.className = 'experiment-picker__options';
-  list.setAttribute('role', 'listbox');
-  list.hidden = true;
-
-  let filtered = experiments;
-  let activeIndex = -1;
-
-  function setOpen(open) {
-    list.hidden = !open;
-    input.setAttribute('aria-expanded', String(open));
-    if (!open) {
-      activeIndex = -1;
-      input.removeAttribute('aria-activedescendant');
-    }
-  }
-
-  async function choose(experiment) {
-    setOpen(false);
-    input.value = '';
-    try {
-      await selectPreset(experiment);
-    } catch (error) {
-      document.getElementById('configurationStatus').textContent = `Could not load experiment: ${error.message}`;
-    }
-  }
-
-  function setActive(index) {
-    const options = [...list.querySelectorAll('[role="option"]')];
-    options.forEach(option => option.setAttribute('aria-selected', 'false'));
-    if (!options.length) {
-      activeIndex = -1;
-      input.removeAttribute('aria-activedescendant');
-      return;
-    }
-    activeIndex = (index + options.length) % options.length;
-    const active = options[activeIndex];
-    active.setAttribute('aria-selected', 'true');
-    input.setAttribute('aria-activedescendant', active.id);
-    active.scrollIntoView({block: 'nearest'});
-  }
-
-  function renderOptions() {
-    list.replaceChildren();
-    activeIndex = -1;
-    input.removeAttribute('aria-activedescendant');
-    const query = input.value.trim().toLocaleLowerCase();
-    filtered = experiments.filter(experiment =>
-      experiment.display_name.toLocaleLowerCase().includes(query));
-
-    if (!filtered.length) {
-      const empty = document.createElement('p');
-      empty.className = 'experiment-picker__empty';
-      empty.textContent = 'No experiments found';
-      list.appendChild(empty);
-      return;
-    }
-
-    filtered.forEach((experiment, index) => {
-      const option = document.createElement('button');
-      option.id = `${listId}-option-${index}`;
-      option.type = 'button';
-      option.className = 'experiment-picker__option';
-      option.setAttribute('role', 'option');
-      option.setAttribute('aria-selected', 'false');
-      option.textContent = experiment.display_name;
-      option.addEventListener('mouseenter', () => setActive(index));
-      option.addEventListener('click', () => choose(experiment));
-      list.appendChild(option);
-    });
-  }
-
-  function open() {
-    renderOptions();
-    setOpen(true);
-  }
-
-  input.addEventListener('focus', open);
-  input.addEventListener('click', open);
-  input.addEventListener('input', open);
-  input.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      setOpen(false);
-      return;
-    }
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      if (list.hidden) open();
-      setActive(activeIndex + (event.key === 'ArrowDown' ? 1 : -1));
-      return;
-    }
-    if (event.key === 'Enter' && activeIndex >= 0) {
-      event.preventDefault();
-      choose(filtered[activeIndex]);
-    }
-  });
-  wrapper.addEventListener('focusout', () => {
-    setTimeout(() => {
-      if (!wrapper.contains(document.activeElement)) setOpen(false);
-    });
-  });
-
-  wrapper.append(label, input, list);
-  return wrapper;
 }
 
 function addCountyLayer() {
@@ -828,7 +686,7 @@ function togglePurposeCard(purpose) {
 // ==========================================================================
 
 function collectFormData() {
-  if (!configuration.config) throw new Error('Configuration has not loaded yet.');
+  if (!configuration.config) throw new Error('Choose a starting configuration first.');
   return configuration.snapshot();
 }
 
@@ -981,7 +839,7 @@ async function fetchJSON(url) {
 }
 
 let selectedSnapshot = null;
-async function selectPreset(preset, {emptyRegion = false} = {}) {
+async function selectPreset(preset) {
   if (selectedPresetId === preset.id) {
     ++presetRequest; // Cancel a different pending selection while retaining edits.
     fitSelectedRegion();
@@ -997,7 +855,7 @@ async function selectPreset(preset, {emptyRegion = false} = {}) {
       await fetchJSON(`/api/config/presets/${encodeURIComponent(preset.id)}`);
     if (requestId !== presetRequest) return;
     if (!response.config) throw new Error('Starting configuration is unavailable.');
-    if (emptyRegion) response.config.region.counties = [];
+    if (preset.id === 'custom') response.config.region.counties = [];
     configuration.load(response.config);
     sourceMigrations = response.migrations || [];
     // Templates are used only when a user explicitly adds an absent source.
@@ -1017,7 +875,7 @@ async function selectPreset(preset, {emptyRegion = false} = {}) {
     if (preset.id !== 'custom') fitSelectedRegion();
   } catch (error) {
     if (requestId !== presetRequest) return;
-    throw error;
+    document.getElementById('configurationStatus').textContent = `Could not load configuration: ${error.message}`;
   }
 }
 
@@ -1029,7 +887,7 @@ async function setupConfiguration() {
   status.textContent = 'Loading configuration…';
   try {
     baselineConfig = await fetchJSON('/api/defaults');
-    if (!configuration.config) await selectPreset({id: 'custom'}, {emptyRegion: true});
+    if (!configuration.config) await selectPreset({id: 'custom'});
     status.textContent = '';
   } catch (error) {
     status.textContent = `Could not load configuration: ${error.message}`;
@@ -1070,28 +928,12 @@ function draftValidationErrors() {
   for (const input of document.querySelectorAll('input[data-edited], select[data-edited]')) {
     if (!input.disabled && !input.validity.valid) errors.push(`${input.getAttribute('aria-label') || input.id}: ${input.validationMessage}`);
   }
-  // Check supplied metadata for changed values, without rejecting unmodified
-  // historical values that a newer metadata revision might not understand.
-  for (const [pointer, metadata] of Object.entries(CONFIG_METADATA)) {
-    const path = pointer.slice(1).split('/').map(key => key.replaceAll('~1', '/').replaceAll('~0', '~'));
-    const value = configuration.get(path);
-    const original = path.reduce((obj, key) => obj?.[key], configuration.original);
-    if (JSON.stringify(value) === JSON.stringify(original)) continue;
-    if (value === undefined && !metadata.required) continue;
-    if (metadata.enum && !metadata.enum.includes(value)) errors.push(`${pointer}: choose one of ${metadata.enum.join(', ')}.`);
-    if (metadata.types && !metadata.types.includes(configType(value))) errors.push(`${pointer}: expected ${metadata.types.join(' or ')}.`);
-    if (typeof value === 'number' && ((metadata.integer && !Number.isInteger(value)) ||
-        (metadata.minimum !== undefined && value < metadata.minimum) ||
-        (metadata.maximum !== undefined && value > metadata.maximum) ||
-        (metadata.exclusiveMinimum !== undefined && value <= metadata.exclusiveMinimum))) errors.push(`${pointer}: number is outside the allowed range.`);
-  }
   return [...new Set(errors)];
 }
 
 function invalidateReview() {
   ++reviewRequest;
   document.getElementById('btnExport').disabled = !configuration.config;
-  document.getElementById('reviewValidationStatus').textContent = 'The current configuration will be validated when you export.';
   fillReviewList('reviewErrors', []);
   fillReviewList('reviewWarnings', []);
   renderChangeList('reviewAutomaticChanges', []);
@@ -1106,18 +948,15 @@ async function exportConfig() {
   const button = document.getElementById('btnExport');
   button.disabled = true;
   try {
+    if (!validateStep(currentStep)) return;
     if (STEPS[currentStep].id !== 'review') {
       goToStep(STEPS.findIndex(step => step.id === 'review'));
       return;
     }
     const errors = draftValidationErrors();
     fillReviewList('reviewErrors', errors);
-    if (errors.length) {
-      document.getElementById('reviewValidationStatus').textContent = 'Fix the listed editing errors before export.';
-      return;
-    }
+    if (errors.length) return;
     const formData = collectFormData(), fingerprint = JSON.stringify(formData);
-    document.getElementById('reviewValidationStatus').textContent = 'Validating configuration…';
     const resp = await fetch('/api/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1125,17 +964,13 @@ async function exportConfig() {
     });
     const config = await resp.json();
     if (request !== reviewRequest || fingerprint !== JSON.stringify(configuration.config)) return;
-    if (!resp.ok) {
-      throw new Error(config.detail || 'Configuration could not be exported.');
-    }
-    const issues = JSON.parse(resp.headers?.get('X-Config-Issues') || '[]');
-    const migrations = JSON.parse(resp.headers?.get('X-Config-Migrations') || '[]');
-    fillReviewList('reviewWarnings', issues.filter(issue => issue.code !== 'machine_resource')
-      .map(issue => `${issue.path ? issue.path + ': ' : ''}${issue.message}`));
+    if (!resp.ok) throw new Error(config.detail || 'Configuration could not be exported.');
+    const issues = JSON.parse(resp.headers.get('X-Config-Issues') || '[]');
+    const migrations = JSON.parse(resp.headers.get('X-Config-Migrations') || '[]');
+    fillReviewList('reviewWarnings', issues.map(issue => `${issue.path ? issue.path + ': ' : ''}${issue.message}`));
     fillReviewList('reviewMigrations', [...sourceMigrations.map(name => `Applied when loading: ${name}`),
       ...migrations.map(name => `Applied on export: ${name}`)]);
     renderChangeList('reviewAutomaticChanges', configDifferences(formData, config));
-    document.getElementById('reviewValidationStatus').textContent = 'Configuration validated and downloaded. Run readiness checks on the execution host.';
 
     // Download as file
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
@@ -1151,7 +986,6 @@ async function exportConfig() {
     if (request !== reviewRequest) return;
     console.error('Export failed:', err);
     fillReviewList('reviewErrors', [`Export failed: ${err.message}`]);
-    document.getElementById('reviewValidationStatus').textContent = 'Validation or export failed.';
   } finally {
     if (request === reviewRequest) button.disabled = !configuration.config;
   }
