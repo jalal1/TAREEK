@@ -72,6 +72,9 @@
     <span class="app-header__subtitle">Build your experiment configuration step by step</span>
   </header>
 
+  <!-- Short confirmation message (for example "Example selected"), shown by showToast() -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
   <!-- ======== Main Container ======== -->
   <div class="app-container">
 
@@ -87,19 +90,26 @@
       <div class="panel__header">
         <div class="panel__number">1</div>
         <div>
-          <div class="panel__title">Region</div>
+          <div class="panel__title">Select Region</div>
           <div class="panel__description">Select the counties for your simulation area</div>
         </div>
         <span class="panel__badge hidden" id="badge-region"></span>
       </div>
       <div class="panel__body">
+        <p class="text-sm text-muted mb-4 hidden" id="selectedExperiment" role="status" aria-live="polite"></p>
+        <button class="btn btn--secondary mb-4 hidden" id="btnCustomConfiguration" type="button">Start a custom configuration instead</button>
         <div class="alert alert--info">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10" />
             <path d="M12 16v-4M12 8h.01" />
           </svg>
           <!-- Maximum population: <strong>10,000,000</strong> agents. -->
-          <span>Zoom into the map and click counties to select them.</span>
+          <span>
+            <strong>Two ways to start:</strong>
+            <br>1. <strong>Use one of our examples.</strong> Click a pin on the map, then pick an experiment.
+            The counties and all parameters of that experiment are applied. You can still change any value in the next steps.
+            <br>2. <strong>Build your own.</strong> Zoom into the map and click counties to select them. Default parameters are used, and you can change them in the next steps.
+          </span>
         </div>
 
         <div class="map-container" id="countyMap">
@@ -119,7 +129,8 @@
         <div class="selected-counties" id="selectedCountiesList"></div>
       </div>
       <div class="panel__footer">
-        <div></div>
+        <span class="text-sm text-muted" id="configurationStatus" role="status" aria-live="polite">Loading configuration…</span>
+        <button class="btn btn--secondary hidden" id="btnRetryConfiguration" type="button">Retry configuration</button>
         <button class="btn btn--primary" id="btnNext0" disabled>
           Next: Surveys
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -142,8 +153,7 @@
         <span class="panel__badge hidden" id="badge-surveys"></span>
       </div>
       <div class="panel__body">
-        <p class="text-sm text-muted mb-4">At least one survey must be selected. NHTS is the national default and works
-          for any US region.</p>
+        <p class="text-sm text-muted mb-4">Survey weights and per-role settings from your experiment are preserved. A weight of zero can still supply person-days through its configured roles.</p>
 
         <!-- NHTS -->
         <div class="card card--selected" id="card-nhts">
@@ -185,7 +195,7 @@
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </span>
-              <span class="checkbox__label"><strong>Custom Survey</strong> — Upload your own travel survey data</span>
+              <span class="checkbox__label"><strong>Regional Survey</strong> — Use a local or regional survey</span>
             </label>
           </div>
           <div id="customSurveyOptions" class="hidden" style="margin-left: 28px; margin-top: 12px;">
@@ -194,6 +204,7 @@
                 <label class="form-label">Survey Type</label>
                 <select class="form-select" id="customSurveyType">
                   <option value="tbi">TBI (Travel Behavior Inventory)</option>
+                  <option value="bham_local">Birmingham local survey</option>
                   <option value="other">Other CSV format</option>
                 </select>
               </div>
@@ -202,13 +213,23 @@
                 <input type="text" class="form-input" id="customSurveyYear" placeholder="e.g. 2023" value="2023">
               </div>
             </div>
-            <div class="file-upload" id="surveyFileUpload">
-              <div class="file-upload__icon">📁</div>
-              <div class="file-upload__text">Click to upload survey CSV file</div>
-              <div class="file-upload__hint">Or drag and drop here</div>
+            <div class="form-group mt-4">
+              <label class="form-label" for="customSurveyFile">Trip file on the execution host</label>
+              <input type="text" class="form-input" id="customSurveyFile" placeholder="Path relative to data directory">
+              <span class="form-hint">Files remain on the execution host; this wizard edits their configured paths.</span>
             </div>
-            <input type="file" id="surveyFileInput" accept=".csv" class="hidden">
-            <div id="surveyFileName" class="text-sm mt-2 text-muted"></div>
+            <div class="form-group">
+              <label class="form-label" for="customSurveyPerson">Person file</label>
+              <input type="text" class="form-input" id="customSurveyPerson">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="customSurveyDay">Day file (TBI)</label>
+              <input type="text" class="form-input" id="customSurveyDay">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="customSurveyLinked">Linked trip file (TBI, optional)</label>
+              <input type="text" class="form-input" id="customSurveyLinked">
+            </div>
             <div class="form-group mt-4">
               <div class="form-label">Weight</div>
               <div class="slider-group" style="max-width: 300px;">
@@ -549,10 +570,8 @@
                   busiest service day.</span>
               </span>
             </div>
-            <select class="form-select" id="gtfs-sample_day" style="max-width: 300px;">
-              <option value="dayWithMostTrips" selected>Day with most trips (auto)</option>
-              <option value="custom">Specific date...</option>
-            </select>
+            <input class="form-input" id="gtfs-sample_day" list="gtfsDayOptions" aria-label="GTFS sample day or date">
+            <datalist id="gtfsDayOptions"><option value="dayWithMostTrips"></option></datalist>
           </div>
 
           <!-- pt2matsim Advanced -->
@@ -618,6 +637,20 @@
                     <option value="travelTime">Travel Time</option>
                   </select>
                 </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <div class="form-label">
+                    Mapping Threads
+                    <span class="info-icon" tabindex="0">?
+                      <span class="info-popup">Number of threads pt2matsim uses to map transit routes onto the road
+                        network (matsim.pt2matsim.numOfThreads). Use the number of CPU cores or less.</span>
+                    </span>
+                  </div>
+                  <input type="number" class="form-input" id="pt2m-numOfThreads" min="1" step="1">
+                  <div class="form-hint" data-resource-hint="pt2m-numOfThreads"></div>
+                </div>
+                <div class="form-group"></div>
               </div>
             </div>
           </div>
@@ -713,6 +746,21 @@
             <input type="number" class="form-input" id="demand-work_scaling_mult" value="1.0" step="0.1" min="0.1"
               max="5.0">
           </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <div class="form-label">
+              Plan Generation Processes
+              <span class="info-icon" tabindex="0">?
+                <span class="info-popup">Number of parallel processes that make the plans
+                  (plan_generation.num_processes). Use the number of CPU cores of the computer that runs the
+                  simulation, or less.</span>
+              </span>
+            </div>
+            <input type="number" class="form-input" id="demand-num_processes" min="1" step="1">
+            <div class="form-hint" data-resource-hint="demand-num_processes"></div>
+          </div>
+          <div class="form-group"></div>
         </div>
 
         <!-- Chain Settings -->
@@ -1157,7 +1205,7 @@
                   better convergence but longer runtime. 50-200 typical.</span>
               </span>
             </div>
-            <input type="number" class="form-input" id="sim-iterations" value="100" min="10" max="1000" step="10">
+            <input type="number" class="form-input" id="sim-iterations" min="0" step="1">
           </div>
           <div class="form-group">
             <div class="form-label">
@@ -1191,6 +1239,76 @@
             </div>
             <input type="number" class="form-input" id="sim-storage_capacity" value="0.12" step="0.01" min="0.01"
               max="1">
+          </div>
+        </div>
+
+        <!-- Computer resources -->
+        <hr class="section-divider">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <rect x="9" y="9" width="6" height="6" />
+            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />
+          </svg>
+          Computer Resources
+        </div>
+        <p class="text-sm text-muted mb-4" id="hostInfo">Set these values for the computer that runs the simulation.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <div class="form-label">
+              Simulation Memory (GB)
+              <span class="info-icon" tabindex="0">?
+                <span class="info-popup">Maximum Java memory for the MATSim run (matsim.heap_size_gb). If it is more
+                  than the RAM limit (Max RAM Fraction × RAM), the engine reduces it to that limit.</span>
+              </span>
+            </div>
+            <input type="number" class="form-input" id="sim-heap_size_gb" min="1" step="1">
+            <div class="form-hint" data-resource-hint="sim-heap_size_gb"></div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">
+              Network Build Memory (GB)
+              <span class="info-icon" tabindex="0">?
+                <span class="info-popup">Maximum Java memory to build the road and transit network
+                  (matsim.network_heap_size_gb). Empty = engine default (8 GB). The same RAM limit applies.</span>
+              </span>
+            </div>
+            <input type="number" class="form-input" id="sim-network_heap_size_gb" min="1" step="1">
+            <div class="form-hint" data-resource-hint="sim-network_heap_size_gb"></div>
+          </div>
+        </div>
+        <div class="form-row--3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <div class="form-label">
+              Max RAM Fraction
+              <span class="info-icon" tabindex="0">?
+                <span class="info-popup">Largest part of the computer's RAM that Java can use
+                  (matsim.heap_ram_fraction, 0.1 to 0.9). Empty = engine default (0.7).</span>
+              </span>
+            </div>
+            <input type="number" class="form-input" id="sim-heap_ram_fraction" min="0.1" max="0.9" step="0.05">
+          </div>
+          <div class="form-group">
+            <div class="form-label">
+              MATSim Threads
+              <span class="info-icon" tabindex="0">?
+                <span class="info-popup">Threads for MATSim replanning and routing
+                  (global.numberOfThreads). Use the number of CPU cores or less.</span>
+              </span>
+            </div>
+            <input type="number" class="form-input" id="sim-global_threads" min="1" step="1">
+            <div class="form-hint" data-resource-hint="sim-global_threads"></div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">
+              Mobility Simulation Threads
+              <span class="info-icon" tabindex="0">?
+                <span class="info-popup">Threads for the QSim traffic simulation (qsim.numberOfThreads). Use the
+                  number of CPU cores or less.</span>
+              </span>
+            </div>
+            <input type="number" class="form-input" id="sim-qsim_threads" min="1" step="1">
+            <div class="form-hint" data-resource-hint="sim-qsim_threads"></div>
           </div>
         </div>
 
@@ -1296,28 +1414,34 @@
           </svg>
           Back
         </button>
-        <div style="display:flex;gap:12px;">
-          <button class="btn btn--success btn--lg" id="btnExport">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Export Config
-          </button>
-          <button class="btn btn--primary btn--lg" id="btnStartSim" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-            Start Simulation
-          </button>
-        </div>
+        <button class="btn btn--primary" id="btnNext6">Next: Review &amp; Export →</button>
       </div>
     </div>
+
+    <section class="panel" id="panel-review" data-step="7" aria-labelledby="reviewTitle">
+      <div class="panel__header">
+        <div class="panel__number">8</div>
+        <div><h2 class="panel__title" id="reviewTitle" tabindex="-1">Review &amp; Export</h2>
+          <p class="panel__description">Review your changes and download your configuration.</p></div>
+      </div>
+      <div class="panel__body">
+        <h3 class="section-title">Your changes</h3>
+        <p class="text-sm text-muted">Values you changed, compared with the starting configuration.</p>
+        <div id="reviewChanges" class="review-changes"></div>
+        <ul id="reviewErrors" class="review-list" role="alert"></ul>
+        <h3 class="section-title mt-4">Check before you run</h3>
+        <ul id="reviewChecks" class="check-list"></ul>
+      </div>
+      <div class="panel__footer">
+        <button class="btn btn--secondary" id="btnBack7">Back</button>
+        <button class="btn btn--success btn--lg" id="btnExport" disabled>Export config.json</button>
+      </div>
+    </section>
 
   </div><!-- /app-container -->
 
   <!-- App JS -->
+  <script src="js/config-state.js"></script>
   <script src="js/app.js"></script>
 
 </body>

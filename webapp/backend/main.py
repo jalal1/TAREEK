@@ -21,6 +21,13 @@ from fastapi.middleware.cors import CORSMiddleware
 import geopandas as gpd
 import requests
 
+try:  # package import and uvicorn main:app from backend/
+    from .config_service import ConfigService, ConfigurationError
+    from .preset_service import PresetService
+except ImportError:
+    from config_service import ConfigService, ConfigurationError
+    from preset_service import PresetService
+
 app = FastAPI(title="Simulation Config Wizard")
 
 app.add_middleware(
@@ -45,7 +52,8 @@ CENSUS_POP_URL = "https://api.census.gov/data/2022/acs/acs5"
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 # Default config template (reference)
-DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "USA" / "LA" / "config_la.json"
+DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "config_local.json"
+config_service = ConfigService(PROJECT_ROOT)
 
 
 def ensure_shapefile():
@@ -133,6 +141,64 @@ def build_population_lookup():
         json.dump(pop_data, f)
 
 
+_county_points = None  # {GEOID: (lat, lng, population)}, built on first use
+
+
+def _load_county_points():
+    """County centroids (computed in an equal-area CRS) with population."""
+    global _county_points
+    if _county_points is None:
+        if not COUNTY_GEOJSON_CACHE.exists():
+            return {}  # County data not built yet: try again on the next request.
+        gdf = gpd.read_file(COUNTY_GEOJSON_CACHE)
+        centroids = gdf.to_crs("EPSG:5070").geometry.centroid.to_crs("EPSG:4326")
+        population = {}
+        if COUNTY_POP_CACHE.exists():
+            with open(COUNTY_POP_CACHE, "r") as f:
+                population = json.load(f)
+        _county_points = {
+            geoid: (point.y, point.x, population.get(geoid, 0))
+            for geoid, point in zip(gdf["GEOID"], centroids)
+        }
+    return _county_points
+
+
+def locate_counties(counties):
+    """Map-pin location for a county set: population-weighted mean of centroids.
+
+    The weight pulls the pin to the main city (for example Hennepin and Ramsey
+    in the 15-county Twin Cities region). Returns None when no county is known,
+    so the example gets no pin.
+    """
+    points = [p for p in map(_load_county_points().get, counties) if p is not None]
+    if not points:
+        return None
+    total = sum(pop for _, _, pop in points)
+    weights = [pop / total for _, _, pop in points] if total > 0 else [1 / len(points)] * len(points)
+    lat = sum(w * p[0] for w, p in zip(weights, points))
+    lng = sum(w * p[1] for w, p in zip(weights, points))
+    return round(lat, 4), round(lng, 4)
+
+
+def preset_service():
+    return PresetService(config_service, locate=locate_counties)
+
+
+@app.get("/api/host")
+async def get_host():
+    """CPUs and RAM of this computer (where the web app runs).
+
+    The wizard compares thread, process and Java heap settings with these
+    values. ram_gb is null when psutil is not installed.
+    """
+    try:
+        import psutil
+        ram_gb = round(psutil.virtual_memory().total / 1024 ** 3, 1)
+    except Exception:
+        ram_gb = None
+    return {"cpus": os.cpu_count(), "ram_gb": ram_gb}
+
+
 # ---------------------------------------------------------------------------
 # Startup
 # ---------------------------------------------------------------------------
@@ -172,16 +238,27 @@ async def get_counties():
 @app.post("/api/export")
 async def export_config(request: Request):
     """
-    Receive wizard form data and assemble a complete config.json.
-    Returns the config as a JSON response for download.
+    Validate and normalize a complete configuration for download.
+    Legacy wizard payloads remain supported with a deprecation diagnostic.
     """
     try:
         form_data = await request.json()
     except Exception:
         raise HTTPException(400, "Invalid JSON body")
 
-    config = assemble_config(form_data)
-    return JSONResponse(config)
+    try:
+        result = config_service.export_submission(form_data)
+    except (ConfigurationError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    # Keep the existing frontend download contract; diagnostics are also
+    # available as structured JSON from /api/config/prepare.
+    headers = {
+        "X-Config-Issues": json.dumps(result.issues, ensure_ascii=True),
+        "X-Config-Migrations": json.dumps(result.migrations),
+    }
+    if any(issue['code'] == 'legacy_export_payload' for issue in result.issues):
+        headers['X-Config-Input-Format'] = 'legacy-wizard; deprecated'
+    return JSONResponse(result.config, headers=headers)
 
 
 @app.get("/api/defaults")
@@ -192,187 +269,48 @@ async def get_defaults():
 
 
 def get_default_config():
-    """Load defaults from the reference config, stripping comments."""
-    if DEFAULT_CONFIG_PATH.exists():
-        with open(DEFAULT_CONFIG_PATH, "r") as f:
-            config = json.load(f)
-        # Strip _comment and _*_help keys for cleaner defaults
-        return strip_comments(config)
-    return {}
-
-
-def strip_comments(obj):
-    """Recursively remove keys starting with _ from dicts."""
-    if isinstance(obj, dict):
-        return {k: strip_comments(v) for k, v in obj.items() if not k.startswith("_")}
-    if isinstance(obj, list):
-        return [strip_comments(item) for item in obj]
-    return obj
+    """Return a fresh maintained baseline, without execution state."""
+    return config_service.load_baseline().config
 
 
 def assemble_config(form_data: dict) -> dict:
-    """
-    Build a complete config.json from wizard form data.
-    Merges user selections with sensible defaults.
-    """
-    defaults = get_default_config()
-
-    config = {
-        "region": {
-            "counties": form_data.get("counties", [])
-        },
-        "data": {
-            "data_dir": defaults.get("data", {}).get("data_dir", "data"),
-            "lodes": defaults.get("data", {}).get("lodes", {
-                "year": 2023,
-                "job_type": "JT00",
-                "segment": "S000"
-            }),
-            "surveys": form_data.get("surveys", defaults.get("data", {}).get("surveys", []))
-        },
-        "gtfs": _build_gtfs_config(form_data, defaults),
-        "modes": _build_modes_config(form_data, defaults),
-        "mode_choice": _build_mode_choice_config(form_data, defaults),
-        "plan_generation": _build_plan_generation_config(form_data, defaults),
-        "od_matrix": form_data.get("od_matrix", defaults.get("od_matrix", {})),
-        "time_models": form_data.get("time_models", defaults.get("time_models", {})),
-        "duration_constraints": _build_duration_config(form_data, defaults),
-        "poi_assignment": form_data.get("poi_assignment", defaults.get("poi_assignment", {})),
-        "coordinates": {
-            "precision_decimal_places": 2
-        },
-        "chains": _build_chains_config(form_data, defaults),
-        "logging": {
-            "level": "INFO",
-            "show_progress_bar": True,
-            "log_to_file": True,
-            "log_to_console": True,
-            "verbose": False
-        },
-        "network": {
-            "clean_network": True,
-            "rebuild_network": False
-        },
-        "matsim": _build_matsim_config(form_data, defaults),
-        "counts": _build_counts_config(form_data, defaults),
-        "evaluation": form_data.get("evaluation", defaults.get("evaluation", {})),
-        "nonwork_purposes": _build_nonwork_config(form_data, defaults),
-    }
-
-    return config
+    """Compatibility wrapper for callers expecting an engine configuration."""
+    return config_service.export_submission(form_data).config
 
 
-def _build_gtfs_config(form_data, defaults):
-    gtfs_defaults = defaults.get("gtfs", {})
-    gtfs = form_data.get("gtfs", {})
-    return {
-        "catalog_url": gtfs.get("catalog_url", gtfs_defaults.get("catalog_url", "https://files.mobilitydatabase.org/feeds_v2.csv")),
-        "catalog_max_age_days": gtfs.get("catalog_max_age_days", gtfs_defaults.get("catalog_max_age_days", 7)),
-        "feed_max_age_days": gtfs.get("feed_max_age_days", gtfs_defaults.get("feed_max_age_days", 30)),
-        "cache_dir": "data/gtfs",
-        "country_filter": "US",
-        "api_keys": gtfs.get("api_keys", gtfs_defaults.get("api_keys", {}))
-    }
+@app.get("/api/examples")
+async def get_examples():
+    return {"examples": config_service.list_examples()}
 
 
-def _build_modes_config(form_data, defaults):
-    return form_data.get("modes", defaults.get("modes", {}))
+@app.post("/api/config/prepare")
+async def prepare_config(request: Request):
+    """Prepare config plus compatibility/portability diagnostics, without I/O preflight."""
+    try:
+        result = config_service.assemble(await request.json())
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {"config": result.config, "issues": result.issues,
+            "migrations": result.migrations}
 
 
-def _build_mode_choice_config(form_data, defaults):
-    mc = form_data.get("mode_choice", {})
-    mc_defaults = defaults.get("mode_choice", {})
-    return {
-        "method": mc.get("method", mc_defaults.get("method", "survey_rates")),
-        "fallback_mode": mc.get("fallback_mode", mc_defaults.get("fallback_mode", "car")),
-        "chain_consistency": mc.get("chain_consistency", mc_defaults.get("chain_consistency", True)),
-        "min_samples_per_purpose": mc.get("min_samples_per_purpose", mc_defaults.get("min_samples_per_purpose", 30)),
-        "max_chain_mode_retries": mc.get("max_chain_mode_retries", mc_defaults.get("max_chain_mode_retries", 10)),
-    }
+@app.get("/api/config/presets")
+async def get_config_presets():
+    """Curated experiments, including separate survey variants per region."""
+    try:
+        return {"presets": preset_service().list()}
+    except ConfigurationError as exc:
+        raise HTTPException(500, "A registered preset configuration could not be loaded") from exc
 
 
-def _build_plan_generation_config(form_data, defaults):
-    pg = form_data.get("plan_generation", {})
-    pg_defaults = defaults.get("plan_generation", {})
-    return {
-        "target_plans": pg.get("target_plans", pg_defaults.get("target_plans", "all")),
-        "scaling_factor": pg.get("scaling_factor", pg_defaults.get("scaling_factor", 0.1)),
-        "work_scaling_multiplier": pg.get("work_scaling_multiplier", pg_defaults.get("work_scaling_multiplier", 1.0)),
-        "random_seed": pg.get("random_seed", pg_defaults.get("random_seed", 42)),
-        "skip_if_exists": pg.get("skip_if_exists", pg_defaults.get("skip_if_exists", True)),
-        "supported_chain_types": pg.get("supported_chain_types", pg_defaults.get("supported_chain_types", ["home_work_home"])),
-        "chain_sampling_method": pg.get("chain_sampling_method", pg_defaults.get("chain_sampling_method", "direct")),
-        "max_chain_retries": pg.get("max_chain_retries", pg_defaults.get("max_chain_retries", 10)),
-        "num_processes": pg.get("num_processes", pg_defaults.get("num_processes", 30)),
-        "default_mode": pg.get("default_mode", pg_defaults.get("default_mode", "car")),
-    }
-
-
-def _build_chains_config(form_data, defaults):
-    ch = form_data.get("chains", {})
-    ch_defaults = defaults.get("chains", {})
-    return {
-        "home_boost_factor": ch.get("home_boost_factor", ch_defaults.get("home_boost_factor", 1.0)),
-        "use_weighted_chains": ch.get("use_weighted_chains", ch_defaults.get("use_weighted_chains", True)),
-        "max_length": ch.get("max_length", ch_defaults.get("max_length", None)),
-        "min_length": ch.get("min_length", ch_defaults.get("min_length", 3)),
-        "max_work_activities": ch.get("max_work_activities", ch_defaults.get("max_work_activities", 2)),
-    }
-
-
-def _build_matsim_config(form_data, defaults):
-    m = form_data.get("matsim", {})
-    m_defaults = defaults.get("matsim", {})
-    cp = m.get("configurable_params", {})
-    cp_defaults = m_defaults.get("configurable_params", {})
-    return {
-        "version": "matsim_25",
-        "mode": m.get("mode", m_defaults.get("mode", "basic")),
-        "run_simulation": m.get("run_simulation", m_defaults.get("run_simulation", True)),
-        "heap_size_gb": m_defaults.get("heap_size_gb", 70),
-        "transit_network": m.get("transit_network", m_defaults.get("transit_network", True)),
-        "gtfs_sample_day": m.get("gtfs_sample_day", m_defaults.get("gtfs_sample_day", "dayWithMostTrips")),
-        "pt2matsim": m.get("pt2matsim", m_defaults.get("pt2matsim", {})),
-        "configurable_params": {
-            "coordinateSystem": "auto",
-            "lastIteration": cp.get("lastIteration", cp_defaults.get("lastIteration", 100)),
-            "outputDirectory": "output",
-            "global.numberOfThreads": m_defaults.get("configurable_params", {}).get("global.numberOfThreads", 30),
-            "qsim.numberOfThreads": m_defaults.get("configurable_params", {}).get("qsim.numberOfThreads", 30),
-            "qsim.flowCapacityFactor": cp.get("qsim.flowCapacityFactor", cp_defaults.get("qsim.flowCapacityFactor", 0.1)),
-            "qsim.storageCapacityFactor": cp.get("qsim.storageCapacityFactor", cp_defaults.get("qsim.storageCapacityFactor", 0.12)),
-            "linkStats.averageLinkStatsOverIterations": cp.get("linkStats.averageLinkStatsOverIterations", cp_defaults.get("linkStats.averageLinkStatsOverIterations", 5)),
-        }
-    }
-
-
-def _build_counts_config(form_data, defaults):
-    c = form_data.get("counts", {})
-    c_defaults = defaults.get("counts", {})
-    fha = c.get("fha", {})
-    fha_defaults = c_defaults.get("fha", {})
-    return {
-        "enabled": c.get("enabled", c_defaults.get("enabled", True)),
-        "rebuild": c.get("rebuild", c_defaults.get("rebuild", False)),
-        "fha": {
-            "data_dir": "data/FHA_counts",
-            "year": fha.get("year", fha_defaults.get("year", 2024)),
-            "month": fha.get("month", fha_defaults.get("month", 7)),
-            "weight": fha.get("weight", fha_defaults.get("weight", 1)),
-        },
-        "custom": {
-            "enabled": c.get("custom", {}).get("enabled", False),
-            "weight": c.get("custom", {}).get("weight", 0),
-        }
-    }
-
-
-def _build_duration_config(form_data, defaults):
-    return form_data.get("duration_constraints", defaults.get("duration_constraints", {}))
-
-
-def _build_nonwork_config(form_data, defaults):
-    return form_data.get("nonwork_purposes", defaults.get("nonwork_purposes", {}))
+@app.get("/api/config/presets/{preset_id}")
+async def get_config_preset(preset_id: str):
+    try:
+        return preset_service().load(preset_id)
+    except KeyError as exc:
+        raise HTTPException(404, "Unknown configuration preset") from exc
+    except ConfigurationError as exc:
+        raise HTTPException(500, "The registered preset configuration could not be loaded") from exc
 
 
 # ---------------------------------------------------------------------------
