@@ -5,7 +5,6 @@
  */
 
 /* Recursive JSON editing and review helpers. Never split keys on periods. */
-const configPointer = path => path.length ? '/' + path.map(key => String(key).replaceAll('~', '~0').replaceAll('/', '~1')).join('/') : '';
 const credentialConfigKey = key => /apikey|password|passwd|secret|token|credential|authorization|privatekey|accesskey|username|clientid|cookie/i.test(String(key).replace(/[^a-z0-9]/gi, ''));
 function hiddenConfigPath(path) {
   return path.some(key => String(key).startsWith('_') || credentialConfigKey(key)) ||
@@ -48,7 +47,11 @@ const configuration = new ConfigurationState();
 let selectedPresetId = null;
 let presetRequest = 0;
 let baselineConfig = null;
-let sourceMigrations = [];
+let sourceWarnings = [];      // Diagnostics from loading a preset (shown on review).
+let dataDirReplaced = null;   // {from, to} when a preset's server data folder was replaced.
+let hostInfo = null;          // {cpus, ram_gb} of this computer, from /api/host.
+let selectedPresetName = '';
+let selectedPresetCounties = [];
 let reviewRequest = 0;
 
 const STEPS = [
@@ -68,6 +71,7 @@ const DURATION_ACTIVITIES = ['Work', 'School', 'Shopping', 'Escort', 'Dining', '
 // State
 // ==========================================================================
 let currentStep = 0;
+const completedSteps = new Set();  // Steps that passed validation; they stay green.
 let selectedCounties = {};   // { GEOID: { name, population, feature } }
 let countyGeoJSON = null;
 let map = null;
@@ -83,26 +87,29 @@ function renderStepProgress() {
   container.innerHTML = '';
 
   STEPS.forEach((step, i) => {
+    const done = completedSteps.has(i) && i !== currentStep;
     if (i > 0) {
       const sep = document.createElement('div');
       sep.className = 'step-progress__separator';
-      if (i <= currentStep) sep.classList.add('step-progress__item--completed');
+      if (completedSteps.has(i - 1)) sep.classList.add('step-progress__item--completed');
       container.appendChild(sep);
     }
 
+    // Every tab is clickable, in both directions. goToStep() checks the
+    // steps in between when moving forward.
     const item = document.createElement('button');
     item.type = 'button';
-    item.disabled = i > currentStep;
-    item.setAttribute('aria-label', `${i + 1}. ${step.label}`);
+    item.setAttribute('aria-label', `${i + 1}. ${step.label}${done ? ' (completed)' : ''}`);
     if (i === currentStep) item.setAttribute('aria-current', 'step');
     item.className = 'step-progress__item';
+    item.title = i === currentStep ? `You are here: ${step.label}` : `Go to ${step.label}`;
     if (i === currentStep) item.classList.add('step-progress__item--active');
-    if (i < currentStep)  item.classList.add('step-progress__item--completed');
-    item.onclick = () => { if (i <= currentStep) goToStep(i); };
+    if (done) item.classList.add('step-progress__item--completed');
+    item.onclick = () => { if (i !== currentStep) goToStep(i); };
 
     const icon = document.createElement('span');
     icon.className = 'step-progress__icon';
-    if (i < currentStep) {
+    if (done) {
       icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>';
     } else {
       icon.textContent = i + 1;
@@ -118,9 +125,27 @@ function renderStepProgress() {
 }
 
 function goToStep(stepIndex) {
-  // Validate current step before moving forward
-  if (stepIndex > currentStep && !validateStep(currentStep)) return;
+  if (stepIndex > currentStep) {
+    // Moving forward: the current step and every step in between must be valid.
+    // Stop on the first invalid step and show it with its message.
+    for (let i = currentStep; i < stepIndex; i++) {
+      if (validateStep(i, {quiet: i !== currentStep})) { completedSteps.add(i); continue; }
+      completedSteps.delete(i);
+      if (i !== currentStep) { showStep(i); validateStep(i); } else renderStepProgress();
+      return;
+    }
+  } else if (STEPS[currentStep].id === 'review') {
+    // Review turns green only after a successful export (see exportConfig).
+  } else if (validateStep(currentStep, {quiet: true})) {
+    // Moving back never blocks; a valid step stays green.
+    completedSteps.add(currentStep);
+  } else {
+    completedSteps.delete(currentStep);
+  }
+  showStep(stepIndex);
+}
 
+function showStep(stepIndex) {
   currentStep = stepIndex;
   renderStepProgress();
 
@@ -128,9 +153,7 @@ function goToStep(stepIndex) {
   STEPS.forEach((step, i) => {
     const panel = document.getElementById(`panel-${step.id}`);
     panel.classList.toggle('panel--active', i === currentStep);
-    if (i < currentStep) {
-      panel.classList.add('panel--completed');
-    }
+    panel.classList.toggle('panel--completed', completedSteps.has(i) && i !== currentStep);
   });
 
   // Scroll to active panel
@@ -147,15 +170,16 @@ function goToStep(stepIndex) {
   if (STEPS[currentStep].id === 'review') { renderReview(); }
 }
 
-function validateStep(stepIndex) {
+// quiet: check only, with no alert or browser message (for steps not on screen).
+function validateStep(stepIndex, {quiet = false} = {}) {
   const panel = document.getElementById(`panel-${STEPS[stepIndex].id}`);
   for (const input of panel.querySelectorAll('input[data-edited], select[data-edited]')) {
-    if (!input.reportValidity()) return false;
+    if (!(quiet ? input.checkValidity() : input.reportValidity())) return false;
   }
   switch (STEPS[stepIndex].id) {
     case 'region': // Region
-      if (Object.keys(selectedCounties).length === 0) {
-        alert('Please select at least one county.');
+      if (!configuration.config || Object.keys(selectedCounties).length === 0) {
+        if (!quiet) alert('Please select at least one county.');
         return false;
       }
       updateBadge('region', `${Object.keys(selectedCounties).length} counties`);
@@ -168,7 +192,7 @@ function validateStep(stepIndex) {
       const active = Array.isArray(surveys) && surveys.some(s => s && typeof s === 'object' &&
         ((s.weight ?? 1) > 0 || Object.values(s.roles || {}).some(weight => weight > 0)));
       if (!active) {
-        alert('At least one survey must be selected.');
+        if (!quiet) alert('At least one survey must be selected.');
         return false;
       }
       updateBadge('surveys', nhts && custom ? '2 surveys' : '1 survey');
@@ -268,11 +292,15 @@ async function setupExperimentMarkers() {
         button.type = 'button';
         button.className = 'btn btn--secondary';
         button.textContent = experiment.display_name;
-        button.onclick = () => selectPreset(experiment);
+        button.title = experiment.description || '';
+        button.onclick = () => choosePresetFromMap(experiment);
         item.appendChild(button);
         list.appendChild(item);
       }
-      popup.append(title, list);
+      const hint = document.createElement('div');
+      hint.className = 'text-sm text-muted';
+      hint.textContent = 'Pick an experiment to apply its counties and parameters. You can change them later.';
+      popup.append(title, hint, list);
       const {lat, lng} = experiments[0].location;
       L.marker([lat, lng], {title: region, bubblingMouseEvents: false})
         .bindPopup(popup).addTo(map);
@@ -409,6 +437,22 @@ function removeCounty(geoid) {
 function updateRegionSelection() {
   document.getElementById('btnNext0').disabled = !configuration.config || Object.keys(selectedCounties).length === 0;
   if (configuration.config) configuration.set(['region', 'counties'], Object.keys(selectedCounties));
+  updateExperimentLabel();
+}
+
+// Tell the user when the counties no longer match the selected experiment:
+// its calibrated settings then apply to a different area.
+function updateExperimentLabel() {
+  const label = document.getElementById('selectedExperiment');
+  const isPreset = selectedPresetId && selectedPresetId !== 'custom';
+  label.classList.toggle('hidden', !isPreset);
+  document.getElementById('btnCustomConfiguration').classList.toggle('hidden', !isPreset);
+  if (!isPreset) { label.textContent = ''; return; }
+  const current = [...Object.keys(selectedCounties)].sort();
+  const changed = JSON.stringify(current) !== JSON.stringify([...selectedPresetCounties].sort());
+  label.textContent = changed ?
+    `Based on experiment: ${selectedPresetName}. The counties are changed, so its calibrated settings may not fit the new area.` :
+    `Selected experiment: ${selectedPresetName}`;
 }
 
 function syncSelectedRegion() {
@@ -839,44 +883,74 @@ async function fetchJSON(url) {
   return body;
 }
 
+// Short message at the top of the page that goes away by itself.
+let toastTimer = null;
+function showToast(message, kind = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = `toast toast--${kind} toast--visible`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('toast--visible'), 4000);
+}
+
+// Returns 'selected' (new configuration loaded), 'same' (already selected), or null (cancelled or failed).
 let selectedSnapshot = null;
 async function selectPreset(preset) {
   if (selectedPresetId === preset.id) {
     ++presetRequest; // Cancel a different pending selection while retaining edits.
     fitSelectedRegion();
-    return;
+    return 'same';
   }
   if (selectedSnapshot && JSON.stringify(configuration.config) !== selectedSnapshot &&
       !window.confirm('Changing the starting configuration replaces your current edits. Continue?')) {
-    return;
+    return null;
   }
   const requestId = ++presetRequest;
   try {
     const response = preset.id === 'custom' ? {config: structuredClone(baselineConfig), warnings: []} :
       await fetchJSON(`/api/config/presets/${encodeURIComponent(preset.id)}`);
-    if (requestId !== presetRequest) return;
+    if (requestId !== presetRequest) return null;
     if (!response.config) throw new Error('Starting configuration is unavailable.');
     if (preset.id === 'custom') response.config.region.counties = [];
+    // Set before load(): load() notifies the review, which reads these.
+    sourceWarnings = response.warnings || [];
+    dataDirReplaced = response.data_dir_replaced || null;
     configuration.load(response.config);
-    sourceMigrations = response.migrations || [];
     // Templates are used only when a user explicitly adds an absent source.
     for (const custom of [false, true]) {
       const template = baselineConfig?.data?.surveys.find(s => custom ? s.type !== 'nhts' : s.type === 'nhts');
       if (template) configuration.surveyCache[custom] = structuredClone(template);
     }
     selectedPresetId = preset.id;
+    const region = response.region || preset.region;
+    const name = response.display_name || preset.display_name || preset.id;
+    selectedPresetName = region ? `${region} — ${name}` : name;
+    // A new starting configuration: earlier steps must be checked again.
+    completedSteps.clear();
+    renderStepProgress();
+    selectedPresetCounties = structuredClone(response.config.region?.counties || []);
     selectedSnapshot = JSON.stringify(configuration.config);
     populateConfiguration();
     document.querySelectorAll('.panel__badge').forEach(el => el.classList.add('hidden'));
-    const selectedExperiment = document.getElementById('selectedExperiment');
-    selectedExperiment.textContent = preset.id === 'custom' ? '' : `Selected experiment: ${response.display_name || preset.display_name || preset.id}`;
-    selectedExperiment.classList.toggle('hidden', preset.id === 'custom');
-    document.getElementById('experimentHardwareNote').classList.toggle('hidden', preset.id === 'custom');
+    updateExperimentLabel();
     document.getElementById('configurationStatus').textContent = '';
     if (preset.id !== 'custom') fitSelectedRegion();
+    return 'selected';
   } catch (error) {
-    if (requestId !== presetRequest) return;
+    if (requestId !== presetRequest) return null;
     document.getElementById('configurationStatus').textContent = `Could not load configuration: ${error.message}`;
+    showToast(`Could not load the example: ${error.message}`, 'error');
+    return null;
+  }
+}
+
+// From a map pin popup: close the popup, then confirm the choice at the top of the page.
+async function choosePresetFromMap(experiment) {
+  map.closePopup();
+  const result = await selectPreset(experiment);
+  if (result === 'selected' || result === 'same') {
+    showToast(`Example selected: ${selectedPresetName}. Its counties and parameters are applied. ` +
+      'You can change any value in the next steps.');
   }
 }
 
@@ -884,6 +958,11 @@ async function setupConfiguration() {
   const status = document.getElementById('configurationStatus');
   const retry = document.getElementById('btnRetryConfiguration');
   retry.onclick = setupConfiguration;
+  document.getElementById('btnCustomConfiguration').onclick = async () => {
+    if (await selectPreset({id: 'custom'}) === 'selected') {
+      showToast('Custom configuration started. Click counties on the map to select your region.');
+    }
+  };
   retry.classList.add('hidden');
   status.textContent = 'Loading configuration…';
   try {
@@ -903,25 +982,228 @@ function fillReviewList(id, messages) {
   }
 }
 
-function renderChangeList(id, changes) {
-  const container = document.getElementById(id); container.replaceChildren();
-  if (!changes.length) { container.textContent = 'No changes.'; return; }
-  for (const change of changes) {
-    const item = document.createElement('details');
-    const title = document.createElement('summary'); title.textContent = configPointer(change.path);
-    item.appendChild(title);
-    for (const [label, value] of [['Before', change.before], ['After', change.after]]) {
-      const heading = document.createElement('strong'); heading.textContent = label;
-      const pre = document.createElement('pre'); pre.textContent = safeReviewValue(value);
-      item.append(heading, pre);
+// ==========================================================================
+// "Your changes" table: readable name, step, starting value and new value
+// ==========================================================================
+
+// Settings that are not edited through a CONFIG_BINDINGS control.
+const SPECIAL_SETTINGS = {
+  '["region","counties"]': {label: 'Counties', step: 'Select Region'},
+  '["data","surveys"]': {label: 'Surveys', step: 'Surveys'},
+  '["plan_generation","target_plans"]': {label: 'Target Plans', step: 'Travel Demand'},
+};
+
+// Name of a wizard control, as the user sees it on the page.
+function controlLabel(el) {
+  if (el.labels?.length) return el.labels[0].textContent.trim().replace(/\s+/g, ' ');
+  const label = el.closest('.form-group')?.querySelector('.form-label');
+  return label?.childNodes[0]?.textContent.trim() || el.getAttribute('aria-label') || el.id;
+}
+
+function settingInfo(path) {
+  const key = JSON.stringify(path.map(String));
+  if (SPECIAL_SETTINGS[key]) return SPECIAL_SETTINGS[key];
+  if (path[0] === 'duration_constraints' && path[1] === 'activity_durations' && path.length === 4) {
+    const field = {min_minutes: 'minimum minutes', max_minutes: 'maximum minutes', trim_priority: 'trim priority'}[path[3]] || path[3];
+    return {label: `${path[2]} duration: ${field}`, step: 'Time'};
+  }
+  for (const [id, bound] of Object.entries(CONFIG_BINDINGS)) {
+    if (JSON.stringify(bound) !== key) continue;
+    const el = document.getElementById(id);
+    if (!el) break;
+    const panel = el.closest('.panel')?.id.replace('panel-', '');
+    return {label: controlLabel(el), step: STEPS.find(step => step.id === panel)?.label || ''};
+  }
+  // Not a wizard field: use the last key as a readable name.
+  const last = String(path.at(-1)).split('.').at(-1);
+  return {label: last.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), step: ''};
+}
+
+function countyName(geoid) {
+  const feature = countyGeoJSON?.features.find(f => f.properties.GEOID === geoid);
+  return feature ? feature.properties.name : geoid;
+}
+
+// Short, readable value (no JSON indentation, credentials hidden).
+function displayValue(value, path) {
+  if (value === undefined || value === null || value === '') return 'Not set';
+  if (typeof value === 'boolean') return value ? 'On' : 'Off';
+  if (privateConfigURL(value)) return '[hidden]';
+  const key = JSON.stringify(path.map(String));
+  if (key === '["region","counties"]' && Array.isArray(value)) {
+    return value.length ? `${value.length}: ${value.map(countyName).join(', ')}` : 'None';
+  }
+  if (key === '["data","surveys"]' && Array.isArray(value)) {
+    return value.length ? value.map(s => `${String(s?.type || 'survey').toUpperCase()} (weight ${s?.weight ?? 1})`).join(', ') : 'None';
+  }
+  if (Array.isArray(value) && value.every(v => v === null || typeof v !== 'object')) {
+    return value.length ? value.join(', ') : 'None';
+  }
+  if (typeof value === 'object') return JSON.stringify(JSON.parse(safeReviewValue(value)));
+  return String(value);
+}
+
+function renderChangeTable(id, changes) {
+  const container = document.getElementById(id);
+  container.replaceChildren();
+  if (!changes.length) {
+    const empty = document.createElement('p');
+    empty.className = 'review-empty';
+    empty.textContent = 'You did not change any value.';
+    container.appendChild(empty);
+    return;
+  }
+  const stepOrder = label => { const i = STEPS.findIndex(step => step.label === label); return i < 0 ? STEPS.length : i; };
+  const rows = changes.map(change => ({...change, info: settingInfo(change.path)}))
+    .sort((a, b) => stepOrder(a.info.step) - stepOrder(b.info.step));
+  const table = document.createElement('table');
+  table.className = 'change-table';
+  const head = table.createTHead().insertRow();
+  for (const title of ['Setting', 'Starting value', 'Your value']) {
+    const th = document.createElement('th'); th.textContent = title; head.appendChild(th);
+  }
+  const body = table.createTBody();
+  for (const {path, before, after, info} of rows) {
+    const row = body.insertRow();
+    const setting = row.insertCell();
+    const label = document.createElement('span');
+    label.className = 'change-table__label';
+    label.textContent = info.label;
+    const meta = document.createElement('span');
+    meta.className = 'change-table__meta';
+    if (info.step) meta.append(`${info.step} step · `);
+    const code = document.createElement('code');
+    code.textContent = path.join('.');
+    meta.appendChild(code);
+    setting.append(label, meta);
+    for (const [value, className] of [[before, 'change-table__before'], [after, 'change-table__after']]) {
+      const cell = row.insertCell();
+      cell.className = className;
+      cell.textContent = displayValue(value, path);
     }
-    container.appendChild(item);
+  }
+  container.appendChild(table);
+}
+
+const issueText = issue => `${issue.path ? issue.path + ': ' : ''}${issue.message}`;
+
+// ==========================================================================
+// Computer resources: compare settings with this computer (/api/host)
+// ==========================================================================
+
+// [control id, label, wizard step, engine default when the value is not set]
+const CPU_SETTINGS = [
+  ['demand-num_processes', 'Plan generation processes', 'Travel Demand', null],
+  ['pt2m-numOfThreads', 'Transit mapping threads', 'Transit', null],
+  ['sim-global_threads', 'MATSim threads', 'Simulation', null],
+  ['sim-qsim_threads', 'Mobility simulation threads', 'Simulation', null],
+];
+const MEMORY_SETTINGS = [
+  ['sim-heap_size_gb', 'Simulation memory', 'Simulation', 32],        // matsim/runner.py default
+  ['sim-network_heap_size_gb', 'Network build memory', 'Simulation', 8], // network_generator.py default
+];
+const VERY_LARGE_MEMORY_GB = 64;  // Used only when the RAM of this computer is unknown.
+
+function settingValue(id, fallback) {
+  const value = configuration.get(CONFIG_BINDINGS[id]);
+  return value == null || value === '' ? fallback : Number(value);
+}
+
+// The engine limits Java memory to heap_ram_fraction (0.1-0.9, default 0.7) of RAM, never below 2 GB.
+function javaMemoryLimit() {
+  if (!hostInfo?.ram_gb) return null;
+  const raw = settingValue('sim-heap_ram_fraction', 0.7);
+  const fraction = Math.min(Math.max(Number.isFinite(raw) ? raw : 0.7, 0.1), 0.9);
+  return {fraction, limit: Math.max(2, Math.floor(hostInfo.ram_gb * fraction))};
+}
+
+// {control id: {label, step, text}} for settings that do not fit this computer.
+function resourceProblems() {
+  const problems = {};
+  if (!configuration.config || !hostInfo) return problems;
+  for (const [id, label, step] of CPU_SETTINGS) {
+    const value = settingValue(id, null);
+    if (hostInfo.cpus && value > hostInfo.cpus) {
+      problems[id] = {label, step, text: `${value}, but this computer has ${hostInfo.cpus} CPU cores.`};
+    }
+  }
+  const memory = javaMemoryLimit();
+  for (const [id, label, step, fallback] of MEMORY_SETTINGS) {
+    const value = settingValue(id, fallback);
+    if (memory && value > memory.limit) {
+      problems[id] = {label, step,
+        text: `${value} GB, but Java can use only ${memory.limit} GB on this computer. The engine will lower it.`};
+    } else if (!memory && value >= VERY_LARGE_MEMORY_GB) {
+      problems[id] = {label, step, text: `${value} GB is very large. Check the RAM of the computer that runs the simulation.`};
+    }
+  }
+  return problems;
+}
+
+// Hint under each resource field: this computer's limit, or the problem.
+function updateResourceHints() {
+  const problems = resourceProblems();
+  const memory = javaMemoryLimit();
+  for (const hint of document.querySelectorAll('[data-resource-hint]')) {
+    const id = hint.dataset.resourceHint;
+    const isMemory = MEMORY_SETTINGS.some(([settingId]) => settingId === id);
+    hint.style.color = problems[id] ? 'var(--color-warning)' : '';
+    hint.textContent = problems[id] ? problems[id].text :
+      !hostInfo ? '' :
+      isMemory ? (memory ? `This computer: Java can use up to ${memory.limit} GB ` +
+        `(${Math.round(memory.fraction * 100)}% of ${hostInfo.ram_gb} GB RAM).` : '') :
+      hostInfo.cpus ? `This computer: ${hostInfo.cpus} CPU cores.` : '';
+  }
+}
+
+async function loadHostInfo() {
+  try {
+    hostInfo = await fetchJSON('/api/host');
+    const parts = [hostInfo.cpus && `${hostInfo.cpus} CPU cores`, hostInfo.ram_gb && `${hostInfo.ram_gb} GB RAM`].filter(Boolean);
+    if (parts.length) {
+      document.getElementById('hostInfo').textContent = `This computer (where this web page runs): ${parts.join(', ')}. ` +
+        'Set these values for the computer that runs the simulation.';
+    }
+  } catch { hostInfo = null; }
+  updateResourceHints();
+  renderReviewChecks();
+}
+
+// One check line from text parts; {code: '...'} parts show as code.
+function checkItem(parts, warning = false) {
+  const item = document.createElement('li');
+  if (warning) item.className = 'check--warning';
+  for (const part of parts) {
+    if (typeof part === 'string') { item.append(part); continue; }
+    const code = document.createElement('code');
+    code.textContent = part.code;
+    item.appendChild(code);
+  }
+  return item;
+}
+
+// "Check before you run": short lines for the data folder, resource problems, and other notes.
+function renderReviewChecks(exportIssues = []) {
+  const list = document.getElementById('reviewChecks');
+  list.replaceChildren();
+  if (!configuration.config) return;
+  const dir = configuration.get(['data', 'data_dir']);
+  const data = ['Data folder: ', {code: String(dir)}, '. With config.json saved in ', {code: 'config/'},
+    ', this is the repository\'s ', {code: 'data/'}, ' folder. If your data is somewhere else, change ',
+    {code: 'data_dir'}, ' in config.json.'];
+  if (dataDirReplaced && dir === dataDirReplaced.to) data.push(' (The example used a server path, which was replaced.)');
+  list.appendChild(checkItem(data));
+  for (const {label, step, text} of Object.values(resourceProblems())) {
+    list.appendChild(checkItem([`${label} (${step} step): ${text}`], true));
+  }
+  for (const message of new Set([...sourceWarnings, ...exportIssues].map(issueText))) {
+    list.appendChild(checkItem([message], true));
   }
 }
 
 function renderReview() {
-  renderChangeList('reviewChanges', configDifferences(configuration.original, configuration.config));
-  fillReviewList('reviewMigrations', sourceMigrations.length ? sourceMigrations.map(name => `Applied when loading: ${name}`) : ['No migrations were required when loading.']);
+  renderChangeTable('reviewChanges', configDifferences(configuration.original, configuration.config));
+  renderReviewChecks();
 }
 
 function draftValidationErrors() {
@@ -934,14 +1216,17 @@ function draftValidationErrors() {
 
 function invalidateReview() {
   ++reviewRequest;
+  // Any edit after an export means the downloaded file is out of date.
+  const review = STEPS.findIndex(step => step.id === 'review');
+  if (completedSteps.delete(review)) renderStepProgress();
   document.getElementById('btnExport').disabled = !configuration.config;
   fillReviewList('reviewErrors', []);
-  fillReviewList('reviewWarnings', []);
-  renderChangeList('reviewAutomaticChanges', []);
+  renderReviewChecks();  // Checks follow the current values.
 }
 
 function setupReview() {
   configuration.subscribe(invalidateReview);
+  configuration.subscribe(updateResourceHints);
 }
 
 async function exportConfig() {
@@ -966,12 +1251,8 @@ async function exportConfig() {
     const config = await resp.json();
     if (request !== reviewRequest || fingerprint !== JSON.stringify(configuration.config)) return;
     if (!resp.ok) throw new Error(config.detail || 'Configuration could not be exported.');
-    const issues = JSON.parse(resp.headers.get('X-Config-Issues') || '[]');
-    const migrations = JSON.parse(resp.headers.get('X-Config-Migrations') || '[]');
-    fillReviewList('reviewWarnings', issues.map(issue => `${issue.path ? issue.path + ': ' : ''}${issue.message}`));
-    fillReviewList('reviewMigrations', [...sourceMigrations.map(name => `Applied when loading: ${name}`),
-      ...migrations.map(name => `Applied on export: ${name}`)]);
-    renderChangeList('reviewAutomaticChanges', configDifferences(formData, config));
+    // Export issues (for example other absolute paths) join the checks, without duplicates.
+    renderReviewChecks(JSON.parse(resp.headers.get('X-Config-Issues') || '[]'));
 
     // Download as file
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
@@ -983,6 +1264,8 @@ async function exportConfig() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    completedSteps.add(currentStep);
+    renderStepProgress();
   } catch (err) {
     if (request !== reviewRequest) return;
     console.error('Export failed:', err);
@@ -1005,8 +1288,17 @@ function formatNumber(n) {
 // Init
 // ==========================================================================
 
+// The sticky step bar sits under the sticky header; both heights change with the window width.
+function updateStickyOffsets() {
+  const root = document.documentElement.style;
+  root.setProperty('--header-height', `${document.querySelector('.app-header')?.offsetHeight || 0}px`);
+  root.setProperty('--steps-height', `${document.getElementById('stepProgress')?.offsetHeight || 0}px`);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderStepProgress();
+  updateStickyOffsets();
+  window.addEventListener('resize', updateStickyOffsets);
   setupNavigation();
   if (typeof L !== 'undefined') initMap();
   else document.getElementById('mapMessage').textContent = 'Map unavailable. You can still remove selected counties and edit settings.';
@@ -1022,6 +1314,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupConfigurationBindings();
   setupReview();
   setupConfiguration();
+  loadHostInfo();
 
   // Export button
   document.getElementById('btnExport').addEventListener('click', exportConfig);

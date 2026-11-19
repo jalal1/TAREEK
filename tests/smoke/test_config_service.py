@@ -38,9 +38,10 @@ def test_all_examples_preserved(path):
     assert_preserved(expected, result.config)
     assert result.config['freight'] == original['freight']
     assert result.config['data']['surveys'] == original['data']['surveys']
+    # Missing keys stay missing: no baseline values, no inferred nulls.
     assert 'scale_transit_pce' not in result.config['matsim']
-    assert any(i['path'] == 'matsim.scale_transit_pce' for i in result.issues)
-    assert result.config['network']['roundabout_capacity_per_lane'] is None
+    assert 'roundabout_capacity_per_lane' not in result.config['network']
+    assert result.migrations == []
     assert path.read_bytes() == source_bytes
     # The web preparation path must retain exactly the same configuration.
     assert ConfigService(ROOT).assemble({'example_id': path.parent.name}).config == result.config
@@ -80,7 +81,6 @@ def test_edit_keeps_hidden_engine_options_and_paths():
     expected['matsim']['configurable_params']['lastIteration'] = 2
     assert result.config == expected
     assert any(i['code'] == 'absolute_path' for i in result.issues)
-    assert any(i['code'] == 'machine_resource' for i in result.issues)
 
 
 def test_legacy_wizard_and_unknown_parameters():
@@ -100,9 +100,10 @@ def test_migrations_are_idempotent_and_do_not_infer_behavior():
     config['network']['counties'] = config.pop('region')['counties']
     config['network'].pop('roundabout_capacity_per_lane')
     config['matsim'].pop('scale_transit_pce')
-    first = service.prepare(config, historical=True)
-    second = service.prepare(first.config, historical=True)
-    assert len(first.migrations) == 2
+    first = service.prepare(config)
+    second = service.prepare(first.config)
+    assert first.migrations == ['legacy_network_counties_to_region']
+    assert 'roundabout_capacity_per_lane' not in first.config['network']
     assert second.migrations == []
     assert first.config == second.config
     assert 'scale_transit_pce' not in first.config['matsim']
@@ -179,3 +180,21 @@ def test_backend_rejects_invalid_export():
     with pytest.raises(HTTPException) as error:
         asyncio.run(export_config(Request()))
     assert error.value.status_code == 422
+
+
+@pytest.mark.parametrize('value', ['/media/volume/data', r'C:\data', 'C:/data'])
+def test_absolute_paths_detected_on_any_host(value):
+    from webapp.backend.config_service import is_absolute_path, portability_issues
+    assert is_absolute_path(value)
+    issues = portability_issues({'data': {'data_dir': value}})
+    assert [i['code'] for i in issues] == ['absolute_path']
+
+
+def test_baseline_export_has_no_noise_diagnostics():
+    service = ConfigService(ROOT)
+    config = service.load_baseline().config
+    config['region']['counties'] = ['01073']
+    result = service.export_submission(config)
+    # Relative paths and resource values are normal; they are not reported.
+    assert result.issues == []
+    assert result.migrations == []

@@ -8,7 +8,9 @@ from fastapi import HTTPException
 
 from webapp.backend import main
 from webapp.backend.config_service import ConfigService
-from webapp.backend.preset_service import PRESETS
+from webapp.backend.preset_service import preset_ids
+
+PRESETS = preset_ids(main.config_service.root)
 
 pytestmark = pytest.mark.smoke
 

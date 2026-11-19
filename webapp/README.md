@@ -65,9 +65,9 @@ webapp/
 5. **Travel Demand** — Scaling factor, activity chains, non-work trip purposes.
 6. **Time & Duration** — Activity duration constraints, time model settings.
 7. **Simulation** — MATSim iterations, capacity factors, traffic counts, evaluation settings.
-8. **Review & Export** — Compare user edits with the normalized starting config,
-    download the complete `config.json`, and see export diagnostics. Validation
-    runs automatically when exporting; there is no separate validation action.
+8. **Review & Export** — See the values you changed and a short "Check before you run" list
+    (data folder, CPU/memory values that do not fit this computer, removed credentials),
+    then download the complete `config.json`. Validation runs automatically when exporting.
 
 The selected experiment's complete configuration stays in memory. Controls update
 only their corresponding fields; freight, MATSim settings, survey roles,
@@ -79,8 +79,11 @@ from review values. Invalid wizard inputs block export.
 
 Export sends the current complete configuration to `/api/export`, which validates
 and returns the JSON to download. The wizard starts with baseline settings but
-no counties or experiment selected. Selecting an example shows a brief hardware
-notice. Input-file availability and machine readiness remain separate
+no counties or experiment selected. Selecting an example replaces its data folder (a path on the server where it
+was run) with the local one from `config/config_local.json` (`../data`, the
+repository's `data/` folder when `config.json` is saved in `config/`). Change
+`data_dir` in `config.json` if your data is in a different folder. CPU and
+memory values are in their wizard sections, with the limits of this computer. Input-file availability and machine readiness remain separate
 execution-host checks.
 
 The final step validates and exports `config.json` for `run_experiment.py`; the
@@ -89,39 +92,32 @@ are never written by the frontend. The frontend has no Node installation or buil
 
 ## Adding an Experiment to the Map
 
-1. Add the experiment configuration at
-   `examples/myregion-20261117/config_used.json` (relative to the repository root).
-   The configuration must pass the backend's structural validation.
-2. Add an entry to `PRESETS` in [`backend/preset_service.py`](backend/preset_service.py):
+Experiments are found automatically. There is no list to edit.
 
-   ```python
-   'myregion-20261117': {
-       'name': 'My Region — NHTS',
-       'region': 'My Region',
-       'description': 'Example experiment description.',
-       'location': (43.07, -89.40),
-   },
-   ```
+1. Add the experiment folder under `examples/`, for example
+   `examples/myregion-20261117/`. It must contain:
+   - `config_used.json`: the engine configuration. Its parameters are applied
+     when the user picks the experiment. It must pass the backend's structural
+     validation.
+   - `config.xml`: the MATSim configuration of the run. A folder without it is
+     not shown on the map.
+2. Optional but recommended: a `README.md` whose first line is a title such as
+   `# My Region, ST experiment — 2026-11-17`. The text before ` experiment` or
+   the first ` — ` is the region name. The first paragraph is the description.
+   Without a README, the region name comes from the folder name (`Myregion`).
+3. Refresh the page (restart the backend if it does not reload).
 
-   The key must match the example folder name exactly. Each dictionary uses
-   `name` for the display name, `region` for the region label, `description`
-   for the description, and `location` for marker coordinates in
-   `(latitude, longitude)` order.
+The backend derives the rest:
 
-   Metadata keys may be omitted: `name` defaults to the preset ID, `region` to
-   `"Unknown"`, `description` to `""`, and `location` to JSON `null`. Missing
-   metadata does not prevent API loading, but the example configuration must
-   still exist and be valid. Presets without a location are excluded from map
-   markers and popup lists, even when another preset shares their region.
-   Supplied coordinates must remain a valid latitude/longitude pair.
-3. Let the development server reload (or restart the backend), then refresh
-   the page. The frontend fetches the registered experiments automatically;
-   no frontend code changes are needed.
-
-A new region name creates a new marker. Reusing an existing region name adds
-another experiment button to that marker's popup. Use the same region text and
-coordinates for experiments that share a marker. Adding a folder under
-`examples` alone does not register it with the map.
+- **Pin location**: the population-weighted center of the counties in
+  `region.counties`, from the county data the map already uses. MATSim
+  `config.xml` cannot give a location: it holds only `coordinateSystem`
+  (a UTM zone, which is a 6° longitude band). If no county is known, the
+  experiment gets no pin.
+- **Button label**: the main survey (the first one with a weight above zero)
+  and the date from the folder name, for example `NHTS (2026-11-17)`.
+- **Grouping**: experiments with the same region name share one pin, with one
+  button for each experiment in its popup.
 
 For developer architecture, state flow, API contracts, and testing guidance, see
 [`DOCS/WEBAPP_GUIDE.md`](DOCS/WEBAPP_GUIDE.md).

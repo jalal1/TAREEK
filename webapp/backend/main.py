@@ -141,6 +141,64 @@ def build_population_lookup():
         json.dump(pop_data, f)
 
 
+_county_points = None  # {GEOID: (lat, lng, population)}, built on first use
+
+
+def _load_county_points():
+    """County centroids (computed in an equal-area CRS) with population."""
+    global _county_points
+    if _county_points is None:
+        if not COUNTY_GEOJSON_CACHE.exists():
+            return {}  # County data not built yet: try again on the next request.
+        gdf = gpd.read_file(COUNTY_GEOJSON_CACHE)
+        centroids = gdf.to_crs("EPSG:5070").geometry.centroid.to_crs("EPSG:4326")
+        population = {}
+        if COUNTY_POP_CACHE.exists():
+            with open(COUNTY_POP_CACHE, "r") as f:
+                population = json.load(f)
+        _county_points = {
+            geoid: (point.y, point.x, population.get(geoid, 0))
+            for geoid, point in zip(gdf["GEOID"], centroids)
+        }
+    return _county_points
+
+
+def locate_counties(counties):
+    """Map-pin location for a county set: population-weighted mean of centroids.
+
+    The weight pulls the pin to the main city (for example Hennepin and Ramsey
+    in the 15-county Twin Cities region). Returns None when no county is known,
+    so the example gets no pin.
+    """
+    points = [p for p in map(_load_county_points().get, counties) if p is not None]
+    if not points:
+        return None
+    total = sum(pop for _, _, pop in points)
+    weights = [pop / total for _, _, pop in points] if total > 0 else [1 / len(points)] * len(points)
+    lat = sum(w * p[0] for w, p in zip(weights, points))
+    lng = sum(w * p[1] for w, p in zip(weights, points))
+    return round(lat, 4), round(lng, 4)
+
+
+def preset_service():
+    return PresetService(config_service, locate=locate_counties)
+
+
+@app.get("/api/host")
+async def get_host():
+    """CPUs and RAM of this computer (where the web app runs).
+
+    The wizard compares thread, process and Java heap settings with these
+    values. ram_gb is null when psutil is not installed.
+    """
+    try:
+        import psutil
+        ram_gb = round(psutil.virtual_memory().total / 1024 ** 3, 1)
+    except Exception:
+        ram_gb = None
+    return {"cpus": os.cpu_count(), "ram_gb": ram_gb}
+
+
 # ---------------------------------------------------------------------------
 # Startup
 # ---------------------------------------------------------------------------
@@ -240,7 +298,7 @@ async def prepare_config(request: Request):
 async def get_config_presets():
     """Curated experiments, including separate survey variants per region."""
     try:
-        return {"presets": PresetService(config_service).list()}
+        return {"presets": preset_service().list()}
     except ConfigurationError as exc:
         raise HTTPException(500, "A registered preset configuration could not be loaded") from exc
 
@@ -248,7 +306,7 @@ async def get_config_presets():
 @app.get("/api/config/presets/{preset_id}")
 async def get_config_preset(preset_id: str):
     try:
-        return PresetService(config_service).load(preset_id)
+        return preset_service().load(preset_id)
     except KeyError as exc:
         raise HTTPException(404, "Unknown configuration preset") from exc
     except ConfigurationError as exc:

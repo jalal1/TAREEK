@@ -10,7 +10,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 import json
 import math
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import shutil
 
 
@@ -63,26 +63,33 @@ def _leaves(value, path=''):
         yield path, value
 
 
+def is_absolute_path(value):
+    """True for absolute POSIX or Windows paths, on any host OS.
+
+    On Windows, Path('/media/x').is_absolute() is False (no drive letter), so
+    server paths in the examples need an explicit POSIX check.
+    """
+    return (Path(value).is_absolute() or PurePosixPath(value).is_absolute()
+            or PureWindowsPath(value).is_absolute())
+
+
 def portability_issues(config):
-    """Report machine bindings without rewriting paths or querying the host."""
+    """Report absolute paths, which usually belong to another computer.
+
+    Relative paths are normal (the engine joins them to the config folder or
+    data_dir) and are not reported. RAM/CPU settings are checked against this
+    computer by the frontend, which shows them in their wizard sections.
+    """
     issues = []
     for path, value in _leaves(config):
         if any(part.startswith('_') for part in path.split('.')):
             continue
         name = path.rsplit('.', 1)[-1]
-        if isinstance(value, str) and value and (
-            name.endswith(('_dir', '_file')) or name == 'file'
-        ):
-            absolute = Path(value).is_absolute() or PureWindowsPath(value).is_absolute()
-            issues.append({'code': 'absolute_path' if absolute else 'relative_path',
-                           'path': path, 'message': (
-                               'Machine-specific absolute path; verify on the execution host.'
-                               if absolute else
-                               'Relative path; verify against the engine resolver and exported config location.')})
-        if name in ('heap_size_gb', 'network_heap_size_gb', 'heap_ram_fraction',
-                    'num_processes', 'numOfThreads') or path.endswith('numberOfThreads'):
-            issues.append({'code': 'machine_resource', 'path': path,
-                           'message': f'Execution-host resource setting: {value}; review available RAM/CPUs.'})
+        if (isinstance(value, str) and value and
+                (name.endswith(('_dir', '_file')) or name == 'file') and is_absolute_path(value)):
+            issues.append({'code': 'absolute_path', 'path': path,
+                           'message': f'Absolute path "{value}" is probably on another computer. '
+                                      'Change it if it does not exist on the computer that runs the simulation.'})
     return issues
 
 
@@ -183,9 +190,9 @@ class ConfigService:
         path = self.root / 'examples' / example_id / 'config_used.json'
         if not path.resolve().is_relative_to((self.root / 'examples').resolve()):
             raise ConfigurationError('Example path must remain inside examples')
-        return self.prepare(self._read(path), historical=True)
+        return self.prepare(self._read(path))
 
-    def prepare(self, config, overrides=None, historical=False):
+    def prepare(self, config, overrides=None):
         if not isinstance(config, dict) or (overrides is not None and not isinstance(overrides, dict)):
             raise ConfigurationError('Configuration and overrides must be objects')
         merged = deep_merge(config, overrides or {})
@@ -197,20 +204,8 @@ class ConfigService:
         if 'counties' not in result.config.get('region', {}) and network.get('counties'):
             result.config.setdefault('region', {})['counties'] = deepcopy(network['counties'])
             result.migrations.append('legacy_network_counties_to_region')
-        # Compatibility migration 2: null is exactly the engine's missing-value
-        # behavior. Do not merge the rest of today's baseline into old inputs.
-        if historical and 'roundabout_capacity_per_lane' not in network:
-            network['roundabout_capacity_per_lane'] = None
-            result.migrations.append('explicit_no_roundabout_capacity_override')
-        if historical:
-            for path, key, section, behavior in (
-                ('matsim.scale_transit_pce', 'scale_transit_pce', 'matsim', 'true'),
-                ('time_models.departure_bandwidth_minutes', 'departure_bandwidth_minutes', 'time_models', '10 minutes'),
-            ):
-                if key not in result.config.get(section, {}):
-                    result.issues.append({'code': 'historical_default_unresolved', 'path': path,
-                        'message': f'Absent in historical input; current engine defaults to {behavior}. '
-                                   'Verify original engine behavior before reproduction; no value was inferred.'})
+        # Do not merge the rest of today's baseline into old inputs: a missing
+        # key keeps the engine's missing-value behavior.
         result.issues.extend(portability_issues(result.config))
         return result
 
@@ -240,8 +235,7 @@ class ConfigService:
             payload.setdefault('region', {})['counties'] = payload.pop('counties')
         if 'surveys' in payload:
             payload.setdefault('data', {})['surveys'] = payload.pop('surveys')
-        return self.prepare(base, deep_merge(payload, overrides),
-                            historical=example is not None or imported is not None)
+        return self.prepare(base, deep_merge(payload, overrides))
 
     def export_submission(self, payload):
         """Export complete inputs without consulting or merging any baseline.
@@ -255,7 +249,7 @@ class ConfigService:
         # A full engine config is authoritative, including unknown top-level keys.
         if 'data' in payload or 'region' in payload:
             if not ('counties' in payload or 'surveys' in payload):
-                return self.prepare(payload, historical=True)
+                return self.prepare(payload)
         if 'config' in payload or 'example_id' in payload:
             if 'config' in payload and not isinstance(payload['config'], dict):
                 raise ConfigurationError('config must be a complete configuration object')
@@ -268,7 +262,7 @@ class ConfigService:
                 'message': 'Deprecated partial wizard payload: assembled against the maintained baseline. '
                            'Submit the complete loaded configuration to preserve preset settings.'})
             return result
-        return self.prepare(payload, historical=True)
+        return self.prepare(payload)
 
     def check_execution_readiness(self, config, config_path):
         """Opt-in host checks, separate from loading/export and non-mutating.

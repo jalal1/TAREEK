@@ -7,7 +7,9 @@ import pytest
 
 from webapp.backend import main
 from webapp.backend.config_service import ConfigService
-from webapp.backend.preset_service import PRESETS, public_config
+from webapp.backend.preset_service import PresetService, example_metadata, preset_ids, public_config
+
+PRESETS = preset_ids(main.config_service.root)
 
 pytestmark = pytest.mark.smoke
 
@@ -39,17 +41,19 @@ def test_list_metadata_and_variants():
     assert status == 200
     presets = response['presets']
     assert {p['id'] for p in presets} == set(PRESETS)
-    assert {p['region'] for p in presets} == {
-        'Los Angeles', 'New York', 'Madison', 'Chicago', 'Twin Cities', 'Birmingham'}
-    twins = [p for p in presets if p['region'] == 'Twin Cities']
+    assert {'Los Angeles, CA', 'New York, NY-NJ', 'Madison, WI', 'Chicago, IL',
+            'Twin Cities, MN-WI', 'Birmingham, AL'} <= {p['region'] for p in presets}
+    twins = [p for p in presets if p['region'] == 'Twin Cities, MN-WI']
     assert len(twins) == 2
+    assert len({p['display_name'] for p in twins}) == 2  # variants are told apart
     for preset in presets:
         assert all(preset[k] for k in ('id', 'display_name', 'region', 'description', 'source_file'))
-        assert -90 <= preset['location']['lat'] <= 90
-        assert -180 <= preset['location']['lng'] <= 180
+        # Location is derived from county data; without it there is no pin.
+        if preset['location'] is not None:
+            assert -90 <= preset['location']['lat'] <= 90
+            assert -180 <= preset['location']['lng'] <= 180
         assert 'config' not in preset
         assert preset['characteristics']['surveys']
-        assert preset['warnings']
 
 
 @pytest.mark.parametrize('preset_id', PRESETS)
@@ -58,15 +62,19 @@ def test_detail_preserves_complete_normalized_configuration(preset_id):
     assert status == 200
     expected = main.config_service.load_example(preset_id).config
     safe, _ = public_config(expected)
-    assert response['location'] == dict(zip(('lat', 'lng'), PRESETS[preset_id]['location']))
+    location = main.locate_counties(expected['region']['counties'])
+    assert response['location'] == (dict(zip(('lat', 'lng'), location)) if location else None)
+    safe['data']['data_dir'] = response['config']['data']['data_dir']  # checked below
     assert response['config'] == safe
     # Scientific settings are unaffected by credential handling.
     for section in ('freight', 'matsim', 'region', 'plan_generation', 'nonwork_purposes'):
         assert response['config'][section] == expected[section]
     assert response['config']['data']['surveys'] == expected['data']['surveys']
-    codes = {w['code'] for w in response['warnings']}
-    assert {'absolute_path', 'machine_resource', 'historical_default_unresolved',
-            'engine_version_unverified', 'data_readiness_unverified'} <= codes
+    # The server data folder is replaced by the local one, and nothing else is noise.
+    local = main.config_service.load_baseline().config['data']['data_dir']
+    assert response['config']['data']['data_dir'] == local
+    assert response['data_dir_replaced'] == {'from': expected['data']['data_dir'], 'to': local}
+    assert response['warnings'] == []
     assert '_config_dir' not in response['config']
 
 
@@ -93,6 +101,7 @@ def test_credentials_are_redacted_in_both_endpoints(tmp_path, monkeypatch):
         folder = tmp_path / 'examples' / registered
         folder.mkdir(parents=True)
         (folder / 'config_used.json').write_text(json.dumps(config))
+        (folder / 'config.xml').write_text('<config/>')
     monkeypatch.setattr(main, 'config_service', ConfigService(tmp_path))
     for path in ('/api/config/presets', '/api/config/presets/' + preset_id):
         status, response = get(path)
@@ -102,11 +111,79 @@ def test_credentials_are_redacted_in_both_endpoints(tmp_path, monkeypatch):
     assert response['config']['gtfs']['api_keys']['example.org'] == ''
     assert response['config']['extension']['url'] == 'https://example.org/feed?api_key=&year=2024'
     assert response['config']['freight'] == original['freight']
-    assert {'missing_data', 'credentials_redacted'} <= {w['code'] for w in response['warnings']}
+    assert {w['code'] for w in response['warnings']} == {'credentials_redacted'}
+    # Without config/config_local.json, the default local data folder is used.
+    assert response['config']['data']['data_dir'] == '../data'
 
 
 def test_broken_registered_source_does_not_expose_local_path(tmp_path, monkeypatch):
+    folder = tmp_path / 'examples' / 'madison-20260928'
+    folder.mkdir(parents=True)
+    (folder / 'config_used.json').write_text('{not json')
+    (folder / 'config.xml').write_text('<config/>')
     monkeypatch.setattr(main, 'config_service', ConfigService(tmp_path))
     status, response = get('/api/config/presets/madison-20260928')
     assert status == 500
     assert str(tmp_path) not in json.dumps(response)
+
+
+def test_redaction_keeps_help_text_and_placeholders():
+    config = {'data': {'census_api_key': 'YOUR_CENSUS_API_KEY_HERE',
+                       '_census_api_key_help': 'Free API key from https://api.census.gov'},
+              'gtfs': {'api_keys': {'_help': 'Keys per domain', 'example.org': 'REAL_SECRET'}}}
+    safe, redacted = public_config(config)
+    assert safe['data'] == config['data']
+    assert safe['gtfs']['api_keys'] == {'_help': 'Keys per domain', 'example.org': ''}
+    assert redacted == ['gtfs.api_keys.example.org']
+
+
+def test_one_broken_preset_does_not_hide_the_others(tmp_path, monkeypatch):
+    config = main.config_service.load_example('madison-20260928').config
+    for i, registered in enumerate(PRESETS):
+        folder = tmp_path / 'examples' / registered
+        folder.mkdir(parents=True)
+        (folder / 'config_used.json').write_text('{not json' if i == 0 else json.dumps(config))
+        (folder / 'config.xml').write_text('<config/>')
+    monkeypatch.setattr(main, 'config_service', ConfigService(tmp_path))
+    status, response = get('/api/config/presets')
+    assert status == 200
+    assert {p['id'] for p in response['presets']} == set(PRESETS[1:])
+
+
+def test_presets_are_found_automatically(tmp_path):
+    """Only folders with both config_used.json and config.xml become presets."""
+    config = main.config_service.load_example('madison-20260928').config
+    for name, files in {'alpha-20260101': ('config_used.json', 'config.xml'),
+                        'beta-20260202': ('config_used.json',),
+                        'gamma-20260303': ('config.xml',)}.items():
+        folder = tmp_path / 'examples' / name
+        folder.mkdir(parents=True)
+        for file in files:
+            (folder / file).write_text(json.dumps(config) if file.endswith('.json') else '<config/>')
+    (tmp_path / 'examples' / 'alpha-20260101' / 'README.md').write_text(
+        '# Alpha City, ST experiment — 2026-01-01\n\nA [short](x) run of **Alpha**.\n\n## More\n', encoding='utf-8')
+    assert preset_ids(tmp_path) == ['alpha-20260101']
+    info = example_metadata(tmp_path, 'alpha-20260101', config)
+    assert info == {'region': 'Alpha City, ST', 'display_name': 'NHTS (2026-01-01)',
+                    'date': '2026-01-01', 'description': 'A short run of Alpha.'}
+    # Without a README the region comes from the folder name.
+    assert example_metadata(tmp_path, 'beta-20260202', config)['region'] == 'Beta'
+
+
+def test_pin_location_from_counties(tmp_path):
+    config = main.config_service.load_example('madison-20260928').config
+    folder = tmp_path / 'examples' / 'alpha-20260101'
+    folder.mkdir(parents=True)
+    (folder / 'config_used.json').write_text(json.dumps(config))
+    (folder / 'config.xml').write_text('<config/>')
+    service = ConfigService(tmp_path)
+    placed = PresetService(service, locate=lambda counties: (43.0, -89.4)).load('alpha-20260101')
+    assert placed['location'] == {'lat': 43.0, 'lng': -89.4}
+    unplaced = PresetService(service, locate=lambda counties: None).load('alpha-20260101')
+    assert unplaced['location'] is None  # no pin
+
+
+def test_locate_counties_is_population_weighted(monkeypatch):
+    monkeypatch.setattr(main, '_county_points', {'00001': (40.0, -90.0, 3), '00002': (44.0, -94.0, 1)})
+    assert main.locate_counties(['00001', '00002']) == (41.0, -91.0)
+    assert main.locate_counties(['99999']) is None
