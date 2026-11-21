@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or help
+    url: https://github.com/jalal1/TAREEK/discussions
+    about: Ask "how do I...?" questions in Discussions.
+  - name: Quick start and documentation
+    url: https://github.com/jalal1/TAREEK#quick-start
+    about: Read the README and the Technical Report before you open an issue.
+  - name: Security problem
+    url: https://github.com/jalal1/TAREEK/blob/main/SECURITY.md
+    about: Do not report security problems in public. Read this page.

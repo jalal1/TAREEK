@@ -1,0 +1,83 @@
+name: Bug report
+description: Tell us about a problem in TAREEK.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Fill in the fields below, so that we can find the problem.
+        Do not report a security problem here. See [SECURITY.md](https://github.com/jalal1/TAREEK/blob/main/SECURITY.md).
+        Do not paste API keys. Replace them with placeholders such as `YOUR_CENSUS_API_KEY_HERE`.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you start
+      options:
+        - label: I searched the [existing issues](https://github.com/jalal1/TAREEK/issues), and this problem is not there.
+          required: true
+        - label: I read the [Quick start](https://github.com/jalal1/TAREEK#quick-start) in the README.
+          required: true
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part of TAREEK?
+      options:
+        - Pipeline (run_experiment.py, demand, network, MATSim run)
+        - Config wizard web app (webapp/)
+        - What-If scenarios (run_scenario.py)
+        - Estimators (estimators/)
+        - Report (scripts/experiment_report.py)
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What occurred?
+      placeholder: When I do X, Y occurs. I expected Z.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to get the problem again
+      description: Give the command that you ran and the region (county codes).
+      placeholder: |
+        1. Use config '...' with counties [...]
+        2. Run `python run_experiment.py ...`
+        3. See the error
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: TAREEK commit
+      description: TAREEK has no release numbers. Give the commit (`git rev-parse --short HEAD`).
+      placeholder: 27376f6
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Operating system, Python version, and Java version
+      description: Use `python --version` and `java -version`.
+      placeholder: Ubuntu 22.04, Python 3.12.3, OpenJDK 21.0.5
+    validations:
+      required: false
+  - type: textarea
+    id: config
+    attributes:
+      label: Config
+      description: Attach `config_used.json` from the experiment folder. Remove your API keys first (`data.census_api_key` and all values under `gtfs.api_keys`).
+    validations:
+      required: false
+  - type: textarea
+    id: log
+    attributes:
+      label: Log and screenshots
+      description: |
+        Attach the log. For an experiment, it is `experiments/<id>/experiment_<date>_<time>.log`. For the MATSim step, also attach `experiments/<id>/matsim_output.log`. For the estimators, the logs are in `logs/`. For the web app, copy the text from the terminal. The logs contain the full paths of your files. Read a log before you attach it.
+    validations:
+      required: false

@@ -14,6 +14,13 @@
 - [ ] Maintenance / dependencies / tooling
 - [ ] Other (describe below)
 
+## License agreement and sources
+
+<!-- Required for every pull request, also for experiment contributions. -->
+
+- [ ] I signed the [Contributor License Agreement](https://github.com/jalal1/TAREEK/blob/main/CLA.md). If this is my first pull request, I posted the signature comment from [CONTRIBUTING.md](https://github.com/jalal1/TAREEK/blob/main/CONTRIBUTING.md#how-to-sign-the-cla) on it.
+- [ ] I wrote this code myself, or I gave the source and license of each part that I did not write.
+
 ## What changed?
 
 <!-- For an experiment: describe the region, scenario, and key results.
@@ -33,6 +40,7 @@ For code: describe the behavior added, fixed, or changed. -->
 - [ ] My contribution targets under 50 MB
 - [ ] I replaced all live API keys and secrets in configuration and other files with placeholders
 - [ ] I documented any external services or keys needed to reproduce the experiment
+- [ ] I have the right to share the data, and my `README.md` gives the source and license of each input dataset (for example, OpenStreetMap data is ODbL)
 - [ ] I added my experiment to the index in `examples/README.md`
 - [ ] Not applicable — this PR does not share an experiment
 

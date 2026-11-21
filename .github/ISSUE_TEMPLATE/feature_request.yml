@@ -1,0 +1,25 @@
+name: Feature request
+description: Ask for a new feature or a change to a feature.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to do?
+      description: Tell us the task, the analysis, or the region. Tell us what stops you now.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What do you propose?
+      description: Tell us how the feature can work. If it needs new data, give the data source and its license.
+    validations:
+      required: false
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I want to make this change myself. I read [CONTRIBUTING.md](https://github.com/jalal1/TAREEK/blob/main/CONTRIBUTING.md).

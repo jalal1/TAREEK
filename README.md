@@ -391,6 +391,34 @@ config file with your keys. You need the WMATA key only if your region uses a fe
 
 ---
 
+## Contributing
+
+We welcome bug reports, code, and experiment contributions.
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before you open a pull request.
+- All contributors must sign the [Contributor License Agreement](CLA.md).
+  You sign with one comment on your first pull request.
+- To share a run for a new region, see
+  [examples/CONTRIBUTING.md](examples/CONTRIBUTING.md).
+- To report a security problem, see [SECURITY.md](SECURITY.md). Do not open a
+  public issue.
+
+---
+
+## Disclaimer
+
+A large part of the TAREEK code is written with Claude, an AI model by
+Anthropic. About two thirds of the commits by people list Claude as a
+co-author. A human directs and reviews all of the work, and we test the
+results.
+
+TAREEK is a research tool. Its results are estimates from a model, and they
+can be wrong. Before you use its results for planning or other decisions,
+check them with other methods and with local data. If a result looks wrong,
+[open an issue](https://github.com/jalal1/TAREEK/issues/new/choose).
+
+---
+
 ## License
 
 Copyright (C) 2026 TAREEK Contributors
