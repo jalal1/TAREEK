@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Cordon detection — where trucks enter and leave the simulated region.
 
 A cordon is the freight equivalent of a traditional model's *external station*:

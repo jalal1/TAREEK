@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 MATSim configuration file manager
 Handles loading templates and generating customized config.xml files

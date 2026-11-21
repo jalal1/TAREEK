@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Process home locations from LODES data and save to DuckDB.
 
 This module uses the LEHD LODES (Longitudinal Employer-Household Dynamics

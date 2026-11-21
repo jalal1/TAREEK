@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Network Manager for caching and reusing MATSim networks
 Manages network storage, metadata, and hash-based retrieval

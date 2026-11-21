@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the preflight external-binary check.
 
 osmium and java are system packages the pipeline shells out to. Before this

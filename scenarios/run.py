@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Run a scenario: the baseline's MATSim run again, with links closed.
 
 Nothing is generated again. The baseline config.xml is copied unchanged, with

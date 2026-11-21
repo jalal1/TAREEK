@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the OD diagnostics helpers: pure, deterministic logic.
 
 Covers the distance helper, the trip-length statistics and the matrix statistics

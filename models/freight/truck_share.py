@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Truck share — how much of a road's traffic is freight, per region.
 
 The number this module resolves is the single most region-dependent input to the

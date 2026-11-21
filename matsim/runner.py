@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 MATSim simulation runner
 Handles execution of MATSim simulations with cross-platform support

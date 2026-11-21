@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Freight validation — the three tiers.
 
 **Tier 1** — internal consistency. Pure Python, seconds to run, no MATSim and no

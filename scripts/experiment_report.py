@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Single-file experiment report: Markdown -> styled HTML -> PDF.
 
 Collects what is otherwise scattered across experiment_summary.json, the

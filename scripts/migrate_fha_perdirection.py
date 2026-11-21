@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Migrate the FHA counts tables to the per-direction schema.
 
 The FHA tables (fha_stations, fha_hourly_volumes) used to store one

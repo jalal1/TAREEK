@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """POI Weighting utility for non-work trip generation.
 
 This module provides functionality to calculate importance weights for POIs

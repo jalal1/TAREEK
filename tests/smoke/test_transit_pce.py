@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Transit vehicle PCE is scaled to the sample size, once."""
 
 import json

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The scenario file: what to change in a baseline run.
 
 The format is the contract with TAREEK-Vis, which writes these files. See

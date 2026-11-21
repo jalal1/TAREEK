@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the freight vehicles.xml writer and PCE config wiring.
 
 The MATSim facts these encode were verified against MATSim source, not assumed:

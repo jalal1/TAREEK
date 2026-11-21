@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Lossless configuration loading, editing and compatibility diagnostics.
 
 New configurations use config_local.json. Historical inputs deliberately do

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for freight reporting metrics.
 
 Each metric here is one that travel-model validation practice expects from a

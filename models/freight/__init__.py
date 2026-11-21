@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Boundary freight demand.
 
 Generates truck trips with at least one end outside the region (E->I, I->E,

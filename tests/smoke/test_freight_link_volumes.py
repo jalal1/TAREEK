@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the compact truck-stream artefact.
 
 The artefact exists so the 20-minute events parse happens once per experiment

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Network generator for MATSim using MATSim's native SupersonicOsmNetworkReader
 Downloads OSM data and converts to MATSim network.xml format using official MATSim tools.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Per-run OD matrix diagnostics — the file that makes two runs comparable.
 
 Every run writes ``od_matrix_diagnostics.json`` into its experiment folder,

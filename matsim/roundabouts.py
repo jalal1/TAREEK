@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Give roundabout links a realistic capacity.
 
 pt2matsim picks a link's default settings from its ``highway`` tag only

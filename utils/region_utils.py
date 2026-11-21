@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Region utilities for handling county-based filtering across the pipeline.
 

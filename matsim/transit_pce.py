@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Scale transit vehicle PCE to the simulation sample size.
 
 pt2matsim writes transitVehicles.xml with full-size passenger car

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for freight events extraction and validation tiers.
 
 Uses synthetic events and plans files, so the tier stays dependency-free. The

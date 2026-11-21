@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Export an authoritative loaded configuration without reconstructing it."""
 import asyncio
 from copy import deepcopy

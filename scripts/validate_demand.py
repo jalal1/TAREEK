@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Validate generated demand against the household travel survey.
 
 This is the level of validation that traffic counts cannot provide. Count

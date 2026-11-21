@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Estimator Orchestrator — runs all estimators for a region config.
 
 Calls sub-estimators in sequence:

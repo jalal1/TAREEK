@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for tier-3 classification coverage and hourly-profile checks.
 
 See docs/freight/design.md §5.

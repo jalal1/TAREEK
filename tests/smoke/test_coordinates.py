@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for utils.coordinates: pure, deterministic coordinate logic.
 
 Known-good values lifted from the module's own __main__ self-test block

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 from sqlalchemy import create_engine, MetaData, Table, Column, inspect, Integer, String, DateTime, Float
 from sqlalchemy.types import *
 from sqlalchemy.exc import SQLAlchemyError

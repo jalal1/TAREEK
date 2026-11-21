@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the automatic FHA per-direction schema upgrade.
 
 An FHA table created before the per-direction change has no ``travel_dir``

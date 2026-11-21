@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Tier 3 — validating the time-of-day model against classification counts.
 
 Tier 2 compares daily truck volumes and cannot say anything about *when* trucks

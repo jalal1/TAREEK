@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Configuration validator for experiment runner
 Validates all config parameters upfront before starting experiments

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Exercise real FastAPI routing without startup downloads or an HTTP client dependency."""
 import asyncio
 from copy import deepcopy

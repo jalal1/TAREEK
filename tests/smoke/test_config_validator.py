@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for ConfigValidator: the real config passes, bad configs fail."""
 
 import json

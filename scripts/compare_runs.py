@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Compare two or more experiments on their count-validation metrics.
 
 Reads each run's ``experiment_summary.json`` (the single source of truth) and

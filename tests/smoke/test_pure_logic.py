@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for small, pure pieces of modeling logic.
 
 These need realistic-but-tiny inputs (drawn from the smoke fixture config where

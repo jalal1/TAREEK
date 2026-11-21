@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The compact truck-stream artefact: ``freight_link_volumes.json``.
 
 **Why this file exists at all.** Tier-2 validation needs simulated truck volumes

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for MATSimOrchestrator wiring that needs no Java.
 
   * the experiment folder follows ``experiments_root`` (the runner writes the

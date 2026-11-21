@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Boundary freight trip generation — the three classes.
 
 Produces MATSim plans of two activities and one leg. No chain sampling, no POI

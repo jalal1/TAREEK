@@ -423,10 +423,14 @@ check them with other methods and with local data. If a result looks wrong,
 
 Copyright (C) 2026 TAREEK Contributors
 
-This program is free software; you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the [GNU General Public License](LICENSE) as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version (`GPL-3.0-or-later`).
+
+Contributions come in under the [Contributor License Agreement](CLA.md).
+The signed agreements and relicensing permissions are in
+[licensing/](licensing/).
 
 ---
 
@@ -440,6 +444,6 @@ If you use TAREEK in your work, please cite it:
   title   = {{TAREEK}: An Agent-Based Traffic Simulation System for Any {U.S.} Metropolitan Area},
   year    = {2026},
   url     = {https://github.com/jalal1/TAREEK},
-  license = {GPL-2.0-or-later}
+  license = {GPL-3.0-or-later}
 }
 ```

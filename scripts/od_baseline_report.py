@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Stage-0 baseline: measure observed OD flows for every configured metro.
 
 Gate G0 requires ``internal_share`` and the aux-sourced I-I share recorded for

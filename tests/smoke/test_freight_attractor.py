@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for sector employment as the freight attractor (design.md item 12).
 
 Total employment cannot tell a distribution centre from an insurance office of

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Non-work OD matrix creation for Shopping, Recreation, and other purposes.
 
 This module creates origin-destination matrices for non-work trips using:

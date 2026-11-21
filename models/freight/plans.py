@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Freight trips -> MATSim plans, and the end-to-end entry point.
 
 A freight plan is two activities and one leg, carrying two person attributes:

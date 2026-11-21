@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Shared pytest fixtures for the TAREEK test suite.
 
 Fixture tiers:

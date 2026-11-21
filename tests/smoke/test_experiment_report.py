@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the experiment report generator.
 
 The report is read by people deciding what to change in a config, so a wrong

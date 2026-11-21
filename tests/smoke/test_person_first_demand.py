@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for person-first demand (models/demand_budget.py and its inputs).
 
 Covers the pieces that decide how many plans are made, with tiny synthetic

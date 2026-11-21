@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Delete a single GTFS feed from the database (for testing/benchmarking loads).
 
 Removes the feed's rows across every GTFS table so the next pipeline run will

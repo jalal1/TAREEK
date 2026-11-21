@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Stage 5 — the ablation that decides whether the OD change actually helped.
 
 Four arms per metro, one variable at a time, so an improvement can be attributed

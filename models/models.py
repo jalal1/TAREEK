@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # models.py
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Integer, Float, Text

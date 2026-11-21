@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Import-smoke: every first-party module must import without error.
 
 This is the cheapest possible guard against a bug fix or refactor leaving a

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Compare a scenario run with its baseline, link by link.
 
 Writes into the scenario folder:

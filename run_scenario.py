@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """What-If Scenarios: run a finished baseline again with roads closed.
 
 The scenario file comes from TAREEK-Vis (Selected links -> Export scenario

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """How many boundary freight trips, and of which class.
 
 Turning an observed truck *share* or a set of cordon *volumes* into a number of

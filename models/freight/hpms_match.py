@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Match cordons to HPMS segments, so cordon weights come from observation.
 
 **Why this exists.** ``assign_cordon_weights`` prefers an observed truck AADT per

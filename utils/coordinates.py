@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Coordinate conversion utilities for MATSim plan generation.
 

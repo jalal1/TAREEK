@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for freight cordon detection.
 
 Built on synthetic networks rather than the cached region network, so the tier

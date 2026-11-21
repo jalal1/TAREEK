@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for freight truck-share resolution.
 
 No network and no data files: the HPMS layers are exercised through a stub

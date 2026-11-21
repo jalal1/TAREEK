@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for survey roles and the Birmingham local survey reader.
 
 Survey roles (data_sources/survey_manager.py, ROLES): each data.surveys entry
