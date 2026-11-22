@@ -432,6 +432,9 @@ Contributions come in under the [Contributor License Agreement](CLA.md).
 The signed agreements and relicensing permissions are in
 [licensing/](licensing/).
 
+Some files in this repository come from other projects and keep their own
+licenses. See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
 ---
 
 ## Citation
