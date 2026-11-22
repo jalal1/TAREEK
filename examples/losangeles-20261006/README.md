@@ -359,3 +359,10 @@ mode-share calibration, and no `wmata.com` transit feed). The keys in this confi
 The freight module reads the public HPMS service, which needs no key.
 
 **Never commit real keys.**
+
+## Data credit
+
+Map data © OpenStreetMap contributors, available under the
+[Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).
+The road network and the results in this folder use this data. See
+[THIRD_PARTY_LICENSES.md](../../THIRD_PARTY_LICENSES.md) for the other data and software.

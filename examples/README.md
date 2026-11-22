@@ -32,3 +32,11 @@ It's simple — see [CONTRIBUTING.md](CONTRIBUTING.md):
 2. Write a `README.md` showing whatever you want about your experiment. Use the
    existing examples in this folder as a guide.
 3. Open a pull request.
+
+## Data credit
+
+The example runs use road networks from OpenStreetMap. Map data © OpenStreetMap
+contributors, available under the [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).
+If you add an example, give the source and the license of each input dataset in its
+`README.md`. See [CONTRIBUTING.md](../CONTRIBUTING.md#experiment-contributions) and
+[THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md).
