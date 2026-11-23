@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for four general fixes found on the Chicago region (2026-09-29).
 
   - counts: a freeway count is split over parallel roadways of its direction

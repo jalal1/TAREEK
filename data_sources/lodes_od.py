@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Observed LODES origin-destination commute flows.
 
 LODES publishes actual home-block → work-block job counts, which the pipeline

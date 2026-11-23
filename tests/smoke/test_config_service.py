@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Pure configuration tests: no data downloads, DB, Java or web startup."""
 from copy import deepcopy
 import json

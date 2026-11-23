@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Generate log-log observed-vs-simulated count comparisons across experiments.
 
 Reads MATSim's ``*.countscompare.txt`` (written by the counts module: one row

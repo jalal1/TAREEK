@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the freight estimator's decision logic.
 
 These test *what it decides to write*, not the HPMS network path — the resolver

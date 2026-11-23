@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Read a MATSim network.xml and close links in a copy of it.
 
 A closed link stays in the file with its ID; only 'car' is removed from its

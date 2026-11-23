@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """When trucks depart — two profiles, chosen by trip class.
 
 The FHWA/LTPP study identifies four national time-of-day patterns. Two are

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Compare two OD matrices — the tool that answers "did it get better".
 
 Standalone by design: it reads saved artefacts (``combined_od_matrix.csv``,

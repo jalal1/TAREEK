@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Demand Estimator — pre-run calibration tool for MATSim experiments.
 
 Reads a config file, queries the DuckDB database for population and survey data,

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """What-If Scenarios: the scenario file, closing links, the cut-off check."""
 
 import pytest

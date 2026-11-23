@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Person-first demand budget.
 
 One place that decides how many persons of each segment travel on the modelled

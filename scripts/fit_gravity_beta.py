@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Stage 4 — fit the gravity model's distance-decay beta against observed flows.
 
 The gravity model is the fallback for regions LODES does not cover, so it has to

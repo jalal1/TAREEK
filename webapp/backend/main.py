@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Config Wizard Backend - FastAPI server for the simulation config builder.
 

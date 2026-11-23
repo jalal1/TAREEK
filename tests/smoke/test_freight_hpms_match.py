@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for HPMS per-segment link matching (design.md item 9).
 
 The failure this module exists to prevent is silent: without it every cordon

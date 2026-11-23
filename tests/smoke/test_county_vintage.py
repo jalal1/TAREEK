@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """County FIPS vintage pinning, and the state-centroid fallback behind it.
 
 County FIPS codes are not stable across Census vintages. Connecticut is the

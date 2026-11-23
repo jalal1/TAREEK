@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 OSM data downloader for MATSim network generation
 Downloads OSM PBF files for specified regions with osmium-based extraction

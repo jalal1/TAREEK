@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """vehicles.xml — passenger-car equivalents for the freight stream.
 
 **PCE does not need a separate network mode.** In MATSim it is a property of the

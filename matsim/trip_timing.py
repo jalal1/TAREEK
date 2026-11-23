@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Trip timing and activity duration figures: generated demand vs simulation.
 
 Five figures, written to the evaluation directory:

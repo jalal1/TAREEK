@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the per-direction FHA counts pipeline.
 
 Covers the pure, network-light logic that the per-direction model depends on:

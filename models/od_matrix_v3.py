@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import pandas as pd
 import numpy as np
 from scipy.spatial.distance import cdist

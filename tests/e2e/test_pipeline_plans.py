@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """End-to-end smoke: run the real pipeline through plan + counts generation.
 
 Marker: e2e (needs data/db/trafficsim1.2.duckdb).

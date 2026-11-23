@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 from typing import Dict, List, Optional
 import pandas as pd
 from utils.logger import setup_logger

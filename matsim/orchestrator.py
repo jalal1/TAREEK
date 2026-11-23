@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 MATSim Simulation Orchestrator
 Coordinates network generation, config management, and simulation execution

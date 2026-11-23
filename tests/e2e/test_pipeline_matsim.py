@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Full end-to-end smoke incl. one MATSim iteration.
 
 Marker: e2e_matsim (needs DuckDB + Java + the MATSim jar).

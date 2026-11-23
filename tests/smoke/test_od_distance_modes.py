@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for the stage-1 distance fixes in the gravity paths.
 
 The load-bearing guarantee here is that ``legacy_degrees`` reproduces the

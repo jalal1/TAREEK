@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """What-If Scenarios: run a finished baseline again with roads closed.
 
 See scenarios/README.md. Entry point: run_scenario.py.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Freight link volumes from the MATSim events file.
 
 **Why this exists.** No MATSim output distinguishes one vehicle from another at

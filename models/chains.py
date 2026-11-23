@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 from collections import Counter
 from utils.logger import setup_logger
 import pandas as pd

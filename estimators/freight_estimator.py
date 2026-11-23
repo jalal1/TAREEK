@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Freight Estimator — calibrates the boundary-freight parameters that have a
 measured path, and refuses to guess at the ones that do not.
 

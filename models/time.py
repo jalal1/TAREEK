@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import multiprocessing
 import pandas as pd
 import numpy as np

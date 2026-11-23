@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Experiment Tracker - CSV comparison file for tracking and comparing experiments
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for freight demand arithmetic, departure profiles and trips.
 
 The arithmetic between an observed AADT and a simulated agent count passes

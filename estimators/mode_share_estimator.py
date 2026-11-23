@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Mode Share Estimator - scoring parameter calibration for MATSim experiments.
 
 Two modes of operation:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Freight reporting metrics — what practice expects a truck model to report.
 
 The existing evaluator reports total link volume only: GEH, RMSE, MAE, %GEH<5

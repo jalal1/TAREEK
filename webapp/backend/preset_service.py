@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Example presets found in examples/, and credential-safe public representations."""
 
 from copy import deepcopy

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 MATSim Simulation Evaluator
 Compares simulation outputs with ground truth traffic counts

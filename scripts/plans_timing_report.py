@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Timing report for a generated plans.xml, without running MATSim.
 
 Reads plans.xml directly and rebuilds the clock that the plan implies: the

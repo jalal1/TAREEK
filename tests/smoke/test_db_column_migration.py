@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Smoke tests for additive column migration in DBManager.
 
 ``Base.metadata.create_all`` creates missing *tables* and leaves existing ones
