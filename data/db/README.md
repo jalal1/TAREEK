@@ -1,6 +1,8 @@
 # DuckDB Database
 
-The file `trafficsim1.2.duckdb` is a pre-populated [DuckDB](https://duckdb.org/) database that contains reference data (states, counties, census blocks, POIs, GTFS transit data, etc.) used by the simulation.
+The file `trafficsim1.2.duckdb` is a [DuckDB](https://duckdb.org/) database that contains reference data (states, counties, census blocks, POIs, GTFS transit data, etc.) used by the simulation.
+
+The repository does not include this file. The first run creates it and downloads the data that your region needs. Later runs use the data that is already in it. Git ignores this folder, except this README.
 
 ## Tables
 

@@ -173,6 +173,16 @@ and we recommend it.
 
    This also installs Git, which you use in [Setup](#2-setup).
 
+4. Activate the new environment:
+
+   ```bash
+   conda activate tareek
+   ```
+
+   The start of the prompt line changes from `(base)` to `(tareek)`. Python, Java,
+   osmium and Git are available only while `(tareek)` shows. Keep this prompt open and
+   continue with [Setup](#2-setup). If you close it, open Miniforge Prompt again and type
+   `conda activate tareek` again. You do not have to do `conda create` again.
 #### Option B: install each program separately
 
 Use this option if you already have Python or Java. On Windows, osmium-tool is available
@@ -226,23 +236,34 @@ If a program is missing, TAREEK stops before it downloads data and tells you wha
 ### 2. Setup
 
 Open your prompt (Option A: **Miniforge Prompt** on Windows, a terminal on macOS/Linux).
-Then get the code and go into its folder:
+
+**Option A:** activate the environment first. Git is in the `tareek` environment, so
+`git` is not found until you activate it:
 
 ```bash
-git clone https://github.com/jalal1/TAREEK.git
+conda activate tareek
+```
+
+Get the code and go into its folder:
+
+```bash
+git clone --depth 1 https://github.com/jalal1/TAREEK.git
 cd TAREEK
 ```
 
 No Git? On the [GitHub page](https://github.com/jalal1/TAREEK), click
+`--depth 1` downloads only the latest version of the files, without the full project
+history. This makes the download much smaller. If you want to contribute changes, you
+can get the full history later with `git fetch --unshallow`.
+
 **Code → Download ZIP** and extract it. Then go into the folder, for example
 `cd Downloads\TAREEK-main` (macOS/Linux: `cd ~/Downloads/TAREEK-main`).
 
 Install the Python packages:
 
-**Option A:**
+**Option A** (`(tareek)` must show at the start of the prompt line):
 
 ```bash
-conda activate tareek
 pip install -r requirements.txt
 ```
 

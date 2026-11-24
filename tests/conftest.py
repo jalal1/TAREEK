@@ -112,8 +112,9 @@ def require_db(repo_root):
     if not db_path.exists():
         pytest.fail(
             f"e2e requires the DuckDB at {db_path}, which was not found. "
-            f"Populate it (see notebooks/0.setup_global_data.ipynb) before "
-            f"running -m e2e / -m e2e_matsim."
+            f"The repository does not ship it: run any experiment once "
+            f"(python run_experiment.py --config config/config_local.json) "
+            f"to create and fill it, then run -m e2e / -m e2e_matsim."
         )
     return db_path
 

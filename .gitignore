@@ -37,6 +37,11 @@ data/pygris_cache
 # HPMS geometry/truck-share responses, re-fetched on demand and cached for
 # freight.hpms.cache_days. One 15-county bbox is ~17 MB of ArcGIS JSON.
 data/hpms
+# County shapefile (downloaded from census.gov on first use) and the web app's
+# counties.geojson built from it. county_population.json stays tracked: it is
+# built from the Census API, which needs a key.
+data/counties/*
+!data/counties/county_population.json
 
 # Databases — never commit these. They are large and carry real data.
 *.duckdb

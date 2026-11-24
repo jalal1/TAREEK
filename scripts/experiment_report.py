@@ -1413,11 +1413,13 @@ def _image_src(path: Path, embed_dir: Optional[Path]) -> str:
     roughly a 4/3 size increase per image.
     """
     if embed_dir is None:
-        return path.as_uri()
+        return path.resolve().as_uri()
     try:
         return os.path.relpath(path, embed_dir).replace("\\", "/")
     except ValueError:
-        return path.as_uri()
+        # Different drives on Windows: no relative path exists. as_uri()
+        # needs an absolute path, so a relative experiment dir crashed here.
+        return path.resolve().as_uri()
 
 
 def _image_data_uri(path: Path, max_width: int = 1400) -> str:
@@ -1774,6 +1776,11 @@ def main() -> None:
     ap.add_argument("--baseline", help="optional experiment to compare against")
     ap.add_argument("--output-dir", help="where to write (default: the experiment dir)")
     ap.add_argument("--no-pdf", action="store_true", help="write .md and .html only")
+    ap.add_argument("--link-images", action="store_true",
+                    help="link the figures by relative path instead of embedding "
+                         "them. The HTML is then small, but it works only next to "
+                         "its image files. Use this for examples/, which already "
+                         "contains the PNGs.")
     args = ap.parse_args()
 
     # Standalone renderer: turn an existing (server-generated) report.html
@@ -1804,15 +1811,18 @@ def main() -> None:
 
     # The Markdown keeps relative image paths so it stays small and readable;
     # the HTML inlines them so the file (and the PDF printed from it) is
-    # self-contained.
+    # self-contained. With --link-images the HTML keeps the relative paths
+    # too, so each image is stored once (in evaluation/ or graphs/).
     md_text = build_markdown(run, baseline, embed_dir=out_dir)
     md_path = out_dir / "report.md"
     md_path.write_text(md_text, encoding="utf-8")
     print(f"wrote {md_path}  ({md_path.stat().st_size / 1024:.0f} KB)")
 
     html_path = out_dir / "report.html"
-    html_path.write_text(markdown_to_html(md_text, exp_dir.name, base_dir=out_dir),
-                         encoding="utf-8")
+    html_path.write_text(
+        markdown_to_html(md_text, exp_dir.name,
+                         base_dir=None if args.link_images else out_dir),
+        encoding="utf-8")
     print(f"wrote {html_path}  ({html_path.stat().st_size / 1024 / 1024:.1f} MB)")
 
     if args.no_pdf:

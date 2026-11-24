@@ -116,11 +116,17 @@ class FHACountsManager:
         month_abbr = self._month_abbrs.get(self.month, 'JUL').lower()
         volume_zip = self.data_dir / f"{month_abbr}_{self.year}_ccs_data.zip"
 
+        # TAREEK does not download these files: the FHWA site does not allow
+        # automated downloads. The repository ships 2024 stations + October.
+        where = ("Download it from the FHWA 'U.S. Traffic Volume Data' (TMAS) page "
+                 "(https://highways.dot.gov/policy/policy-information/special-tabulations/"
+                 f"us-traffic-volume-data) and put it in {self.data_dir}, or set "
+                 "fha.year/fha.month to a file that is there.")
         if not station_zip.exists():
-            logger.error(f"FHA station zip not found: {station_zip}")
+            logger.error(f"FHA station zip not found: {station_zip}. {where}")
             return False
         if not volume_zip.exists():
-            logger.error(f"FHA volume zip not found: {volume_zip}")
+            logger.error(f"FHA volume zip not found: {volume_zip}. {where}")
             return False
 
         all_stations = []

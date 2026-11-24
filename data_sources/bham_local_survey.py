@@ -175,15 +175,16 @@ class BirminghamLocalSurveyTrip(BaseSurveyTrip):
     def _region_shape(self):
         """Union of the region counties in UTM 16N, or None when unavailable."""
         try:
-            import geopandas as gpd
-            shp = Path(self.config['data']['data_dir']) / 'counties' / 'cb_2022_us_county_500k.shp'
-            counties = {str(c)[:5] for c in self.config['region']['counties']}
-            gdf = gpd.read_file(shp)
-            gdf = gdf[gdf['GEOID'].isin(counties)].to_crs(self.UTM_CRS)
-            if gdf.empty:
+            from shapely.ops import unary_union
+            from utils.region_utils import load_county_polygons
+            # load_county_polygons downloads the county shapefile on first use;
+            # the repository does not ship it.
+            counties = sorted({str(c)[:5] for c in self.config['region']['counties']})
+            polys = load_county_polygons(counties, self.config['data']['data_dir'],
+                                         utm_epsg=self.UTM_CRS)
+            if not polys:
                 return None
-            return gdf.geometry.union_all() if hasattr(gdf.geometry, 'union_all') \
-                else gdf.geometry.unary_union
+            return unary_union(polys)
         except Exception as e:
             logger.warning(f"bham_local: region counties not available ({e}); no region filter")
             return None
