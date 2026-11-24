@@ -303,6 +303,17 @@ You can use `config/config_local.json` as it is. To model a different area, chan
 You can find the codes at [census.gov](https://www.census.gov/library/reference/code-lists/ansi.html).
 There are example configs for different cities in `config/USA/`.
 
+`data.data_dir` tells TAREEK where the data folder is. A relative path is read from the
+folder of the config file, so the configs in this repository find the `data/` folder of
+the repository on any machine. If you keep the data in a different folder, set the
+`TAREEK_DATA_DIR` environment variable to that folder. It overrides `data_dir` in every
+config, and you do not have to change the config files:
+
+```bash
+export TAREEK_DATA_DIR=/path/to/data          # Linux / macOS
+$env:TAREEK_DATA_DIR = "D:\path\to\data"      # Windows PowerShell
+```
+
 You can also make a config in the web app. See [Config Wizard](#config-wizard-web-ui).
 
 ### 4. Run

@@ -19,7 +19,7 @@
     ]
   },
   "data": {
-    "data_dir": "/home/exouser/Documents/Tareek/data",
+    "data_dir": "../../../data",
     "day_type": "weekday",
     "survey_months": "regular",
     "_survey_months_help": "Survey months used for day types, chains and times: 'regular' (Mar-May, Sep-Nov), 'all', or a list of months. Keep counts.fha.month inside it.",

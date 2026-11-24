@@ -5,6 +5,7 @@ Validates all config parameters upfront before starting experiments
 """
 
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -398,8 +399,16 @@ class ConfigValidator:
 
     def _validate_data_paths(self):
         """Validate data directory paths exist"""
-        data_config = self.config.get('data', {})
-        data_dir = data_config.get('data_dir')
+        data_config = self.config.setdefault('data', {})
+
+        # TAREEK_DATA_DIR overrides the config value, so one machine can keep
+        # its data in a different folder without edits to the shared configs.
+        env_data_dir = os.environ.get('TAREEK_DATA_DIR')
+        if env_data_dir:
+            logger.info(f"data_dir from TAREEK_DATA_DIR: {env_data_dir}")
+            data_dir = env_data_dir
+        else:
+            data_dir = data_config.get('data_dir')
 
         if not data_dir:
             raise ConfigValidationError("data 'data_dir' is required")
@@ -413,7 +422,10 @@ class ConfigValidator:
         if not data_dir_path.exists():
             raise ConfigValidationError(
                 f"Data directory does not exist: {data_dir_path}\n"
-                f"Resolved from config value: {data_dir}"
+                f"Resolved from config value: {data_dir}\n"
+                f"A relative data_dir is read from the folder of the config file. "
+                f"Set data.data_dir in the config, or set the TAREEK_DATA_DIR "
+                f"environment variable to the data folder."
             )
 
         # Update config with absolute path to avoid path resolution issues later
