@@ -1779,8 +1779,8 @@ def main() -> None:
     ap.add_argument("--link-images", action="store_true",
                     help="link the figures by relative path instead of embedding "
                          "them. The HTML is then small, but it works only next to "
-                         "its image files. Use this for examples/, which already "
-                         "contains the PNGs.")
+                         "its image files. Use this for TAREEK-examples, which "
+                         "already contains the PNGs.")
     args = ap.parse_args()
 
     # Standalone renderer: turn an existing (server-generated) report.html

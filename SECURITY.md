@@ -67,7 +67,7 @@ repository now.
   trust.
 - TAREEK writes your config, with your API keys, to
   `experiments/<id>/config_used.json`. Remove the keys before you share an
-  experiment. See [examples/CONTRIBUTING.md](examples/CONTRIBUTING.md).
+  experiment. See [CONTRIBUTING.md in TAREEK-examples](https://github.com/jalal1/TAREEK-examples/blob/main/CONTRIBUTING.md).
 
 ## What is not a security problem
 

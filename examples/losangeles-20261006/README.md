@@ -1,3 +1,5 @@
+> Full results (report, figures and data): [TAREEK-examples/losangeles-20261006](https://github.com/jalal1/TAREEK-examples/tree/main/losangeles-20261006)
+
 # Los Angeles, CA experiment — 2026-10-06
 
 A full Tareek run for the Los Angeles–Long Beach–Anaheim metro area, compared against FHA
@@ -20,18 +22,19 @@ examples. It is the first Los Angeles example.
 
 ## Full report
 
-**[`report.html`](report.html)** is the complete experiment report: the verdict, the
+**[`report.html`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/report.html)** is the complete experiment report: the verdict, the
 demand check against the household survey, the count validation, freight, and all the
-evaluation figures. It is one self-contained file. All the images are inside it.
+evaluation figures. It loads its images from the `evaluation/` folder next to it.
 
-> **How to open it:** GitHub does not show HTML pages. Open
-> [`report.html`](report.html) on GitHub, click **Download raw file**, then open the
-> downloaded file in a web browser. Or clone the repository and open the file locally.
+> **How to open it:** GitHub does not show HTML pages. Clone
+> [TAREEK-examples](https://github.com/jalal1/TAREEK-examples) (or download it as a ZIP file) and open
+> `losangeles-20261006/report.html` in a web browser. Keep the `evaluation/` folder next to
+> `report.html`, because the report loads its images from it.
 
 To make the same report for your own run:
 
 ```bash
-python scripts/experiment_report.py experiments/<experiment-id> --no-pdf
+python scripts/experiment_report.py experiments/<experiment-id> --no-pdf --link-images
 ```
 
 ---
@@ -101,13 +104,13 @@ keys in the config are **optional** — see [Optional API keys](#optional-api-ke
 
 - [`config_used.json`](config_used.json) — the full Tareek config for this run
 - [`config.xml`](config.xml) — the MATSim config that Tareek made
-- [`counts.xml`](counts.xml) — the observed counts given to MATSim
-- [`matched_devices.csv`](matched_devices.csv) — FHA count devices matched to network links
-- [`demand_budget.json`](demand_budget.json) — the person-first demand budget (day types, purpose mix, persons per purpose)
-- [`freight_summary.json`](freight_summary.json) — freight cordons, trip totals and checks
-- [`od_matrix_diagnostics.json`](od_matrix_diagnostics.json) — checks on the work OD matrix
-- [`experiment_summary.json`](experiment_summary.json) — the full machine-readable run summary
-- [`experiment_20261006_052346.log`](experiment_20261006_052346.log) — the run log
+- [`counts.xml`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/counts.xml) — the observed counts given to MATSim
+- [`matched_devices.csv`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/matched_devices.csv) — FHA count devices matched to network links
+- [`demand_budget.json`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/demand_budget.json) — the person-first demand budget (day types, purpose mix, persons per purpose)
+- [`freight_summary.json`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/freight_summary.json) — freight cordons, trip totals and checks
+- [`od_matrix_diagnostics.json`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/od_matrix_diagnostics.json) — checks on the work OD matrix
+- [`experiment_summary.json`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/experiment_summary.json) — the full machine-readable run summary
+- [`experiment_20261006_052346.log`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/experiment_20261006_052346.log) — the run log
 
 ### Key parameters
 
@@ -200,7 +203,7 @@ The mode target for this region is the ACS commute split (see
 ### Freight
 
 Measured from the events of iteration 10 on the count links
-([`evaluation/freight_share_it10.txt`](evaluation/freight_share_it10.txt)):
+([`evaluation/freight_share_it10.txt`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/evaluation/freight_share_it10.txt)):
 
 | Block | Freight share of simulated volume | Ratio | Ratio without freight |
 |-------|----------------------------------:|------:|----------------------:|
@@ -219,7 +222,7 @@ Measured from the events of iteration 10 on the count links
 
 | | |
 |---|---|
-| ![Station ratios](evaluation/station_ratio_dotplot.png) | ![Hourly error](evaluation/hourly_relative_error_box.png) |
+| ![Station ratios](https://raw.githubusercontent.com/jalal1/TAREEK-examples/main/losangeles-20261006/evaluation/station_ratio_dotplot.png) | ![Hourly error](https://raw.githubusercontent.com/jalal1/TAREEK-examples/main/losangeles-20261006/evaluation/hourly_relative_error_box.png) |
 | Sim/obs ratio per station, sorted | Signed relative error per hour, all stations |
 
 The error is spatial. The stations near the region boundary are much too low, and the
@@ -230,13 +233,13 @@ stations in the core are too high:
 | Edge, too low | I-10 San Bernardino Fwy at Pomona (0.18, 0.23) · I-5 at San Clemente (0.15, 0.23) · I-210 Foothill Fwy at San Dimas (0.34, 0.46) · US-101 Ventura Fwy at Agoura Hills (0.42) · I-5 Santa Ana Fwy at Tustin (0.39, 0.69) · I-10 at Covina (0.59) |
 | Core, too high | I-405 at Sepulveda (1.23, 1.36) · US-101 Hollywood Fwy (1.26) · Arroyo Seco Pkwy (1.61) · I-210 at Pasadena (1.45, 1.95) · I-405 at Long Beach (1.48, 1.58) |
 
-More figures are in [`evaluation/`](evaluation/). The full set, with captions, is in
-[`report.html`](report.html).
+More figures are in [`evaluation/`](https://github.com/jalal1/TAREEK-examples/tree/main/losangeles-20261006/evaluation/). The full set, with captions, is in
+[`report.html`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/report.html).
 
-Data: [`evaluation/volume_comparison.csv`](evaluation/volume_comparison.csv) (per hour,
-per station) · [`evaluation/trip_timing_check.json`](evaluation/trip_timing_check.json)
-· [`matsim_output/10.countscompare.txt`](matsim_output/10.countscompare.txt) (MATSim's
-own count comparison) · [`matsim_output/`](matsim_output/) (mode and score statistics)
+Data: [`evaluation/volume_comparison.csv`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/evaluation/volume_comparison.csv) (per hour,
+per station) · [`evaluation/trip_timing_check.json`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/evaluation/trip_timing_check.json)
+· [`matsim_output/10.countscompare.txt`](https://github.com/jalal1/TAREEK-examples/blob/main/losangeles-20261006/matsim_output/10.countscompare.txt) (MATSim's
+own count comparison) · [`matsim_output/`](https://github.com/jalal1/TAREEK-examples/tree/main/losangeles-20261006/matsim_output/) (mode and score statistics)
 
 ---
 
@@ -275,7 +278,7 @@ own count comparison) · [`matsim_output/`](matsim_output/) (mode and score stat
 
 ## MATSim count graphs
 
-MATSim's own count graphs for iteration 10 are in [`graphs/`](graphs/). GitHub does not
+MATSim's own count graphs for iteration 10 are in [`graphs/`](https://github.com/jalal1/TAREEK-examples/tree/main/losangeles-20261006/graphs/). GitHub does not
 show them. Download or clone the folder and open `graphs/start.html` in a browser.
 
 ---

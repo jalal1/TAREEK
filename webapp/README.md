@@ -107,6 +107,12 @@ Experiments are found automatically. There is no list to edit.
    Without a README, the region name comes from the folder name (`Myregion`).
 3. Refresh the page (restart the backend if it does not reload).
 
+The full results of an experiment (report, figures and data) go in the
+[TAREEK-examples](https://github.com/jalal1/TAREEK-examples) repository, not in `examples/`. See its
+[CONTRIBUTING.md](https://github.com/jalal1/TAREEK-examples/blob/main/CONTRIBUTING.md). Put the link to the full
+results in a line before the README title, so that it does not change the
+region name or the description.
+
 The backend derives the rest:
 
 - **Pin location**: the population-weighted center of the counties in

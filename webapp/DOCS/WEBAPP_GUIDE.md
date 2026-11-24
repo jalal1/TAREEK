@@ -23,7 +23,7 @@ The browser owns editable state and the downloaded file. The backend reads confi
 | `webapp/frontend/js/config-state.js` | Complete configuration state, field bindings, snapshots, and survey toggling. |
 | `webapp/frontend/js/app.js` | Navigation, map interactions, configuration selection, control events, review, and download. |
 | `config/config_local.json` | Maintained baseline used for custom configurations. |
-| `examples/<preset-id>/config_used.json` | Experiment snapshots. A folder that also has `config.xml` is a preset. |
+| `examples/<preset-id>/config_used.json` | Experiment snapshots. A folder that also has `config.xml` is a preset. Each folder has only `README.md`, `config_used.json` and `config.xml`; the full results are in [TAREEK-examples](https://github.com/jalal1/TAREEK-examples). |
 
 Paths in this guide are relative to the repository root unless stated otherwise.
 

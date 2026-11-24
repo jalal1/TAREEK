@@ -53,7 +53,7 @@ again. Some research directions and practical problems that TAREEK can help with
 ### What a TAREEK run gives you
 
 Each run makes a full evaluation report. The figures below come from the
-[Birmingham, AL example](examples/birmingham-20260928/) (2 counties, 25% population
+[Birmingham, AL example](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-20260928) (2 counties, 25% population
 sample, 10 MATSim iterations).
 
 **Simulated vs. observed traffic at 8 AM.** Each point is one direction at one count
@@ -70,13 +70,13 @@ stations for one hour. Above zero, the model has too much traffic. Below zero, i
 little. The red line is the median and the black dot is the mean. You can see in which
 hours the model is good and in which hours it needs more work.
 
-![Signed relative error by hour, Birmingham](examples/birmingham-20260928/evaluation/hourly_relative_error_box.png)
+![Signed relative error by hour, Birmingham](docs/images/hourly_relative_error_box.png)
 
 **Departures and arrivals per hour, by activity.** Bars above zero show the trips that
 leave each activity. Bars below zero show the trips that arrive at each activity. You can
 see the morning trips from home to work and school, and the afternoon trips back home.
 
-![Departures and arrivals per hour, Birmingham](examples/birmingham-20260928/evaluation/dep_arr_by_activity_sim.png)
+![Departures and arrivals per hour, Birmingham](docs/images/dep_arr_by_activity_sim.png)
 
 **Count station error at 8 AM.** Each bar is one direction at one count station. Green
 is an error of 15% or less, yellow is 15-30%, and red is more than 30%. Use this map to
@@ -115,23 +115,30 @@ traffic, red links are congested, and blue shows transit stops and lines.*
 
 ## Examples
 
-The [examples folder](examples/) has complete runs for real regions: the config that was
-used, the results, and a full `report.html` for each run. Now it has
-[Twin Cities, MN-WI](examples/twincities-20260928/),
-[Birmingham, AL](examples/birmingham-20260928/) and
-[Madison, WI](examples/madison-20260928/). We will add more cities.
+The [TAREEK-examples](https://github.com/jalal1/TAREEK-examples) repository has complete runs for real regions: the config
+that was used, the results, and a full `report.html` for each run. Now it has
+[Twin Cities, MN-WI](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-20260928),
+[Birmingham, AL](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-20260928),
+[Madison, WI](https://github.com/jalal1/TAREEK-examples/tree/main/madison-20260928),
+[Chicago, IL](https://github.com/jalal1/TAREEK-examples/tree/main/chicago-20261003),
+[New York, NY-NJ](https://github.com/jalal1/TAREEK-examples/tree/main/newyork-20261006) and
+[Los Angeles, CA](https://github.com/jalal1/TAREEK-examples/tree/main/losangeles-20261006). We will add more cities.
+The [examples folder](examples/) of this repository keeps only the config files of each
+run, for the presets of the web app.
 
-The [Twin Cities TBI example](examples/twincities-tbi-20260930/) uses a custom local
+The [Twin Cities TBI example](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-tbi-20260930) uses a custom local
 household travel survey (TBI 2023) in place of NHTS, and compares the two surveys on the
-same region. The [Birmingham local survey example](examples/birmingham-localsurvey-20261001/)
+same region. The [Birmingham local survey example](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-localsurvey-20261001)
 is a first run with a small local survey (451 people). It uses survey roles: the local survey
 gives the chains, times and modes, and NHTS gives only the person-days. More tuning is needed.
 Custom surveys live in [`data/surveys/`](data/surveys/).
 
-You can also add your own region. See [examples/CONTRIBUTING.md](examples/CONTRIBUTING.md).
+You can also add your own region. See [CONTRIBUTING.md in TAREEK-examples](https://github.com/jalal1/TAREEK-examples/blob/main/CONTRIBUTING.md).
 
-> GitHub does not show HTML pages. To see a `report.html`, download the file and open it
-> in a web browser.
+> GitHub does not show HTML pages. To see a `report.html`, clone
+> [TAREEK-examples](https://github.com/jalal1/TAREEK-examples) (or download it as a ZIP file) and open the file in a web
+> browser. The report loads its images from the `evaluation/` folder next to it, so keep
+> the folder complete.
 
 ---
 
@@ -172,7 +179,6 @@ and we recommend it.
    ```
 
    This also installs Git, which you use in [Setup](#2-setup).
-
 4. Activate the new environment:
 
    ```bash
@@ -183,6 +189,7 @@ and we recommend it.
    osmium and Git are available only while `(tareek)` shows. Keep this prompt open and
    continue with [Setup](#2-setup). If you close it, open Miniforge Prompt again and type
    `conda activate tareek` again. You do not have to do `conda create` again.
+
 #### Option B: install each program separately
 
 Use this option if you already have Python or Java. On Windows, osmium-tool is available
@@ -251,11 +258,11 @@ git clone --depth 1 https://github.com/jalal1/TAREEK.git
 cd TAREEK
 ```
 
-No Git? On the [GitHub page](https://github.com/jalal1/TAREEK), click
 `--depth 1` downloads only the latest version of the files, without the full project
 history. This makes the download much smaller. If you want to contribute changes, you
 can get the full history later with `git fetch --unshallow`.
 
+No Git? On the [GitHub page](https://github.com/jalal1/TAREEK), click
 **Code → Download ZIP** and extract it. Then go into the folder, for example
 `cd Downloads\TAREEK-main` (macOS/Linux: `cd ~/Downloads/TAREEK-main`).
 
@@ -420,7 +427,7 @@ We welcome bug reports, code, and experiment contributions.
 - All contributors must sign the [Contributor License Agreement](CLA.md).
   You sign with one comment on your first pull request.
 - To share a run for a new region, see
-  [examples/CONTRIBUTING.md](examples/CONTRIBUTING.md).
+  [CONTRIBUTING.md in TAREEK-examples](https://github.com/jalal1/TAREEK-examples/blob/main/CONTRIBUTING.md).
 - To report a security problem, see [SECURITY.md](SECURITY.md). Do not open a
   public issue.
 

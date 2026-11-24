@@ -6,7 +6,7 @@ the Twin Cities region. The survey was in the field from January 12, 2023 to
 January 16, 2024.
 
 Tareek uses it as a **custom local survey** in place of the national NHTS. See the
-example [`examples/twincities-tbi-20260930`](../../examples/twincities-tbi-20260930/).
+example [`twincities-tbi-20260930`](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-tbi-20260930) in TAREEK-examples.
 
 ## Source and license
 

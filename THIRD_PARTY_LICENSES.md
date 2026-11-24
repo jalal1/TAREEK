@@ -67,19 +67,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### overLIB
-
-| Item | Value |
-|---|---|
-| Files | `examples/*/graphs/div/overlib.js` |
-| Version | overLIB 4.21 |
-| Copyright | Copyright Erik Bosrup 1998-2004. All rights reserved. |
-| License | The overLIB license agreement, at http://www.bosrup.com/web/overlib/ |
-
-MATSim writes this file into its count output, and we keep it unchanged in
-the examples. The TAREEK license does not apply to it. Do not remove or
-change its copyright notice.
-
 ## Data in this repository
 
 | Data | Files | Source | License |
@@ -94,9 +81,11 @@ change its copyright notice.
 
 ## Results that use OpenStreetMap data
 
-The road networks in the TAREEK runs come from OpenStreetMap. The results in
-`examples/` (for example `report.html`, `counts.xml`, and
-`matched_devices.csv`) use these networks.
+The road networks in the TAREEK runs come from OpenStreetMap. The example
+results in [TAREEK-examples](https://github.com/jalal1/TAREEK-examples) (for example `report.html`, `counts.xml`,
+and `matched_devices.csv`) and the example figures in `docs/images/` use
+these networks. TAREEK-examples has its own license file and third-party
+notices.
 
 Map data © OpenStreetMap contributors, available under the
 [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/).

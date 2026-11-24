@@ -7,7 +7,7 @@ before we can merge your pull request.
 
 All pull requests need a signed CLA before we merge them. This rule applies
 to every contributor and to every change, also small ones. It also applies
-to experiment contributions in `examples/`.
+to the example folders in `examples/` of this repository.
 
 The CLA is in [CLA.md](CLA.md). Read it before you sign. In summary:
 
@@ -64,9 +64,12 @@ If you cannot sign in public, contact the maintainer through
 
 ## Experiment contributions
 
-You can share a completed TAREEK run in `examples/`. Follow
-[examples/CONTRIBUTING.md](examples/CONTRIBUTING.md) for the folder name,
-the files, and the size limit. These rules also apply:
+You can share a completed TAREEK run in the
+[TAREEK-examples](https://github.com/jalal1/TAREEK-examples) repository. Follow its
+[CONTRIBUTING.md](https://github.com/jalal1/TAREEK-examples/blob/main/CONTRIBUTING.md) for the folder name, the
+files, and the size limit. To show the run as a preset in the web app, also
+add `examples/<id>/` to this repository with only `README.md`,
+`config_used.json` and `config.xml`. These rules also apply:
 
 - You must have the right to share all files in the experiment, also the
   data in them and the data that the results come from.

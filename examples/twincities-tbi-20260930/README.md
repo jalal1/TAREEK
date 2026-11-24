@@ -1,3 +1,5 @@
+> Full results (report, figures and data): [TAREEK-examples/twincities-tbi-20260930](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-tbi-20260930)
+
 # Twin Cities, MN-WI — TBI 2023 custom local survey — 2026-09-30
 
 > **This example uses a custom local household travel survey, not NHTS.**
@@ -26,13 +28,14 @@ that path for the Twin Cities.
 
 ## Full report
 
-**[`report.html`](report.html)** is the complete experiment report: the verdict, the
+**[`report.html`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/report.html)** is the complete experiment report: the verdict, the
 demand check against the TBI survey, the demand budget, the count validation, freight, and
-all the evaluation figures. It is one self-contained file. All the images are inside it.
+all the evaluation figures. It loads its images from the `evaluation/` folder next to it.
 
-> **How to open it:** GitHub does not show HTML pages. Open
-> [`report.html`](report.html) on GitHub, click **Download raw file**, then open the
-> downloaded file in a web browser. Or clone the repository and open the file locally.
+> **How to open it:** GitHub does not show HTML pages. Clone
+> [TAREEK-examples](https://github.com/jalal1/TAREEK-examples) (or download it as a ZIP file) and open
+> `twincities-tbi-20260930/report.html` in a web browser. Keep the `evaluation/` folder next to
+> `report.html`, because the report loads its images from it.
 
 ---
 
@@ -166,13 +169,13 @@ keys in the config are **optional** — see [Optional API keys](#optional-api-ke
 
 - [`config_used.json`](config_used.json) — the full Tareek config for this run
 - [`config.xml`](config.xml) — the MATSim config that Tareek made
-- [`counts.xml`](counts.xml) — the observed counts given to MATSim
-- [`matched_devices.csv`](matched_devices.csv) — FHA count devices matched to network links
-- [`demand_budget.json`](demand_budget.json) — the person-first demand budget from the TBI person-days (with the reported commute check)
-- [`freight_summary.json`](freight_summary.json) — freight cordons, trip totals and checks
-- [`od_matrix_diagnostics.json`](od_matrix_diagnostics.json) — checks on the work OD matrix
-- [`experiment_summary.json`](experiment_summary.json) — the full machine-readable run summary
-- [`experiment_20260930_072013.log`](experiment_20260930_072013.log) — the run log
+- [`counts.xml`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/counts.xml) — the observed counts given to MATSim
+- [`matched_devices.csv`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/matched_devices.csv) — FHA count devices matched to network links
+- [`demand_budget.json`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/demand_budget.json) — the person-first demand budget from the TBI person-days (with the reported commute check)
+- [`freight_summary.json`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/freight_summary.json) — freight cordons, trip totals and checks
+- [`od_matrix_diagnostics.json`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/od_matrix_diagnostics.json) — checks on the work OD matrix
+- [`experiment_summary.json`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/experiment_summary.json) — the full machine-readable run summary
+- [`experiment_20260930_072013.log`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/experiment_20260930_072013.log) — the run log
 
 ### Key parameters
 
@@ -252,7 +255,7 @@ The trips per person is per simulated agent (travellers only).
 ### Freight
 
 Measured from the events of iteration 10 on the count links
-([`evaluation/freight_share_it10.txt`](evaluation/freight_share_it10.txt)):
+([`evaluation/freight_share_it10.txt`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/evaluation/freight_share_it10.txt)):
 
 | Block | Freight share of simulated volume | Ratio | Ratio without freight |
 |-------|----------------------------------:|------:|----------------------:|
@@ -269,22 +272,22 @@ for the notes on the freight level.
 
 | | |
 |---|---|
-| ![Station ratios](evaluation/station_ratio_dotplot.png) | ![Hourly error](evaluation/hourly_relative_error_box.png) |
+| ![Station ratios](https://raw.githubusercontent.com/jalal1/TAREEK-examples/main/twincities-tbi-20260930/evaluation/station_ratio_dotplot.png) | ![Hourly error](https://raw.githubusercontent.com/jalal1/TAREEK-examples/main/twincities-tbi-20260930/evaluation/hourly_relative_error_box.png) |
 | Sim/obs ratio per station, sorted | Signed relative error per hour, all stations |
 
-More figures are in [`evaluation/`](evaluation/). The full set, with captions, is in
-[`report.html`](report.html).
+More figures are in [`evaluation/`](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-tbi-20260930/evaluation/). The full set, with captions, is in
+[`report.html`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/report.html).
 
-Data: [`evaluation/volume_comparison.csv`](evaluation/volume_comparison.csv) (per hour,
-per station) · [`evaluation/trip_timing_check.json`](evaluation/trip_timing_check.json)
-· [`matsim_output/10.countscompare.txt`](matsim_output/10.countscompare.txt) (MATSim's
-own count comparison) · [`matsim_output/`](matsim_output/) (mode and score statistics)
+Data: [`evaluation/volume_comparison.csv`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/evaluation/volume_comparison.csv) (per hour,
+per station) · [`evaluation/trip_timing_check.json`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/evaluation/trip_timing_check.json)
+· [`matsim_output/10.countscompare.txt`](https://github.com/jalal1/TAREEK-examples/blob/main/twincities-tbi-20260930/matsim_output/10.countscompare.txt) (MATSim's
+own count comparison) · [`matsim_output/`](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-tbi-20260930/matsim_output/) (mode and score statistics)
 
 ---
 
 ## MATSim count graphs
 
-MATSim's own count graphs for iteration 10 are in [`graphs/`](graphs/). GitHub does not
+MATSim's own count graphs for iteration 10 are in [`graphs/`](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-tbi-20260930/graphs/). GitHub does not
 show them. Download or clone the folder and open `graphs/start.html` in a browser.
 
 ---

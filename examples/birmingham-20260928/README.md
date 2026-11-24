@@ -1,3 +1,5 @@
+> Full results (report, figures and data): [TAREEK-examples/birmingham-20260928](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-20260928)
+
 # Birmingham, AL experiment — 2026-09-28
 
 A full Tareek run for the Birmingham metro core, compared against FHA directional
@@ -15,18 +17,19 @@ way as the [Twin Cities example](../twincities-20260928/).
 
 ## Full report
 
-**[`report.html`](report.html)** is the complete experiment report: the verdict, the
+**[`report.html`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/report.html)** is the complete experiment report: the verdict, the
 demand check against the household survey, the count validation, freight, and all the
-evaluation figures. It is one self-contained file. All the images are inside it.
+evaluation figures. It loads its images from the `evaluation/` folder next to it.
 
-> **How to open it:** GitHub does not show HTML pages. Open
-> [`report.html`](report.html) on GitHub, click **Download raw file**, then open the
-> downloaded file in a web browser. Or clone the repository and open the file locally.
+> **How to open it:** GitHub does not show HTML pages. Clone
+> [TAREEK-examples](https://github.com/jalal1/TAREEK-examples) (or download it as a ZIP file) and open
+> `birmingham-20260928/report.html` in a web browser. Keep the `evaluation/` folder next to
+> `report.html`, because the report loads its images from it.
 
 To make the same report for your own run:
 
 ```bash
-python scripts/experiment_report.py experiments/<experiment-id> --no-pdf
+python scripts/experiment_report.py experiments/<experiment-id> --no-pdf --link-images
 ```
 
 ---
@@ -87,13 +90,13 @@ keys in the config are **optional** — see [Optional API keys](#optional-api-ke
 
 - [`config_used.json`](config_used.json) — the full Tareek config for this run
 - [`config.xml`](config.xml) — the MATSim config that Tareek made
-- [`counts.xml`](counts.xml) — the observed counts given to MATSim
-- [`matched_devices.csv`](matched_devices.csv) — FHA count devices matched to network links
-- [`demand_budget.json`](demand_budget.json) — the person-first demand budget
-- [`freight_summary.json`](freight_summary.json) — freight cordons, trip totals and checks
-- [`od_matrix_diagnostics.json`](od_matrix_diagnostics.json) — checks on the work OD matrix
-- [`experiment_summary.json`](experiment_summary.json) — the full machine-readable run summary
-- [`experiment_20260928_185021.log`](experiment_20260928_185021.log) — the run log
+- [`counts.xml`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/counts.xml) — the observed counts given to MATSim
+- [`matched_devices.csv`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/matched_devices.csv) — FHA count devices matched to network links
+- [`demand_budget.json`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/demand_budget.json) — the person-first demand budget
+- [`freight_summary.json`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/freight_summary.json) — freight cordons, trip totals and checks
+- [`od_matrix_diagnostics.json`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/od_matrix_diagnostics.json) — checks on the work OD matrix
+- [`experiment_summary.json`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/experiment_summary.json) — the full machine-readable run summary
+- [`experiment_20260928_185021.log`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/experiment_20260928_185021.log) — the run log
 
 ### Key parameters
 
@@ -185,7 +188,7 @@ survey is loaded for this region, so the reference is the national survey.
 ### Freight
 
 Measured from the events of iteration 10 on the count links
-([`evaluation/freight_share_it10.txt`](evaluation/freight_share_it10.txt)):
+([`evaluation/freight_share_it10.txt`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/evaluation/freight_share_it10.txt)):
 
 | Block | Freight share of simulated volume | Ratio | Ratio without freight |
 |-------|----------------------------------:|------:|----------------------:|
@@ -202,22 +205,22 @@ truck volume. HPMS gives a truck share of 16.3% on the urban interstates of Alab
 
 | | |
 |---|---|
-| ![Station ratios](evaluation/station_ratio_dotplot.png) | ![Hourly error](evaluation/hourly_relative_error_box.png) |
+| ![Station ratios](https://raw.githubusercontent.com/jalal1/TAREEK-examples/main/birmingham-20260928/evaluation/station_ratio_dotplot.png) | ![Hourly error](https://raw.githubusercontent.com/jalal1/TAREEK-examples/main/birmingham-20260928/evaluation/hourly_relative_error_box.png) |
 | Sim/obs ratio per station, sorted | Signed relative error per hour, all stations |
 
-More figures are in [`evaluation/`](evaluation/). The full set, with captions, is in
-[`report.html`](report.html).
+More figures are in [`evaluation/`](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-20260928/evaluation/). The full set, with captions, is in
+[`report.html`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/report.html).
 
-Data: [`evaluation/volume_comparison.csv`](evaluation/volume_comparison.csv) (per hour,
-per station) · [`evaluation/trip_timing_check.json`](evaluation/trip_timing_check.json)
-· [`matsim_output/10.countscompare.txt`](matsim_output/10.countscompare.txt) (MATSim's
-own count comparison) · [`matsim_output/`](matsim_output/) (mode and score statistics)
+Data: [`evaluation/volume_comparison.csv`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/evaluation/volume_comparison.csv) (per hour,
+per station) · [`evaluation/trip_timing_check.json`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/evaluation/trip_timing_check.json)
+· [`matsim_output/10.countscompare.txt`](https://github.com/jalal1/TAREEK-examples/blob/main/birmingham-20260928/matsim_output/10.countscompare.txt) (MATSim's
+own count comparison) · [`matsim_output/`](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-20260928/matsim_output/) (mode and score statistics)
 
 ---
 
 ## MATSim count graphs
 
-MATSim's own count graphs for iteration 10 are in [`graphs/`](graphs/). GitHub does not
+MATSim's own count graphs for iteration 10 are in [`graphs/`](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-20260928/graphs/). GitHub does not
 show them. Download or clone the folder and open `graphs/start.html` in a browser.
 
 ---

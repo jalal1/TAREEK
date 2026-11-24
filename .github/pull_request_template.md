@@ -6,7 +6,7 @@
 
 <!-- Select the category that best describes this PR. -->
 
-- [ ] **Experiment contribution** — share a completed TAREEK simulation under `examples/`
+- [ ] **Experiment preset** — add `examples/<id>/` (only `README.md`, `config_used.json`, `config.xml`) for an experiment whose full results are in [TAREEK-examples](https://github.com/jalal1/TAREEK-examples)
 - [ ] Bug fix
 - [ ] New feature / enhancement
 - [ ] Refactoring / performance improvement
@@ -28,28 +28,19 @@ For code: describe the behavior added, fixed, or changed. -->
 
 -
 
-## Experiment contribution checklist
+## Experiment preset checklist
 
-<!-- Only complete this section if sharing an experiment. Follow examples/CONTRIBUTING.md. -->
+<!-- Share the full results of an experiment (report, figures, data) in TAREEK-examples
+(https://github.com/jalal1/TAREEK-examples), with its own pull request and checklist.
+Complete this section only if this PR adds the small preset folder to examples/. -->
 
-- [ ] My experiment lives in `examples/<region>-<author>-<YYYYMMDD>/` (maintainers may omit `<author>`)
-- [ ] I added a `README.md` describing the experiment, configuration, and results
-- [ ] I included `report.html` generated using `python scripts/experiment_report.py experiments/<experiment-id> --no-pdf`
-- [ ] I included `config_used.json` and any relevant small result CSVs / figures
-- [ ] I did **not** commit large or regenerable inputs (such as OSM extracts or MATSim networks/plans)
-- [ ] My contribution targets under 50 MB
-- [ ] I replaced all live API keys and secrets in configuration and other files with placeholders
-- [ ] I documented any external services or keys needed to reproduce the experiment
-- [ ] I have the right to share the data, and my `README.md` gives the source and license of each input dataset (for example, OpenStreetMap data is ODbL)
-- [ ] I added my experiment to the index in `examples/README.md`
-- [ ] Not applicable — this PR does not share an experiment
-
-**Experiment details (if applicable):**
-
-- Region:
-- Scenario / purpose:
-- Key results:
-- Reproduction notes:
+- [ ] The full results of my experiment are in TAREEK-examples (link: )
+- [ ] My folder is `examples/<region>-<author>-<YYYYMMDD>/`, with the same name as in TAREEK-examples (maintainers may omit `<author>`)
+- [ ] The folder has only `README.md`, `config_used.json` and `config.xml`
+- [ ] The first line of `README.md` links to the full results in TAREEK-examples, before the title
+- [ ] I replaced all live API keys and secrets in the configuration files with placeholders
+- [ ] I added my experiment to the table in `examples/README.md`
+- [ ] Not applicable — this PR does not add an experiment preset
 
 ## Code contribution checklist
 
