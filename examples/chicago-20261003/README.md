@@ -75,7 +75,7 @@ Before you start, change these values in the config for your machine:
 
 | Field | Value in this run | Change to |
 |-------|-------------------|-----------|
-| `data.data_dir` | server path | the `data/` folder of your clone |
+| `data.data_dir` | server path | `"../data"`, or set the `TAREEK_DATA_DIR` environment variable |
 | `matsim.heap_size_gb` | 180 (with `matsim.heap_ram_fraction` 0.80) | less than your RAM |
 | `plan_generation.num_processes` | 60 | your CPU count, or less |
 | `matsim.configurable_params.global.numberOfThreads` | 60 | your CPU count, or less |
