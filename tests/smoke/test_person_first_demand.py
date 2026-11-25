@@ -251,17 +251,30 @@ def test_compute_demand_budget_segments_and_origins(no_acs):
 
 
 @pytest.mark.smoke
-def test_nonwork_trip_share_scales_every_purpose(no_acs):
+def test_nonwork_trip_share_scales_discretionary_purposes_not_school(no_acs):
     pdays, persons, home = _budget_inputs()
     base = db.compute_demand_budget(_budget_config(1.0), _FakeBudgetManager({'nhts': pdays}),
                                     {'nhts': persons}, json.loads(json.dumps(home)), build_chains=False)
     more = db.compute_demand_budget(_budget_config(1.8), _FakeBudgetManager({'nhts': pdays}),
                                     {'nhts': persons}, json.loads(json.dumps(home)), build_chains=False)
     for p in PURPOSES:
-        assert more.purpose_origin_totals[p] == pytest.approx(1.8 * base.purpose_origin_totals[p])
-        assert more.purpose_factors[p] == pytest.approx(1.8)
+        expected = 1.0 if p == 'School' else 1.8
+        assert more.purpose_origin_totals[p] == pytest.approx(expected * base.purpose_origin_totals[p])
+        assert more.purpose_factors[p] == pytest.approx(expected)
+    assert more.summary()['knob_excluded_purposes'] == ['School']
     # the knob acts on non-work only: P(commute) is unchanged
     assert more.p_commute == pytest.approx(base.p_commute)
+
+
+@pytest.mark.smoke
+def test_empty_knob_exclusion_list_scales_every_purpose(no_acs):
+    pdays, persons, home = _budget_inputs()
+    cfg = _budget_config(1.8)
+    cfg['nonwork_purposes']['knob_excluded_purposes'] = []
+    more = db.compute_demand_budget(cfg, _FakeBudgetManager({'nhts': pdays}),
+                                    {'nhts': persons}, json.loads(json.dumps(home)), build_chains=False)
+    for p in PURPOSES:
+        assert more.purpose_factors[p] == pytest.approx(1.8)
 
 
 @pytest.mark.smoke

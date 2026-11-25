@@ -162,6 +162,18 @@ def enabled_purposes(config: Dict) -> List[str]:
 
 # ── Budget ──────────────────────────────────────────────────────────────
 
+def nonwork_knob_excluded_purposes(config: Dict) -> List[str]:
+    """Purposes that nonwork_trip_share does not scale.
+
+    nonwork_purposes.knob_excluded_purposes, default ["School"]. Set [] to
+    get the old behaviour (the knob scales every purpose).
+    """
+    value = config.get('nonwork_purposes', {}).get('knob_excluded_purposes', ['School'])
+    if isinstance(value, str):
+        value = [value]
+    return list(value or [])
+
+
 class DemandBudget:
     """Result of compute_demand_budget(). See the module docstring."""
 
@@ -179,6 +191,7 @@ class DemandBudget:
         self.age_source: str = ''
         self.reported_commute_by_source: Dict[str, Dict[str, float]] = {}  # person-file check
         self.person_day_weights: Dict[str, float] = {}             # normalised, sources used
+        self.knob_excluded_purposes: List[str] = []                # not scaled by nonwork_trip_share
         self.notes: List[str] = []
 
     def origin_key(self, purpose: str) -> str:
@@ -197,6 +210,7 @@ class DemandBudget:
                                              for s, d in self.purpose_rates.items()},
             'nonwork_persons_unscaled': {p: round(v) for p, v in self.purpose_origin_totals.items()},
             'knob_factors': {p: r(v) for p, v in self.purpose_factors.items()},
+            'knob_excluded_purposes': list(self.knob_excluded_purposes),
             'age_split_source': self.age_source,
             'p_commute_reported_by_source': {src: {k: r(v) for k, v in d.items()}
                                              for src, d in self.reported_commute_by_source.items()},
@@ -409,13 +423,20 @@ def compute_demand_budget(config: Dict,
     total_pop = sum(seg_pop.values())
 
     # ── Knob factors per purpose ───────────────────────────────────────
+    # nonwork_trip_share is a level knob for discretionary travel. School is
+    # mandatory and tied to the student count, so it is excluded by default:
+    # at knob 1.8 Stearns got 41k school plans for 27k students, and every
+    # extra school trip landed in the morning peak (item 4, 2026-11-25).
+    excluded = set(nonwork_knob_excluded_purposes(config))
+    budget.knob_excluded_purposes = sorted(excluded & set(purposes))
     for p in purposes:
-        base = sum(seg_pop[s] * budget.purpose_rates[s][p] for s in TRAVEL_SEGMENTS) * share_knob
+        knob = 1.0 if p in excluded else share_knob
+        base = sum(seg_pop[s] * budget.purpose_rates[s][p] for s in TRAVEL_SEGMENTS) * knob
         rate = base / total_pop if total_pop > 0 else 0.0
         tg = nw_cfg.get(p, {}).get('trip_generation', {})
         w = float(tg.get('blend_weight', 0) or 0)
         cfg_rate = tg.get('config_rate')
-        factor = share_knob
+        factor = knob
         if w > 0 and cfg_rate is not None and rate > 0:
             factor *= ((1 - w) * rate + w * float(cfg_rate)) / rate
         budget.purpose_factors[p] = factor

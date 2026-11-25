@@ -765,7 +765,9 @@ def _demand_budget_section(exp_dir: Path, summary: Dict[str, Any]) -> List[str]:
              f"({_fmt(work_mult, 2)}).")
     L.append(f"- **Demand knobs:** `work_scaling_multiplier` {_fmt(work_mult, 2)}, "
              f"`nonwork_trip_share` {_fmt(share, 2)} (neutral = 1.0). A knob above 1.0 "
-             f"makes more demand than the survey says.")
+             f"makes more demand than the survey says."
+             + (f" Not scaled by the knob: {', '.join(budget['knob_excluded_purposes'])}."
+                if budget.get('knob_excluded_purposes') else ""))
     L.append(f"- **Survey months:** `{data.get('survey_months', 'regular')}` · "
              f"**age split of non-workers:** {budget.get('age_split_source') or '—'}")
 
