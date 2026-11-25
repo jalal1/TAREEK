@@ -22,10 +22,10 @@
     </module>
     <module name="eventsManager">
         <!-- Hermes logs "should be run with one thread per handler" (P4).
-             MATSim's default (false) is kept here for QSim. ConfigManager sets
-             true when controller.mobsim is hermes, unless configurable_params
-             sets eventsManager.oneThreadPerHandler. The module must exist in
-             the template for the parameter to be overridable. -->
+             Kept false (MATSim's default): true was ~28% faster on a short
+             test but crashed MATSim 25 on Madison (LegHistogram thread race).
+             A config can set eventsManager.oneThreadPerHandler; the module
+             must exist here for the parameter to be overridable. -->
         <param name="oneThreadPerHandler" value="false" />
     </module>
     <module name="linkStats">

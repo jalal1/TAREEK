@@ -1104,15 +1104,15 @@ class ConfigManager:
                         self._set_or_add_parameter(tree, 'hermes', param, _xml_value(value))
                         logger.info(f"Mirrored qsim.{param} -> hermes.{param} = {value}")
 
-        # Hermes: one events thread per handler, unless the config set it (P4).
-        # Measured 2026-11-25 (Anoka, 4 iterations, identical plans): mobsim
-        # time 108 s -> 64 s, iteration total 153 s -> 110 s. QSim keeps
-        # MATSim's default; it was not measured there.
-        user_keys = set(self.matsim_config.get('configurable_params', {}) or {}) | set(custom_params or {})
-        if ('eventsManager.oneThreadPerHandler' not in user_keys
-                and self._param_value(tree, 'controller', 'mobsim') == 'hermes'):
-            self._set_or_add_parameter(tree, 'eventsManager', 'oneThreadPerHandler', 'true')
-            logger.info("mobsim=hermes: eventsManager.oneThreadPerHandler = true")
+        # eventsManager.oneThreadPerHandler is NOT set automatically (P4). It
+        # made Hermes iterations ~28% faster on a 4-iteration Anoka test, but
+        # on Madison it crashed MATSim 25 in iteration 9: LegHistogram's
+        # TreeMap was changed from two event threads at once
+        # (NullPointerException in TreeMap.fixAfterInsertion). A config can
+        # still set it in configurable_params, at its own risk.
+        if self._param_value(tree, 'eventsManager', 'oneThreadPerHandler') == 'true':
+            logger.warning("eventsManager.oneThreadPerHandler = true: faster with hermes, but "
+                           "MATSim 25 can crash in LegHistogram (thread race, seen 2026-11-25)")
 
         # Ensure file paths are relative (network.xml, plans.xml are in same dir as config)
         self.update_parameter(tree, 'network', 'inputNetworkFile', 'network.xml')
