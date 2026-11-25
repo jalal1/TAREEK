@@ -12,6 +12,7 @@ Follows the GTFSManager pattern: a manager with a setup() method called from
 run_experiment.py, with data cached in the DB so ETL only runs once per region.
 """
 
+import json
 import zipfile
 from pathlib import Path
 from typing import Any, Dict, Set
@@ -104,10 +105,7 @@ class FHACountsManager:
             logger.warning("FHA: no counties configured — cannot load FHA data")
             return False
 
-        if rebuild:
-            logger.info("FHA counts rebuild requested — clearing existing data and re-running ETL")
-            self._clear_region_data(needed)
-        elif self.has_data_for_region():
+        if not rebuild and self.has_data_for_region():
             logger.info("FHA counts data already loaded in DB — skipping ETL")
             return True
 
@@ -122,12 +120,24 @@ class FHACountsManager:
                  "(https://highways.dot.gov/policy/policy-information/special-tabulations/"
                  f"us-traffic-volume-data) and put it in {self.data_dir}, or set "
                  "fha.year/fha.month to a file that is there.")
-        if not station_zip.exists():
-            logger.error(f"FHA station zip not found: {station_zip}. {where}")
+        missing_zip = next((z for z in (station_zip, volume_zip) if not z.exists()), None)
+        if missing_zip is not None:
+            # Without the zips the DB cannot be reloaded. Keep the rows that
+            # are there (the old behaviour) rather than clear them: a machine
+            # may have the DB but not the zips.
+            if not rebuild and self._db_has_rows_for(needed):
+                logger.warning(f"FHA zip not found: {missing_zip}. Using the stations "
+                               f"already in the DB; they may belong to another region, "
+                               f"year or month. {where}")
+                return True
+            logger.error(f"FHA zip not found: {missing_zip}. {where}")
             return False
-        if not volume_zip.exists():
-            logger.error(f"FHA volume zip not found: {volume_zip}. {where}")
-            return False
+
+        # Rebuild, or rows of another region / year / month: clear the
+        # states first, so no station of the old region stays behind.
+        logger.info("FHA counts: clearing existing data for the needed states and re-running ETL"
+                    + (" (rebuild requested)" if rebuild else ""))
+        self._clear_region_data(needed)
 
         all_stations = []
         all_volumes = []
@@ -197,6 +207,7 @@ class FHACountsManager:
 
         # Load to DB
         self._load_to_db(stations_with_vol, agg_volumes)
+        self._write_region_marker()
 
         logger.info(f"FHA: loaded {len(stations_with_vol)} station-directions, "
                     f"{len(agg_volumes)} volume records for "
@@ -268,11 +279,23 @@ class FHACountsManager:
         if not needed:
             return False
 
+        # The DB keeps one region per state: the stations of the counties of
+        # the last ETL. A run with other counties in the same state, or another
+        # fha.year/month, must reload, or it silently uses the old stations.
+        marker = self._read_region_marker()
+        signature = self._region_signature()
         for state_fips in needed:
-            results = self.db_manager.query_all(
-                FHAStation, filters={'state_code': state_fips}
-            )
-            if not results:
+            if marker.get(state_fips) != signature[state_fips]:
+                logger.info(f"FHA: DB rows for state {state_fips} were loaded for "
+                            f"{marker.get(state_fips) or 'an unknown region'}; this run "
+                            f"needs {signature[state_fips]} -> reloading")
+                return False
+        return self._db_has_rows_for(needed)
+
+    def _db_has_rows_for(self, needed) -> bool:
+        """True when the DB has at least one station for every needed state."""
+        for state_fips in needed:
+            if not self.db_manager.query_all(FHAStation, filters={'state_code': state_fips}):
                 return False
         return True
 
@@ -337,14 +360,19 @@ class FHACountsManager:
             if col in df.columns:
                 df[col] = df[col].str.strip()
 
-        # Filter to our counties
-        df = df[df['county_code'].isin(county_codes)].copy()
+        # Convert lat/lon: scaled integers → decimal, negate longitude for US
+        df['lat'] = pd.to_numeric(df['latitude'], errors='coerce') / 1_000_000
+        df['lon'] = -pd.to_numeric(df['longitude'], errors='coerce') / 1_000_000
+
+        # Filter to our counties by LOCATION, not by the STA county_code.
+        # States mis-code county_code (often '000'): Wisconsin codes nearly all
+        # Dane County stations '000', so the code filter kept 10 of 59
+        # station-directions for Madison, 100 of 136 for the Twin Cities and
+        # 2 of 8 for Stearns (item 7, 2026-11-25). The counts generator
+        # matches stations to links by their coordinates anyway.
+        df = self._filter_to_region(df, state_fips, county_codes)
         if df.empty:
             return pd.DataFrame()
-
-        # Convert lat/lon: scaled integers → decimal, negate longitude for US
-        df['lat'] = df['latitude'].astype(float) / 1_000_000
-        df['lon'] = -df['longitude'].astype(float) / 1_000_000
 
         # Direction code: keep only cardinal directions (1=N,3=E,5=S,7=W).
         # Diagonal codes (2/4/6/8) are rare and can't be matched to a single
@@ -379,6 +407,69 @@ class FHACountsManager:
         })
 
         return result.reset_index(drop=True)
+
+    def _filter_to_region(self, df: pd.DataFrame, state_fips: str,
+                          county_codes: Set[str]) -> pd.DataFrame:
+        """Rows whose (lat, lon) is inside the configured counties of this state.
+
+        Falls back to the STA county_code when the county polygons cannot be
+        loaded (no shapefile and no download).
+        """
+        from utils.region_utils import load_county_polygons
+        geoids = [state_fips + c for c in sorted(county_codes)]
+        data_dir = self.config.get('data', {}).get('data_dir', 'data')
+        polygons = load_county_polygons(geoids, data_dir)
+        if not polygons:
+            logger.warning(f"FHA: county polygons for {geoids} not available; "
+                           f"filtering stations by the STA county_code (may drop "
+                           f"mis-coded stations)")
+            return df[df['county_code'].isin(county_codes)].copy()
+
+        import geopandas as gpd
+        from shapely.ops import unary_union
+        region = unary_union(polygons)
+        ok = df['lat'].notna() & df['lon'].notna()
+        pts = gpd.GeoSeries(gpd.points_from_xy(df.loc[ok, 'lon'], df.loc[ok, 'lat']),
+                            index=df.index[ok], crs='EPSG:4326')
+        inside = pts.within(region)
+        keep = df.loc[inside[inside].index].copy()
+        by_code = df['county_code'].isin(county_codes)
+        n_code = int(by_code.sum())
+        n_gained = int((~by_code.loc[keep.index]).sum())
+        n_lost = int((by_code & ~df.index.isin(keep.index)).sum())
+        logger.info(f"FHA: {len(keep)} station rows inside the region counties "
+                    f"(county_code filter would keep {n_code}: +{n_gained} mis-coded "
+                    f"inside, -{n_lost} coded here but located outside)")
+        return keep
+
+    def _region_marker_path(self) -> Path:
+        """Beside the DB file: the marker describes what the DB holds, so two
+        DBs that share one FHA zip folder must not share one marker."""
+        db_path = getattr(self.db_manager, 'db_path', None)
+        if db_path:
+            return Path(db_path).with_name(Path(db_path).stem + '.fha_region.json')
+        return self.data_dir / '.loaded_region.json'
+
+    def _region_signature(self) -> Dict[str, Any]:
+        """What the DB rows of each state were loaded for."""
+        return {st: {'counties': sorted(codes), 'year': int(self.year), 'month': int(self.month)}
+                for st, codes in self._get_needed_states().items()}
+
+    def _read_region_marker(self) -> Dict[str, Any]:
+        try:
+            with open(self._region_marker_path(), encoding='utf-8') as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return {}
+
+    def _write_region_marker(self) -> None:
+        marker = self._read_region_marker()
+        marker.update(self._region_signature())
+        try:
+            with open(self._region_marker_path(), 'w', encoding='utf-8') as f:
+                json.dump(marker, f, indent=1, sort_keys=True)
+        except OSError as e:
+            logger.warning(f"FHA: could not write {self._region_marker_path()}: {e}")
 
     def _parse_volumes(self, zip_path: Path, state_abbr: str,
                        state_fips: str, station_ids: Set[str]) -> pd.DataFrame:
