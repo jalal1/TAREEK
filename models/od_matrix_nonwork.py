@@ -490,6 +490,86 @@ def calculate_blended_survey_trip_rate(survey_dfs: Dict[str, pd.DataFrame],
     return blended_rate
 
 
+def survey_home_based_log_km(survey_df: pd.DataFrame, purpose: str,
+                             config: Dict[str, Any]) -> Optional[Tuple[float, float, int]]:
+    """Weighted mean log(beeline km) and median km of survey Home -> purpose trips.
+
+    Beeline = reported distance / circuity (od_matrix.beta_calibration.circuity,
+    default 1.25). Trips longer than max_km (default 80) are left out: a
+    region model cannot hold them, and a few of them move a mean a lot.
+    Returns None when there are too few trips.
+    """
+    B = BaseSurveyTrip
+    cal = config.get('od_matrix', {}).get('beta_calibration', {})
+    circuity = float(cal.get('circuity', 1.25))
+    max_km = float(cal.get('max_km', 80.0))
+    need = {B.ORIGIN_PURPOSE, B.DESTINATION_PURPOSE, B.DISTANCE}
+    if survey_df is None or not need.issubset(survey_df.columns):
+        return None
+    sel = (survey_df[B.ORIGIN_PURPOSE] == B.ACT_HOME) & (survey_df[B.DESTINATION_PURPOSE] == purpose)
+    km = pd.to_numeric(survey_df.loc[sel, B.DISTANCE], errors='coerce') * 1.609344 / circuity
+    if B.TRIP_WEIGHT in survey_df.columns:
+        w = pd.to_numeric(survey_df.loc[sel, B.TRIP_WEIGHT], errors='coerce').fillna(1.0)
+    else:
+        w = pd.Series(1.0, index=km.index)
+    ok = km.notna() & (km > 0.05) & (km <= max_km) & (w > 0)
+    km, w = km[ok].to_numpy(), w[ok].to_numpy()
+    if len(km) < 30:
+        return None
+    order = np.argsort(km)
+    median = float(km[order][np.searchsorted(np.cumsum(w[order]), 0.5 * w.sum())])
+    return float(np.average(np.log(km), weights=w)), median, len(km)
+
+
+def calibrate_beta_to_survey(dist_km: np.ndarray, Oi: np.ndarray, Aj: np.ndarray,
+                             survey_df: pd.DataFrame, purpose: str,
+                             config: Dict[str, Any]) -> float:
+    """beta at which the gravity model's mean log distance equals the survey's.
+
+    For od_matrix.beta = "auto". The model is singly constrained at the
+    origins, so the trip shares of row i are Aj * d_ij^-beta normalised over
+    j, and the weighted mean log distance falls as beta rises: a bisection on
+    beta finds the match. The log mean is used, not the mean, because the
+    defect it fixes is in the bulk of the distribution (P1: planned
+    non-work legs had half the survey median, while the long power-law tail
+    kept the mean close).
+    """
+    target = survey_home_based_log_km(survey_df, purpose, config)
+    fallback = float(config.get('od_matrix', {}).get('beta_calibration', {}).get('fallback_beta', 2.0))
+    if target is None:
+        logger.warning(f"beta=auto for {purpose}: too few survey Home->{purpose} trips; "
+                       f"using fallback beta {fallback}")
+        return fallback
+    target_log, target_median, n = target
+    log_d = np.log(np.maximum(dist_km, 1e-3))
+    row_w = Oi / max(Oi.sum(), 1e-30)
+
+    def model_log(b):
+        f = Aj * np.exp(-b * (log_d - log_d.min(axis=1, keepdims=True)))
+        p = f / np.maximum(f.sum(axis=1, keepdims=True), 1e-300)
+        return float(row_w @ (p * log_d).sum(axis=1))
+
+    lo, hi = 0.05, 5.0
+    m_lo, m_hi = model_log(lo), model_log(hi)
+    if not (m_hi <= target_log <= m_lo):
+        beta = lo if target_log > m_lo else hi
+        logger.warning(f"beta=auto for {purpose}: survey mean log km {target_log:.3f} is outside "
+                       f"the model range [{m_hi:.3f}, {m_lo:.3f}] for beta in [{lo}, {hi}]; "
+                       f"using beta {beta}")
+        return beta
+    for _ in range(25):
+        mid = 0.5 * (lo + hi)
+        if model_log(mid) > target_log:
+            lo = mid
+        else:
+            hi = mid
+    beta = round(0.5 * (lo + hi), 3)
+    logger.info(f"beta=auto for {purpose}: beta {beta} (survey Home->{purpose}: {n:,} trips, "
+                f"geometric mean {np.exp(target_log):.2f} km, median {target_median:.2f} km "
+                f"beeline; model geometric mean {np.exp(model_log(beta)):.2f} km)")
+    return beta
+
+
 def create_gravity_od_matrix_nonwork(home_locs_dict: Dict[str, Dict[str, Any]],
                                       poi_density_dict: Dict[str, int],
                                       purpose: str,
@@ -620,6 +700,11 @@ def create_gravity_od_matrix_nonwork(home_locs_dict: Dict[str, Dict[str, Any]],
         )
         logger.info(f"  Distances in km: median {np.median(friction):.2f}, "
                     f"min {friction.min():.3f}, max {friction.max():.1f}")
+
+    if isinstance(beta, str):
+        if beta != 'auto':
+            raise ValueError(f"od_matrix.beta for {purpose} must be a number or 'auto', got {beta!r}")
+        beta = calibrate_beta_to_survey(friction, Oi, Aj, survey_df, purpose, config)
 
     np.power(friction, -beta, out=friction)   # distance^(-beta)
 
@@ -783,6 +868,9 @@ def create_nonwork_od_matrix(config: Dict[str, Any],
     from models.demand_budget import origin_key as _budget_origin_key
     budget_used = any(_budget_origin_key(purpose) in d for d in home_locs_dict.values())
     nonwork_trip_share = config.get('nonwork_purposes', {}).get('nonwork_trip_share', 1.0)
+    from models.demand_budget import nonwork_knob_excluded_purposes
+    if purpose in nonwork_knob_excluded_purposes(config):
+        nonwork_trip_share = 1.0
     if not budget_used and nonwork_trip_share != 1.0:
         total_before = combined_od_matrix.sum().sum()
         combined_od_matrix = combined_od_matrix * nonwork_trip_share

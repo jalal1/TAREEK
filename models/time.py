@@ -176,9 +176,11 @@ class TripDurationModel:
         # time: Birmingham work chains started at 9.2 h against 7.9 h in the
         # survey, and the late start was measured as ~64% of the 22-23 h count
         # excess. 'first_of_day' fits a second set of KDEs on the first trip
-        # of each person-day only.
+        # of each person-day only. Default 'first_of_day' since 2026-11-25:
+        # every accepted example uses it, and with 'all_trips' Anoka plans put
+        # 32% of later departures in the evening against 20% in NHTS (P1).
         self.first_departure_source = self.config.get('time_models', {}).get(
-            'first_departure_source', 'all_trips')
+            'first_departure_source', 'first_of_day')
         if self.first_departure_source not in ('all_trips', 'first_of_day'):
             raise ValueError(
                 f"time_models.first_departure_source must be 'all_trips' or "

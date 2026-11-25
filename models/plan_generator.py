@@ -181,8 +181,14 @@ def _worker_process_chunk(args: Tuple) -> Tuple[List[Plan], Dict]:
     # This avoids pickling database connections
     worker_gen = _WorkerPlanGenerator(config_data, data_dir, shared_data)
 
+    # Reseed per OD pair from the config seed (P7), so the plans do not depend
+    # on the number of processes or on which worker gets which chunk.
+    from utils.rng import reseed
+    base_seed = config_data.get('plan_generation', {}).get('random_seed', 42)
+
     chunk_plans = []
     for origin_bg, dest_bg, num_trips in od_chunk:
+        worker_gen.mode_choice.rng = reseed(base_seed, 'Work', origin_bg, dest_bg)
         plans = worker_gen.process_od_pair(origin_bg, dest_bg, num_trips)
         chunk_plans.extend(plans)
 
@@ -633,7 +639,7 @@ class _BasePlanGenerator:
                     # (hour 23 with min_evening_home_minutes=0), measured as
                     # ~30% of the Birmingham 22-23 h excess. The last retry
                     # still trims, so no plan is lost to the budget.
-                    if (self.config.get('duration_constraints', {}).get('over_budget', 'trim') == 'resample'
+                    if (self.config.get('duration_constraints', {}).get('over_budget', 'resample') == 'resample'
                             and retry < max_retries - 1):
                         self.stats['schedules_resampled'] += 1
                         raise ValueError("Schedule over 24h budget: resampling")
@@ -791,6 +797,10 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
         # Build spatial index for fast POI lookups
         self.poi_index = POISpatialIndex(poi_data)
 
+        # Secondary stops at a survey distance (opt-in, see models/stop_distance.py)
+        from models.stop_distance import build_stop_distance_model
+        self.stop_distance_model = build_stop_distance_model(survey_df, config)
+
         # Stats (local to this worker)
         self.stats = {
             'failed_plans': 0,
@@ -924,6 +934,13 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
 
         lon, lat = current_location  # current_location is already (lon, lat)
         # logger.info(f"  Searching near lat={lat:.6f}, lon={lon:.6f}, initial_radius={radius}m")
+
+        if self.stop_distance_model is not None:
+            from models.stop_distance import place_stop
+            poi = place_stop(self.poi_index, lat, lon, activity, self.stop_distance_model)
+            if poi is not None:
+                return poi
+            self.stats['poi_retries'] += 1
 
         for retry_attempt in range(max_retries):
             poi = self._find_nearby_poi_from_cache(lat, lon, activity, radius)
@@ -1844,8 +1861,9 @@ class PlanGenerator(_BasePlanGenerator):
         expected_total = original_total * effective_scaling
 
         # Set random seed for reproducibility
+        from utils.rng import derive_seed
         random_seed = self.config.get('plan_generation', {}).get('random_seed', 42)
-        np.random.seed(random_seed)
+        rounding_rng = np.random.default_rng(derive_seed(random_seed, 'od_rounding', 'Work'))
 
         # Scale to float
         od_scaled_float = od_nonzero * effective_scaling
@@ -1856,7 +1874,7 @@ class PlanGenerator(_BasePlanGenerator):
         # Probabilistic part (fractional)
         # Each OD pair has a probability equal to its fractional part of being rounded up
         fractional_part = od_scaled_float - od_scaled_int
-        random_values = np.random.random(len(fractional_part))
+        random_values = rounding_rng.random(len(fractional_part))
         round_up = (random_values < fractional_part).astype(int)
 
         # Combine deterministic and probabilistic parts
@@ -2027,7 +2045,18 @@ class PlanGenerator(_BasePlanGenerator):
         else:
             pbar = od_pairs
 
+        # Per-OD-pair seeding as in the workers (P7), so this path is
+        # repeatable too. It is NOT equal to the parallel path: it uses
+        # _process_od_pair() with the DB POI manager, not the worker code.
+        from utils.rng import reseed
+        base_seed = self.config.get('plan_generation', {}).get('random_seed', 42)
+        if self.config.get('poi_assignment', {}).get('stop_distance_source', 'nearest') != 'nearest':
+            logger.warning("Sequential plan generation does not support "
+                           "poi_assignment.stop_distance_source; secondary stops use the "
+                           "nearest-POI search. Use num_processes > 1.")
+
         for origin_bg, dest_bg, num_trips in pbar:
+            self.mode_choice.rng = reseed(base_seed, 'Work', origin_bg, dest_bg)
             plans = self._process_od_pair(origin_bg, dest_bg, num_trips)
             all_plans.extend(plans)
 
@@ -2167,9 +2196,10 @@ class PlanGenerator(_BasePlanGenerator):
                 show_progress = self.config.get('logging', {}).get('show_progress_bar', True)
 
                 if show_progress:
-                    # Use imap_unordered for progress tracking
+                    # imap, not imap_unordered: the plans must come back in
+                    # chunk order, or the person IDs change between runs (P7).
                     pbar = tqdm(total=len(od_chunks), desc="Processing chunks")
-                    for chunk_plans, worker_stats in pool.imap_unordered(_worker_process_chunk, worker_args):
+                    for chunk_plans, worker_stats in pool.imap(_worker_process_chunk, worker_args):
                         all_plans.extend(chunk_plans)
                         # Aggregate worker stats into main stats
                         self._aggregate_worker_stats(worker_stats)

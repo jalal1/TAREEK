@@ -237,8 +237,14 @@ def _worker_process_chunk_nonwork(args: Tuple) -> Tuple[List[Plan], Dict]:
     # Create a worker generator instance for this process
     worker_gen = _WorkerNonWorkPlanGenerator(config_data, shared_data, purpose)
 
+    # Reseed per OD pair from the config seed (P7), so the plans do not depend
+    # on the number of processes or on which worker gets which chunk.
+    from utils.rng import reseed
+    base_seed = config_data.get('plan_generation', {}).get('random_seed', 42)
+
     chunk_plans = []
     for origin_bg, dest_bg, num_trips in od_chunk:
+        worker_gen.mode_choice.rng = reseed(base_seed, purpose, origin_bg, dest_bg)
         plans = worker_gen.process_od_pair(origin_bg, dest_bg, num_trips)
         chunk_plans.extend(plans)
 
@@ -359,6 +365,10 @@ class _WorkerNonWorkPlanGenerator:
 
         # Build spatial index for fast POI lookups
         self.poi_spatial_index = POISpatialIndex(self.poi_data_grouped)
+
+        # Secondary stops at a survey distance (opt-in, see models/stop_distance.py)
+        from models.stop_distance import build_stop_distance_model
+        self.stop_distance_model = build_stop_distance_model(survey_df, config)
 
         # Initialize POI weighting
         self.poi_weighting = POIWeighting(config, purpose)
@@ -705,6 +715,14 @@ class _WorkerNonWorkPlanGenerator:
         """Find nearby POI for intermediate activities."""
         lat, lon = current_location[1], current_location[0]
 
+        if self.stop_distance_model is not None:
+            from models.stop_distance import place_stop
+            poi = place_stop(self.poi_spatial_index, lat, lon, activity_type,
+                             self.stop_distance_model)
+            if poi is not None:
+                return poi
+            self.stats['poi_retries'] += 1
+
         initial_radius = self.config.get('poi_assignment', {}).get('initial_radius_m', 1000)
         radius_increment = self.config.get('poi_assignment', {}).get('radius_increment_m', 500)
         max_retries = self.config.get('poi_assignment', {}).get('max_poi_retries', 3)
@@ -864,7 +882,7 @@ class _WorkerNonWorkPlanGenerator:
                     # over_budget='resample': new start and durations instead of
                     # trimming to the cap; see the work generator. The last
                     # retry still trims, so no plan is lost to the budget.
-                    if (self.config.get('duration_constraints', {}).get('over_budget', 'trim') == 'resample'
+                    if (self.config.get('duration_constraints', {}).get('over_budget', 'resample') == 'resample'
                             and retry < max_retries - 1):
                         self.stats['schedules_resampled'] += 1
                         raise ValueError("Schedule over 24h budget: resampling")
@@ -1500,9 +1518,12 @@ class NonWorkPlanGenerator:
         The probabilistic rounding preserves the expected total while
         maintaining the spatial distribution of trips.
         """
-        # Set random seed for reproducibility
+        # A different, repeatable stream per purpose. Do not use hash(purpose):
+        # Python changes string hashes in each process (P7).
+        from utils.rng import derive_seed
         random_seed = self.config.get('plan_generation', {}).get('random_seed', 42)
-        np.random.seed(random_seed + hash(self.purpose) % 1000)  # Different seed per purpose
+        rounding_rng = np.random.default_rng(
+            derive_seed(random_seed, 'od_rounding', self.purpose))
 
         # Vectorized probabilistic rounding (replaces slow cell-by-cell .loc loop)
         values = self.od_matrix.values
@@ -1511,7 +1532,7 @@ class NonWorkPlanGenerator:
         fractional_parts = scaled - floor_values
 
         # Probabilistically round up based on fractional part
-        random_draws = np.random.random(scaled.shape)
+        random_draws = rounding_rng.random(scaled.shape)
         rounded = floor_values + (random_draws < fractional_parts).astype(int)
 
         # Only apply to cells that were originally > 0
@@ -1942,9 +1963,10 @@ class NonWorkPlanGenerator:
                 show_progress = self.config.get('logging', {}).get('show_progress_bar', True)
 
                 if show_progress:
-                    # Use imap_unordered for progress tracking
+                    # imap, not imap_unordered: the plans must come back in
+                    # chunk order, or the person IDs change between runs (P7).
                     pbar = tqdm(total=len(od_chunks), desc=f"Processing {self.purpose} chunks")
-                    for chunk_plans, worker_stats in pool.imap_unordered(
+                    for chunk_plans, worker_stats in pool.imap(
                         _worker_process_chunk_nonwork, worker_args
                     ):
                         all_plans.extend(chunk_plans)
@@ -2374,7 +2396,7 @@ class NonWorkPlanGenerator:
                     # over_budget='resample': new start and durations instead of
                     # trimming to the cap; see the work generator. The last
                     # retry still trims, so no plan is lost to the budget.
-                    if (self.config.get('duration_constraints', {}).get('over_budget', 'trim') == 'resample'
+                    if (self.config.get('duration_constraints', {}).get('over_budget', 'resample') == 'resample'
                             and retry < max_retries - 1):
                         self.stats['schedules_resampled'] += 1
                         raise ValueError("Schedule over 24h budget: resampling")

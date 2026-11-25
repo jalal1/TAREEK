@@ -113,6 +113,14 @@ class ModeChoiceModel:
             mode_choice_config.get('walk_passthrough_max_meters', 200.0)
         )
 
+        # Default random stream. Plan generators replace it at the start of
+        # each OD pair (utils.rng.reseed), so the modes do not depend on the
+        # worker schedule. Never use an unseeded default_rng() here: it takes
+        # fresh OS entropy and makes plan generation unrepeatable (P7).
+        from utils.rng import derive_seed
+        base_seed = config.get('plan_generation', {}).get('random_seed', 42)
+        self.rng = np.random.default_rng(derive_seed(base_seed, 'mode_choice'))
+
         # Store survey data for rate computation
         self.survey_data = survey_data
         self.survey_weights = survey_weights
@@ -350,7 +358,8 @@ class ModeChoiceModel:
                 return {self.fallback_mode: 1.0}
             else:
                 # Fallback not available either - use first available
-                first_available = next(iter(available_modes), self.fallback_mode)
+                first_available = min(available_modes, key=lambda m: m.value,
+                                      default=self.fallback_mode)
                 logger.warning(f"Fallback mode not available, using {first_available.value}")
                 return {first_available: 1.0}
 
@@ -377,7 +386,7 @@ class ModeChoiceModel:
             return self.fallback_mode
 
         if rng is None:
-            rng = np.random.default_rng()
+            rng = self.rng
 
         modes = list(rates.keys())
         probs = list(rates.values())
@@ -473,7 +482,7 @@ class ModeChoiceModel:
         )
 
         if rng is None:
-            rng = np.random.default_rng()
+            rng = self.rng
 
         if not self.chain_consistency:
             # No consistency - choose mode independently for each leg

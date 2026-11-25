@@ -8,6 +8,7 @@ Can work with in-memory POI data (for multiprocessing) or database queries.
 from typing import Dict, List, Optional, Tuple
 from math import radians, sin, cos, sqrt, atan2
 from rtree import index
+import numpy as np
 
 
 class POISpatialIndex:
@@ -168,6 +169,40 @@ class POISpatialIndex:
         # Sort by distance and limit
         candidates.sort(key=lambda x: x[0])
         return candidates[:limit]
+
+    def find_in_ring(self, lat: float, lon: float, activity: str,
+                     r_min_m: float, r_max_m: float) -> List[Dict]:
+        """POIs of `activity` with r_min_m <= distance <= r_max_m (meters).
+
+        Used to put a stop at a target distance (models/stop_distance.py).
+        The R-tree gives the bounding box of r_max_m; the exact haversine
+        check is vectorized, because a ring of 20-40 km can hold thousands
+        of POIs.
+        """
+        if activity not in self.indices:
+            return []
+        if not hasattr(self, '_coords'):
+            self._coords = {}
+        if activity not in self._coords:
+            pois = self.poi_data[activity]
+            self._coords[activity] = (np.radians([p['lat'] for p in pois]),
+                                      np.radians([p['lon'] for p in pois]))
+        radius_lat = r_max_m / 111000.0
+        radius_lon = r_max_m / (111000.0 * max(1e-6, abs(cos(radians(lat)))))
+        cand = np.fromiter(self.indices[activity].intersection(
+            (lon - radius_lon, lat - radius_lat, lon + radius_lon, lat + radius_lat)),
+            dtype=np.int64)
+        if cand.size == 0:
+            return []
+        plat, plon = self._coords[activity]
+        la1, lo1 = radians(lat), radians(lon)
+        dlat = plat[cand] - la1
+        dlon = plon[cand] - lo1
+        a = np.sin(dlat / 2) ** 2 + np.cos(la1) * np.cos(plat[cand]) * np.sin(dlon / 2) ** 2
+        dist = 2 * 6371000 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+        hit = cand[(dist >= r_min_m) & (dist <= r_max_m)]
+        pois = self.poi_data[activity]
+        return [pois[i] for i in hit]
 
     def find_within_radius(self, lat: float, lon: float, radius_m: float) -> List[Dict]:
         """
