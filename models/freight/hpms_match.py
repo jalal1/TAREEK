@@ -932,7 +932,7 @@ def resolve_truck_aadt_by_link(
 
         wanted = {link_id for cordon in cordons for link_id in cordon.link_ids}
         geometry = link_geometry(Path(network_path), link_ids=wanted)
-        one_way = _one_way_links(Path(network_path), wanted)
+        one_way = _directional_links(config, Path(network_path), wanted)
 
         truck_aadt, stats = build_truck_aadt_by_link(
             cordons, segments, geometry,
@@ -998,7 +998,7 @@ def resolve_corridor_truck_aadt(
             min_freespeed_ms=float(cordon_config.get('min_freespeed_ms', 22.0)),
             min_capacity_vph=float(cordon_config.get('min_capacity_vph', 1500.0)),
         )
-        one_way = _one_way_links(Path(network_path), set(links))
+        one_way = _directional_links(config, Path(network_path), set(links))
 
         truck_aadt, stats = match_corridor_links(
             links, segments,
@@ -1015,6 +1015,29 @@ def resolve_corridor_truck_aadt(
             f"Tier-2 corridor matching failed ({exc}); tier 2 will report that "
             f"it could not run. The run is unaffected.")
         return {}, {'error': str(exc)}
+
+
+def _directional_links(config: Dict, network_path: Path, link_ids: set) -> set:
+    """The links whose HPMS AADT is halved (``directional_aadt``).
+
+    freight.hpms.aadt_direction_split:
+      ``divided_only`` (default, the old behaviour): only links with no reverse
+        twin (a divided carriageway) are halved.
+      ``always``: every link is halved. A MATSim link carries ONE direction,
+        so a two-way road is always two links; HPMS AADT is the two-way total
+        of the section. With ``divided_only`` an undivided road gave its full
+        two-way AADT to the inbound AND the outbound cordon. Measured on the
+        Twin Cities example (P2, 2026-11-25): the HPMS-matched cordon weight
+        falls 23% with ``always``, the total cordon weight 11% (the
+        capacity-fallback cordons are not affected).
+    """
+    split = config.get('freight', {}).get('hpms', {}).get('aadt_direction_split', 'divided_only')
+    if split == 'always':
+        return set(link_ids)
+    if split != 'divided_only':
+        raise ValueError(f"freight.hpms.aadt_direction_split must be 'divided_only' or "
+                         f"'always', got {split!r}")
+    return _one_way_links(network_path, link_ids)
 
 
 def _one_way_links(network_path: Path, link_ids: set) -> set:
