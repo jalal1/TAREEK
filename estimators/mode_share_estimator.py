@@ -733,6 +733,20 @@ def main() -> None:
     if args.experiment_dir:
         exp_dir = _resolve_experiment_dir(args.experiment_dir)
 
+        # modestats.csv is written in each iteration, so a failed run has a
+        # partial one. Never calibrate on it (P6).
+        summary_file = exp_dir / "experiment_summary.json"
+        if summary_file.is_file():
+            try:
+                with open(summary_file) as f:
+                    status = json.load(f).get("simulation_status")
+            except (json.JSONDecodeError, OSError):
+                status = None
+            if status == "failed":
+                print(f"ERROR: MATSim failed in {exp_dir} (simulation_status "
+                      f"'failed'); its modestats are partial. Use a completed run.")
+                sys.exit(1)
+
         sim_shares = _read_modestats_final(exp_dir)
         if sim_shares is None:
             print(f"ERROR: no modestats.csv/txt found in {exp_dir} or {exp_dir}/output")

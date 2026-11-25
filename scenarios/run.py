@@ -246,6 +246,10 @@ def _run_evaluation(run_dir: Path, config: Dict) -> Optional[Dict]:
         _, metrics = evaluator.run_evaluation(
             generate_spatial_maps=evaluation_config.get('generate_spatial_maps', True),
             generate_per_device_reports=evaluation_config.get('generate_per_device_reports', False))
+        if metrics.get('error'):
+            # A block of zeros with an 'error' key means no input, not a result.
+            logger.info(f"Count evaluation has no input: {metrics['error']}")
+            return None
         return metrics
     except Exception as e:
         logger.warning(f"Count evaluation failed; the scenario run itself is fine: {e}")

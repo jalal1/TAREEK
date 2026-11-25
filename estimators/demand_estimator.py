@@ -1347,6 +1347,20 @@ def compute_scorecard(
     return scorecard
 
 
+def _summary_is_failed(summary_file: Path) -> bool:
+    """True when the run's MATSim step failed (P6).
+
+    A failed run has only partial output, so it must never be calibration
+    feedback. Older summaries without the field count as not failed; a
+    summary that cannot be read counts as failed (it is skipped).
+    """
+    try:
+        with open(summary_file, "r") as f:
+            return json.load(f).get("simulation_status") == "failed"
+    except (json.JSONDecodeError, OSError):
+        return True
+
+
 def load_experiment_feedback(config: Dict[str, Any]) -> Dict[str, Any] | None:
     """Look for a previous experiment's summary and evaluation results.
 
@@ -1379,7 +1393,7 @@ def load_experiment_feedback(config: Dict[str, Any]) -> Dict[str, Any] | None:
         summary_file = exp_dir / "experiment_summary.json"
         if summary_file.is_file():
             mtime = summary_file.stat().st_mtime
-            if mtime > best_mtime:
+            if mtime > best_mtime and not _summary_is_failed(summary_file):
                 best_mtime = mtime
                 best_summary = summary_file
                 eval_file = exp_dir / "evaluation" / "summary_metrics.json"
@@ -2460,6 +2474,10 @@ def main():
             try:
                 with open(summary_file, "r") as f:
                     summary = json.load(f)
+                if summary.get("simulation_status") == "failed":
+                    raise OSError("MATSim failed in this run (simulation_status "
+                                  "'failed'); its output is partial and cannot "
+                                  "be feedback")
                 experiment_feedback = {
                     "summary": summary,
                     "evaluation": read_evaluation_metrics(exp_dir, summary),

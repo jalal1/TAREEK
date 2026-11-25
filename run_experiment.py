@@ -378,6 +378,48 @@ class ExperimentRunner:
             data_dir = (self.config_path.parent / data_dir).resolve()
         return Path(data_dir) / 'demand_cache'
 
+    # Values the plan step derives from the survey and that config.xml needs.
+    # A reuse of plans.xml (cache hit, skip_if_exists) skips the plan step, so
+    # they are stored with the plans and restored (P3: without them config.xml
+    # had no activityParams and MATSim stopped).
+    _DEMAND_DERIVED_FILE = 'demand_derived.json'
+    _DEMAND_DERIVED_KEYS = ('_survey_typical_durations', '_survey_activity_params')
+
+    def _write_demand_derived(self, path: Path) -> None:
+        matsim_cfg = self.config.get('matsim', {})
+        derived = {k: matsim_cfg[k] for k in self._DEMAND_DERIVED_KEYS if matsim_cfg.get(k)}
+        try:
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump({'matsim': derived}, f, indent=1)
+        except OSError as e:
+            logger.warning(f"Could not write {path}: {e}")
+
+    def _restore_demand_derived(self, *candidates: Path) -> bool:
+        """Load the derived MATSim values from the first file that has them.
+
+        A candidate is a demand_derived.json, or a config_used.json of the run
+        that made the plans (the old manual work-around). Returns False when
+        none has them; the caller then regenerates the plans. Values already
+        in the run config (the manual plan-reuse recipe copies them there)
+        count as found.
+        """
+        if self.config.get('matsim', {}).get('_survey_typical_durations'):
+            logger.info("  Survey activity durations/scoring are already in the config")
+            return True
+        for path in candidates:
+            try:
+                with open(path, encoding='utf-8') as f:
+                    data = json.load(f)
+            except (OSError, ValueError):
+                continue
+            block = (data.get('matsim') or {})
+            found = {k: block[k] for k in self._DEMAND_DERIVED_KEYS if block.get(k)}
+            if '_survey_typical_durations' in found:
+                self.config.setdefault('matsim', {}).update(found)
+                logger.info(f"  Restored survey activity durations/scoring from {path.name}")
+                return True
+        return False
+
     def _try_reuse_cached_demand(self) -> bool:
         """Copy a previously generated plans.xml in, when the inputs match.
 
@@ -404,8 +446,17 @@ class ExperimentRunner:
             logger.warning(f"Demand cache entry is invalid, regenerating: {cached}")
             return False
 
+        derived = cached.parent / f'{key}_{self._DEMAND_DERIVED_FILE}'
+        if not self._restore_demand_derived(derived):
+            logger.warning(f"Demand cache entry {key} has no {self._DEMAND_DERIVED_FILE} "
+                           f"(made before 2026-11-25); without it config.xml would get no "
+                           f"activityParams. Regenerating the plans.")
+            return False
+
         import shutil
         shutil.copy2(cached, self.plans_path)
+        if derived.exists():
+            shutil.copy2(derived, self.experiment_dir / self._DEMAND_DERIVED_FILE)
 
         size_mb = self.plans_path.stat().st_size / 1024 / 1024
         logger.info("=" * 60)
@@ -422,7 +473,7 @@ class ExperimentRunner:
         # Carry the matching diagnostics across so the run still reports how
         # its demand was built, rather than appearing to have none.
         for artefact in ('od_matrix_diagnostics.json', 'combined_od_matrix.csv',
-                         'base_od_matrix.csv'):
+                         'base_od_matrix.csv', 'demand_budget.json'):
             src = cached.parent / f'{key}_{artefact}'
             if src.exists():
                 shutil.copy2(src, self.experiment_dir / artefact)
@@ -449,7 +500,8 @@ class ExperimentRunner:
             # Keep the OD artefacts beside the plans so a cache hit can restore
             # the full picture of how this demand was produced.
             for artefact in ('od_matrix_diagnostics.json', 'combined_od_matrix.csv',
-                             'base_od_matrix.csv'):
+                             'base_od_matrix.csv', 'demand_budget.json',
+                             self._DEMAND_DERIVED_FILE):
                 src = self.experiment_dir / artefact
                 if src.exists():
                     shutil.copy2(src, cache_dir / f'{key}_{artefact}')
@@ -1213,8 +1265,16 @@ class ExperimentRunner:
                 logger.info(f"Found existing plans.xml in experiment directory")
                 logger.info(f"  File: {self.plans_path}")
 
-                # Validate the existing plans file
-                if self._validate_plans_file(self.plans_path):
+                # Validate the existing plans file, and restore the values the
+                # plan step derived for config.xml (P3). Without them MATSim
+                # stops on "activity types with no activityParams".
+                derived_ok = self._restore_demand_derived(
+                    self.experiment_dir / self._DEMAND_DERIVED_FILE,
+                    self.experiment_dir / 'config_used.json')
+                if not derived_ok:
+                    logger.warning(f"No {self._DEMAND_DERIVED_FILE} or config_used.json with "
+                                   f"survey activity durations beside plans.xml; regenerating")
+                elif self._validate_plans_file(self.plans_path):
                     file_size_mb = self.plans_path.stat().st_size / 1024 / 1024
                     logger.info(f"  Size: {file_size_mb:.2f} MB")
                     logger.info("Skipping plan generation (skip_if_exists=true)")
@@ -1482,6 +1542,11 @@ class ExperimentRunner:
             # Track plan generation end time
             self.runtime['plans_end'] = datetime.now()
 
+            # The plan step also fits values that MATSim needs (activity
+            # durations and scoring from the survey). Keep them beside
+            # plans.xml so a reuse of these plans can restore them (P3).
+            self._write_demand_derived(self.experiment_dir / self._DEMAND_DERIVED_FILE)
+
             # Save the finished demand so a later run with the same inputs can
             # skip this step entirely.
             self._store_cached_demand()
@@ -1681,6 +1746,16 @@ class ExperimentRunner:
                 generate_per_device_reports=generate_per_device_reports
             )
 
+            # The evaluator returns a block of zeros with an 'error' key when
+            # it has no input (e.g. no countscompare.txt). Zeros are not a
+            # result: report "no evaluation" instead (P6).
+            if summary_metrics.get('error'):
+                logger.warning(f"Evaluation has no input: {summary_metrics['error']}. "
+                               f"No evaluation metrics are written.")
+                logger.info("")
+                self.runtime['eval_end'] = datetime.now()
+                return None
+
             # Log summary
             logger.info("")
             logger.info("="*60)
@@ -1781,6 +1856,68 @@ class ExperimentRunner:
         # so it must come after write_summary().
         self._generate_report()
 
+    def _finish_failed_run(self, metadata: Dict) -> None:
+        """Write the summary and a short report for a failed MATSim run.
+
+        The summary keeps what is valid (plans, network, runtime) and says
+        clearly that the simulation failed. It holds no `evaluation` and no
+        `matsim_output` section, because both would come from partial
+        output. The tuning tools and the estimator read these files, so a
+        failed run must not look like a result.
+        """
+        self.runtime['end_time'] = datetime.now()
+        return_code = metadata.get('matsim_return_code')
+        log_path = self.experiment_dir / 'matsim_output.log'
+
+        summary = build_summary(
+            experiment_id=self.experiment_id,
+            experiment_dir=self.experiment_dir,
+            config=self.config,
+            plan_stats=self.plan_stats,
+            population_stats=self.population_stats,
+            data_quality_stats=self.data_quality_stats,
+            network_stats=self.network_stats,
+            plans_file_size_mb=self.plans_file_size_mb,
+            runtime=self.runtime,
+            metadata=metadata,
+            evaluation_metrics=None,
+        )
+        summary.pop('matsim_output', None)
+        summary.pop('evaluation', None)
+        summary['simulation_status'] = 'failed'
+        summary['failure'] = {
+            'matsim_return_code': return_code,
+            'log': log_path.name,
+            'message': ('MATSim stopped with an error. The output folder holds '
+                        'partial iterations only. No evaluation was run; do not '
+                        'use this run as a result or as calibration feedback.'),
+        }
+        write_summary(summary, self.experiment_dir / 'experiment_summary.json')
+
+        tail = ''
+        try:
+            lines = log_path.read_text(encoding='utf-8', errors='replace').splitlines()
+            tail = '\n'.join(lines[-40:])
+        except OSError:
+            tail = '(matsim_output.log not found)'
+        md_text = (
+            f"# {self.experiment_id}: SIMULATION FAILED\n\n"
+            f"MATSim exit code: **{return_code}**. No metrics were computed, "
+            f"because the output is partial.\n\n"
+            f"Plans: `plans.xml`. Full log: `{log_path.name}`.\n\n"
+            f"## Last lines of the MATSim log\n\n```\n{tail}\n```\n")
+        (self.experiment_dir / 'report.md').write_text(md_text, encoding='utf-8')
+        try:
+            sys.path.insert(0, str(Path(__file__).parent / 'scripts'))
+            from experiment_report import markdown_to_html
+            html = markdown_to_html(md_text, self.experiment_dir.name,
+                                    base_dir=self.experiment_dir)
+            (self.experiment_dir / 'report.html').write_text(html, encoding='utf-8')
+        except Exception as e:
+            logger.warning(f"Could not write report.html for the failed run: {e}")
+        logger.error(f"Simulation FAILED (exit code {return_code}). Summary and "
+                     f"report say so; no evaluation was run.")
+
     def _generate_report(self):
         """Write report.md / report.html summarising this experiment.
 
@@ -1866,6 +2003,18 @@ class ExperimentRunner:
                 json.dump(self.config, f, indent=2)
             logger.debug(f"Saved config_used.json to: {config_copy_path}")
 
+            # A failed MATSim run leaves partial output (linkstats, modestats,
+            # scorestats of the iterations it finished). Evaluating it gives
+            # zeros, or metrics that look real if it failed after a counts
+            # iteration (P6). So stop here: no evaluation, no demand
+            # validation, no comparison-CSV row, and exit non-zero.
+            if simulation_metadata.get('simulation_status') == 'failed':
+                self._finish_failed_run(simulation_metadata)
+                raise RuntimeError(
+                    f"MATSim failed (exit code "
+                    f"{simulation_metadata.get('matsim_return_code')}); no metrics "
+                    f"were computed. See {self.experiment_dir / 'matsim_output.log'}")
+
             # Step 6: Run evaluation (if enabled in config)
             # Note: Evaluation can run independently of simulation
             # It will check for existing output files and skip if not available
@@ -1873,6 +2022,9 @@ class ExperimentRunner:
             evaluation_config = self.config.get('evaluation', {})
             run_evaluation = evaluation_config.get('run_evaluation', True)
 
+            # A plans-only run still runs this step: it writes the demand-side
+            # timing plots. Without countscompare.txt run_evaluation() returns
+            # None, so no zero metrics reach the summary or the CSV.
             if run_evaluation:
                 evaluation_metrics = self.run_evaluation()
 
