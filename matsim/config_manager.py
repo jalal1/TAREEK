@@ -17,6 +17,19 @@ logger = logging.getLogger(__name__)
 VEHICLES_SOURCE = 'modeVehicleTypesFromVehiclesData'
 
 
+def _xml_value(value) -> str:
+    """A config value as MATSim's XML expects it.
+
+    Python writes a JSON true as "True", which MATSim's reflective config
+    parser rejects ("Incorrect value of the boolean parameter: True") and the
+    run stops at config load (found 2026-11-25 with
+    eventsManager.oneThreadPerHandler). Booleans become "true"/"false".
+    """
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
+    return str(value)
+
+
 class ConfigManager:
     """Manage MATSim configuration files"""
 
@@ -344,10 +357,10 @@ class ConfigManager:
         for name, value in params.items():
             existing = target.find(f"param[@name='{name}']")
             if existing is not None:
-                existing.set('value', str(value))
+                existing.set('value', _xml_value(value))
             else:
                 ET.SubElement(target, 'param',
-                              {'name': name, 'value': str(value)})
+                              {'name': name, 'value': _xml_value(value)})
 
         logger.info(f"Registered scoring activityParams for '{activity_type}'")
 
@@ -482,6 +495,38 @@ class ConfigManager:
                 "closingTime and minimalDuration stay undefined"
             )
 
+    @staticmethod
+    def _param_value(tree: ET.ElementTree, module_name: str, param_name: str) -> Optional[str]:
+        """A module parameter's value in the tree, or None."""
+        for module in tree.getroot().findall('module'):
+            if module.get('name') == module_name:
+                for p in module.findall('param'):
+                    if p.get('name') == param_name:
+                        return p.get('value')
+        return None
+
+    def _ensure_mode_params_for(self, scoring_params: ET.Element, leg_modes: set) -> None:
+        """Add a modeParams block for every leg mode in plans.xml that has none.
+
+        MATSim stops in iteration 0 with "no scoring parameters are defined:
+        bike" when a plan has a leg mode with no modeParams (P5: modes.bike
+        enabled). The block added here holds only the mode name, so MATSim
+        uses its default scoring values for it, the same as the template's
+        car/pt/walk blocks, whose values are all commented out.
+        """
+        declared = {
+            p.find("param[@name='mode']").get('value')
+            for p in scoring_params.findall("parameterset[@type='modeParams']")
+            if p.find("param[@name='mode']") is not None
+        }
+        for mode in sorted(leg_modes - declared):
+            block = ET.SubElement(scoring_params, 'parameterset', {'type': 'modeParams'})
+            ET.SubElement(block, 'param', {'name': 'mode', 'value': mode})
+            logger.warning(
+                f"plans.xml has '{mode}' legs but config.xml had no modeParams for "
+                f"'{mode}': added a block with MATSim's default scoring values. Set "
+                f"scoring.modeParams.{mode}.* in configurable_params to calibrate it.")
+
     def verify_activity_params_cover_plans(
         self,
         tree: ET.ElementTree,
@@ -512,19 +557,26 @@ class ConfigManager:
         }
 
         # Stream the file: a full-population plans.xml runs to hundreds of MB,
-        # and only the activity type attributes are needed.
+        # and only the activity types and leg modes are needed.
         performed = set()
+        leg_modes = set()
         try:
             for _, elem in ET.iterparse(plans_path, events=('end',)):
                 if elem.tag == 'activity':
                     act_type = elem.get('type')
                     if act_type:
                         performed.add(act_type)
+                elif elem.tag == 'leg':
+                    mode = elem.get('mode')
+                    if mode:
+                        leg_modes.add(mode)
                 if elem.tag == 'person':
                     elem.clear()
         except ET.ParseError as e:
             logger.warning(f"Could not scan {plans_path} for activity types: {e}")
             return
+
+        self._ensure_mode_params_for(scoring_params, leg_modes)
 
         missing = performed - declared
         if missing:
@@ -1000,10 +1052,10 @@ class ConfigManager:
                 # scoring.modeParams.<mode>.<param>  (param may itself contain dots)
                 mode = parts[2]
                 inner_param = '.'.join(parts[3:])
-                self.update_mode_param(tree, mode, inner_param, str(value))
+                self.update_mode_param(tree, mode, inner_param, _xml_value(value))
             elif parts[0] == 'scoring' and len(parts) == 2:
                 # scoring.<top-level scoringParameters param>, e.g. scoring.waitingPt
-                self.update_scoring_param(tree, parts[1], str(value))
+                self.update_scoring_param(tree, parts[1], _xml_value(value))
             else:
                 module, param = param_key.split('.', 1)
                 # Create the param when the module exists but does not list it.
@@ -1014,12 +1066,12 @@ class ConfigManager:
                 # An unknown MODULE is still a hard error: that is what catches
                 # a typo, which is the case update_parameter was guarding.
                 self._require_module(tree, module, param_key)
-                self._set_or_add_parameter(tree, module, param, str(value))
+                self._set_or_add_parameter(tree, module, param, _xml_value(value))
                 logger.info(f"Applied configurable param: {module}.{param} = {value}")
                 # Capacity factors must be kept in sync between qsim and hermes
                 # because mobsim=hermes reads its own module, not qsim.
                 if module == 'qsim' and param in ('flowCapacityFactor', 'storageCapacityFactor'):
-                    self._set_or_add_parameter(tree, 'hermes', param, str(value))
+                    self._set_or_add_parameter(tree, 'hermes', param, _xml_value(value))
                     logger.info(f"Mirrored qsim.{param} -> hermes.{param} = {value}")
 
         # Apply custom parameters if provided (these override configurable_params)
@@ -1041,16 +1093,26 @@ class ConfigManager:
                     continue
                 parts = module_param.split('.')
                 if parts[0] == 'scoring' and len(parts) >= 4 and parts[1] == 'modeParams':
-                    self.update_mode_param(tree, parts[2], '.'.join(parts[3:]), str(value))
+                    self.update_mode_param(tree, parts[2], '.'.join(parts[3:]), _xml_value(value))
                 elif parts[0] == 'scoring' and len(parts) == 2:
-                    self.update_scoring_param(tree, parts[1], str(value))
+                    self.update_scoring_param(tree, parts[1], _xml_value(value))
                 else:
                     module, param = module_param.split('.', 1)
                     self._require_module(tree, module, module_param)
-                    self._set_or_add_parameter(tree, module, param, str(value))
+                    self._set_or_add_parameter(tree, module, param, _xml_value(value))
                     if module == 'qsim' and param in ('flowCapacityFactor', 'storageCapacityFactor'):
-                        self._set_or_add_parameter(tree, 'hermes', param, str(value))
+                        self._set_or_add_parameter(tree, 'hermes', param, _xml_value(value))
                         logger.info(f"Mirrored qsim.{param} -> hermes.{param} = {value}")
+
+        # Hermes: one events thread per handler, unless the config set it (P4).
+        # Measured 2026-11-25 (Anoka, 4 iterations, identical plans): mobsim
+        # time 108 s -> 64 s, iteration total 153 s -> 110 s. QSim keeps
+        # MATSim's default; it was not measured there.
+        user_keys = set(self.matsim_config.get('configurable_params', {}) or {}) | set(custom_params or {})
+        if ('eventsManager.oneThreadPerHandler' not in user_keys
+                and self._param_value(tree, 'controller', 'mobsim') == 'hermes'):
+            self._set_or_add_parameter(tree, 'eventsManager', 'oneThreadPerHandler', 'true')
+            logger.info("mobsim=hermes: eventsManager.oneThreadPerHandler = true")
 
         # Ensure file paths are relative (network.xml, plans.xml are in same dir as config)
         self.update_parameter(tree, 'network', 'inputNetworkFile', 'network.xml')

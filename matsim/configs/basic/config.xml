@@ -20,6 +20,14 @@
         <!-- "global" number of threads.  This number is used, e.g., for replanning, but NOT in QSim.  This can typically be set to as many cores as you have available, or possibly even slightly more. -->
         <param name="numberOfThreads" value="3" />
     </module>
+    <module name="eventsManager">
+        <!-- Hermes logs "should be run with one thread per handler" (P4).
+             MATSim's default (false) is kept here for QSim. ConfigManager sets
+             true when controller.mobsim is hermes, unless configurable_params
+             sets eventsManager.oneThreadPerHandler. The module must exist in
+             the template for the parameter to be overridable. -->
+        <param name="oneThreadPerHandler" value="false" />
+    </module>
     <module name="linkStats">
         <!-- Specifies over how many iterations the link volumes should be averaged that are used for the link statistics. Use 1 or 0 to only use the link volumes of a single iteration. This values cannot be larger than the value specified for writeLinkStatsInterval -->
         <param name="averageLinkStatsOverIterations" value="5" />
