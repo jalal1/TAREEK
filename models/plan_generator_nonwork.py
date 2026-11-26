@@ -366,7 +366,7 @@ class _WorkerNonWorkPlanGenerator:
         # Build spatial index for fast POI lookups
         self.poi_spatial_index = POISpatialIndex(self.poi_data_grouped)
 
-        # Secondary stops at a survey distance (opt-in, see models/stop_distance.py)
+        # Secondary stops at a survey distance (default, see models/stop_distance.py)
         from models.stop_distance import build_stop_distance_model
         self.stop_distance_model = build_stop_distance_model(survey_df, config)
 

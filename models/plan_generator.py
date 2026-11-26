@@ -797,7 +797,7 @@ class _WorkerPlanGenerator(_BasePlanGenerator):
         # Build spatial index for fast POI lookups
         self.poi_index = POISpatialIndex(poi_data)
 
-        # Secondary stops at a survey distance (opt-in, see models/stop_distance.py)
+        # Secondary stops at a survey distance (default, see models/stop_distance.py)
         from models.stop_distance import build_stop_distance_model
         self.stop_distance_model = build_stop_distance_model(survey_df, config)
 
@@ -2050,7 +2050,7 @@ class PlanGenerator(_BasePlanGenerator):
         # _process_od_pair() with the DB POI manager, not the worker code.
         from utils.rng import reseed
         base_seed = self.config.get('plan_generation', {}).get('random_seed', 42)
-        if self.config.get('poi_assignment', {}).get('stop_distance_source', 'nearest') != 'nearest':
+        if self.config.get('poi_assignment', {}).get('stop_distance_source', 'survey') != 'nearest':
             logger.warning("Sequential plan generation does not support "
                            "poi_assignment.stop_distance_source; secondary stops use the "
                            "nearest-POI search. Use num_processes > 1.")

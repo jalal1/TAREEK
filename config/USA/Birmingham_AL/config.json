@@ -319,7 +319,7 @@
         "blend_weight": 0
       },
       "od_matrix": {
-        "beta": 2,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -334,7 +334,7 @@
         "blend_weight": 0
       },
       "od_matrix": {
-        "beta": 1.8,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -349,7 +349,7 @@
         "blend_weight": 0
       },
       "od_matrix": {
-        "beta": 2,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -364,7 +364,7 @@
         "blend_weight": 0
       },
       "od_matrix": {
-        "beta": 2,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -379,7 +379,7 @@
         "blend_weight": 0
       },
       "od_matrix": {
-        "beta": 2,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {

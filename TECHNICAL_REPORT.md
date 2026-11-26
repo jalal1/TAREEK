@@ -206,7 +206,9 @@ T_ij = A_i * O_i * B_j * D_j * f(c_ij)
 
 where `A_i` and `B_j` are balancing factors computed via Iterative Proportional Fitting (IPF), `O_i` is the number of workers in block group `i`, `D_j` is the number of jobs in block group `j`, and `f(c_ij) = c_ij^(-beta)` is a distance-decay function. The default `beta = 1.5` reflects typical metropolitan commuting patterns.
 
-**Non-work trips** use a singly-constrained gravity model where only origin totals are enforced. Destination attractiveness is defined by the count of relevant POIs in each block group.
+**Non-work trips** use a singly-constrained gravity model where only origin totals are enforced. Destination attractiveness is defined by the count of relevant POIs in each block group. The default `nonwork_purposes.<P>.od_matrix.beta` is `"auto"`: a bisection finds the beta at which the model's weighted mean log distance equals that of the survey's Home -> P trips (beeline = reported distance / 1.25). With fewer than 30 such trips it uses `od_matrix.beta_calibration.fallback_beta` (2.0). A number still sets beta directly.
+
+**Secondary stops**: The main destination of a chain comes from the OD matrix. Every other stop (for example the Dining stop in Home-Shopping-Dining-Home) goes to a POI of its type at a beeline distance drawn from the survey's stop -> stop trips (origin and destination both not Home) of that activity, weighted (`models/stop_distance.py`). A POI is taken at random in a ring of +-25%, then +-50%, then 0-2x around the drawn distance. Without such a POI, the old nearest-POI search is used. `poi_assignment.stop_distance_source: "nearest"` restores the old search for every stop. Before this default, secondary stops went to the nearest POI, and non-work legs had about half the survey length, which took car-km out of the midday and evening.
 
 **Survey-gravity blending**: When survey-based OD data is available, the system blends it with the gravity matrix using a configurable parameter `alpha`:
 

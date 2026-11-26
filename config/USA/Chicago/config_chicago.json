@@ -402,7 +402,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both (recommended)"
       },
       "od_matrix": {
-        "beta": 1.6,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -437,7 +437,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
       },
       "od_matrix": {
-        "beta": 2.0,
+        "beta": "auto",
         "alpha": 0.15
       },
       "poi_weighting": {
@@ -469,7 +469,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
       },
       "od_matrix": {
-        "beta": 1.4,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -498,7 +498,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
       },
       "od_matrix": {
-        "beta": 1.4,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {
@@ -525,7 +525,7 @@
         "_blend_weight_help": "Weight for blending rates: 0.0 = use survey rate only, 1.0 = use config rate only, 0.5 = average both"
       },
       "od_matrix": {
-        "beta": 1.4,
+        "beta": "auto",
         "alpha": 0.1
       },
       "poi_weighting": {

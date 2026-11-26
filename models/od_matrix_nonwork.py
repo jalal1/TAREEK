@@ -792,7 +792,9 @@ def create_nonwork_od_matrix(config: Dict[str, Any],
 
     # Get purpose-specific config
     purpose_config = config.get('nonwork_purposes', {}).get(purpose, {})
-    beta = purpose_config.get('od_matrix', {}).get('beta', 2.0)
+    # Default "auto": beta fitted to the survey's Home -> purpose distances
+    # (calibrate_beta_to_survey; falls back to beta_calibration.fallback_beta).
+    beta = purpose_config.get('od_matrix', {}).get('beta', 'auto')
     alpha = purpose_config.get('od_matrix', {}).get('alpha', 0.1)
 
     # Distance handling is shared with the work path — same defects, same fix,

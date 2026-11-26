@@ -14,9 +14,9 @@ stop-to-stop trips (origin and destination both not Home), per destination
 activity, weighted. The caller then takes a POI of the right type in a ring
 around that distance (see POISpatialIndex.find_in_ring).
 
-Config (opt-in):
-    poi_assignment.stop_distance_source: "nearest" (default, old behaviour)
-                                       | "survey"
+Config:
+    poi_assignment.stop_distance_source: "survey" (default)
+                                       | "nearest" (old behaviour)
     poi_assignment.survey_circuity: reported / beeline distance, default 1.25
     poi_assignment.stop_distance_max_km: longest leg kept, default 50
 """
@@ -77,14 +77,28 @@ class StopDistanceModel:
 
 
 def build_stop_distance_model(survey_df, config) -> Optional[StopDistanceModel]:
-    """The model when poi_assignment.stop_distance_source == 'survey', else None."""
-    source = config.get('poi_assignment', {}).get('stop_distance_source', 'nearest')
+    """The model when poi_assignment.stop_distance_source == 'survey' (default), else None.
+
+    With the default (key not set), a survey that cannot build the model gives
+    a warning and the old nearest-POI search. With "survey" set explicitly, it
+    is an error.
+    """
+    pa = config.get('poi_assignment', {})
+    explicit = 'stop_distance_source' in pa
+    source = pa.get('stop_distance_source', 'survey')
     if source == 'nearest':
         return None
     if source != 'survey':
         raise ValueError(f"poi_assignment.stop_distance_source must be 'nearest' or "
                          f"'survey', got {source!r}")
-    return StopDistanceModel(survey_df, config)
+    try:
+        return StopDistanceModel(survey_df, config)
+    except ValueError as e:
+        if explicit:
+            raise
+        logger.warning(f"Survey stop distances not available ({e}); secondary stops "
+                       f"use the nearest-POI search")
+        return None
 
 
 def place_stop(index, lat: float, lon: float, activity: str,
