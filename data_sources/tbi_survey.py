@@ -7,7 +7,7 @@ from utils.logger import setup_logger
 from data_sources.base_survey_trip import BaseSurveyTrip
 from models.mode_types import (
     MODE_CAR, MODE_BUS, MODE_RAIL, MODE_WALK, MODE_BIKE,
-    MODE_SCHOOL_BUS, MODE_RIDESHARE, MODE_OTHER
+    MODE_SCHOOL_BUS, MODE_RIDESHARE, MODE_OTHER, MODE_RIDE
 )
 
 logger = setup_logger(__name__)
@@ -71,8 +71,24 @@ class TBISurveyTrip(BaseSurveyTrip):
         'd_purpose_category_broad': BaseSurveyTrip.DESTINATION_PURPOSE,
     }
 
+    # ── Columns read when the file has them (older extracts may not) ────
+    # driver: 1 Driver, 2 Passenger, 3 Both (switched drivers). Asked only
+    # when the travel party is 2+, and not when the other travellers are
+    # household children under 16, so it is empty on many trips.
+    OPTIONAL_COLUMNS = ['driver']
+
+    # 2: vehicle trips are split into Car (driver) and Ride (passenger).
+    LOADER_VERSION = 2
+
+    VEHICLE_MODE_LABELS = {'Household Vehicle', 'Other Vehicle'}
+    DRIVER_LABELS = {'Driver', 'Both (switched drivers during trip)', '1', '3'}
+    PASSENGER_LABELS = {'Passenger', '2'}
+    # Person ``age`` labels of persons who cannot drive.
+    NON_DRIVER_AGE_LABELS = {'Under 5', '5 to 15'}
+
     # ── TBI-only columns used during cleaning then dropped ─────────────
     _CLEANING_ONLY_COLUMNS = [
+        'driver',
         'day_id', 'linked_trip_id',
         'o_purpose_category', 'd_purpose_category',
         'trip_o_county', 'trip_d_county',
@@ -249,8 +265,9 @@ class TBISurveyTrip(BaseSurveyTrip):
             'o_bg_2020': first_leg['o_bg_2020'],
             'd_bg_2020': last_leg['d_bg_2020'],
         })
+        wanted = set(self.LINKED_RAW_COLUMNS) | set(self.OPTIONAL_COLUMNS)
         linked = pd.read_csv(linked_path, encoding='iso-8859-1', low_memory=False,
-                             usecols=self.LINKED_RAW_COLUMNS,
+                             usecols=lambda c: c in wanted,
                              dtype={'linked_trip_id': str, 'person_id': str, 'day_id': str})
         linked = linked.rename(columns={'linked_trip_weight': 'trip_weight'})
         n_orphan = int((~linked['linked_trip_id'].isin(per_link.index)).sum())
@@ -299,6 +316,37 @@ class TBISurveyTrip(BaseSurveyTrip):
                     f"{n_later:,} from the previous trip)")
         return df
 
+    def _passenger_mask(self, df: pd.DataFrame) -> pd.Series:
+        """True for a vehicle trip made as a passenger (raw TBI labels).
+
+        ``driver`` Passenger -> passenger; Driver or Both -> driver. An empty
+        ``driver`` (the question was skipped) is a passenger trip if the
+        person is under 16 (Person file ``age``), else a driver trip: the
+        skip rule leaves it empty for an adult who travels with household
+        children only.
+        """
+        vehicle = df['mode_type'].isin(self.VEHICLE_MODE_LABELS)
+        if 'driver' not in df.columns:
+            logger.warning("TBI: no 'driver' column — every vehicle trip is a driver trip (Car)")
+            return pd.Series(False, index=df.index)
+        drv = df['driver'].astype(str).str.strip()
+        passenger = drv.isin(self.PASSENGER_LABELS)
+        unknown = ~(passenger | drv.isin(self.DRIVER_LABELS))
+        child = pd.Series(False, index=df.index)
+        person_path = self._resolve_data_path(self._survey_entry().get('person_file'))
+        if person_path and Path(person_path).exists():
+            per = pd.read_csv(person_path, usecols=['person_id', 'age'],
+                              dtype={'person_id': str}, encoding='iso-8859-1')
+            age = df['person_id'].astype(str).map(per.set_index('person_id')['age'])
+            child = age.isin(self.NON_DRIVER_AGE_LABELS)
+        elif unknown.any():
+            logger.warning("TBI: no person_file — trips with an empty 'driver' are driver trips")
+        out = vehicle & (passenger | (unknown & child))
+        logger.info(f"TBI: {int(out.sum()):,} of {int(vehicle.sum()):,} vehicle trips are "
+                    f"passenger trips (Ride); {int((vehicle & unknown & child).sum()):,} of them "
+                    f"from an empty 'driver' of a person under 16")
+        return out
+
     def extract_data(self, year: str, file_path: Optional[str] = None) -> pd.DataFrame:
         """Read TBI CSV for the given year and apply geographic filtering.
 
@@ -333,9 +381,10 @@ class TBISurveyTrip(BaseSurveyTrip):
                 df = self._read_linked_trips(linked_path, file_path)
             else:
                 logger.info(f"Reading {year} TBI survey data from {file_path}")
+                wanted = set(self.RAW_COLUMNS) | set(self.OPTIONAL_COLUMNS)
                 df = pd.read_csv(
                     file_path,
-                    usecols=self.RAW_COLUMNS,
+                    usecols=lambda c: c in wanted,
                     encoding='iso-8859-1',
                     low_memory=False,
                     dtype={'person_id': str, 'day_id': str, 'linked_trip_id': str,
@@ -478,6 +527,9 @@ class TBISurveyTrip(BaseSurveyTrip):
             for col in ['o_bg_2020', 'd_bg_2020']:
                 df[col] = df[col].astype(str).str.replace('.0', '', regex=False)
 
+            # Passenger trips: before the drop below removes 'driver'.
+            passenger = self._passenger_mask(df)
+
             # ── Drop TBI-only columns that aren't part of the canonical schema
             cols_to_drop = [c for c in self._CLEANING_ONLY_COLUMNS if c in df.columns]
             df.drop(columns=cols_to_drop, inplace=True)
@@ -497,6 +549,7 @@ class TBISurveyTrip(BaseSurveyTrip):
             if unmapped_modes:
                 logger.warning(f"Unmapped mode values: {unmapped_modes} — mapping to '{self.MODE_OTHER}'")
             df[self.MODE_TYPE] = df[self.MODE_TYPE].map(self.MODE_MAP).fillna(self.MODE_OTHER)
+            df.loc[passenger & df[self.MODE_TYPE].eq(self.MODE_CAR), self.MODE_TYPE] = self.MODE_RIDE
 
             # ── Add source metadata columns ──────────────────────────────
             df[self.SOURCE_TYPE] = self.metadata['source_type']

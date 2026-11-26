@@ -20,7 +20,8 @@ from typing import Dict, List, Optional, Any, Set
 import numpy as np
 import pandas as pd
 
-from models.mode_types import ModeType, ModeConfig, get_default_car_config, MODE_CAR
+from models.mode_types import (ModeType, ModeConfig, get_default_car_config, MODE_CAR,
+                               MODE_RIDE, NHTS_2022_DRIVER_SHARE, effective_modes_config)
 from models.mode_availability import ModeAvailabilityManager, Location, haversine_meters
 
 logger = logging.getLogger(__name__)
@@ -69,10 +70,13 @@ class ModeChoiceModel:
         self.config = config
 
         # Get modes config, default to car if not present
-        modes_config = config.get('modes')
-        if not modes_config:
-            logger.warning("No 'modes' section in config, defaulting to car-only mode")
-            modes_config = get_default_car_config()
+        if not config.get('modes'):
+            logger.warning("No 'modes' section in config, defaulting to car-only mode "
+                           "(plus the default ride and school_bus modes)")
+            config = {**config, 'modes': get_default_car_config()}
+        # The config modes plus ride (car passenger) and school_bus, which are
+        # on unless the config switches them off (models.mode_types).
+        modes_config = effective_modes_config(config)
 
         # Parse mode configurations
         self.mode_configs: Dict[ModeType, ModeConfig] = {}
@@ -104,6 +108,10 @@ class ModeChoiceModel:
         self.chain_consistency = mode_choice_config.get('chain_consistency', True)
         self.min_samples_per_purpose = mode_choice_config.get('min_samples_per_purpose', 30)
         self.max_chain_mode_retries = mode_choice_config.get('max_chain_mode_retries', 5)
+        # Mode shares from trip-weighted survey trips (default). False = the
+        # old trip count, which over-represents the groups that report more
+        # trips (NHTS School car share: 54.6% weighted, 65.5% unweighted).
+        self.weighted_shares = bool(mode_choice_config.get('weighted_shares', True))
         # Short legs (e.g. Work->Lunch) get a walk pass-through: they don't
         # constrain the chain intersection, and emit as walk regardless of the
         # chain's primary mode. Only applies to interior legs (neither
@@ -227,7 +235,9 @@ class ModeChoiceModel:
                     logger.warning(f"  Survey '{survey_name}' missing 'mode_type' column")
                     continue
 
-                mode_counts = purpose_df['mode_type'].value_counts(normalize=True)
+                mode_counts = self._source_mode_shares(survey_name, purpose_df, purpose)
+                if mode_counts is None:
+                    continue
 
                 # Blend into overall rates
                 for mode_str, share in mode_counts.items():
@@ -254,6 +264,57 @@ class ModeChoiceModel:
         logger.info(f"Computed mode rates for {len(self.survey_rates)} purposes")
         if 'all' in self.survey_rates:
             logger.info(f"  Overall mode distribution: {self._format_rates(self.survey_rates['all'])}")
+
+    def _source_has_driver_info(self, survey_name: str) -> bool:
+        """True if the source tells drivers from passengers (has Ride trips)."""
+        cache = self.__dict__.setdefault('_driver_info', {})
+        if survey_name not in cache:
+            df = self.survey_data[survey_name]
+            cache[survey_name] = bool('mode_type' in df.columns
+                                      and df['mode_type'].eq(MODE_RIDE).any())
+            if not cache[survey_name] and ModeType.RIDE in self.mode_configs:
+                logger.warning(
+                    f"  Survey '{survey_name}' has no driver/passenger split: its Car share is "
+                    f"split into car and ride with the NHTS 2022 driver shares per purpose")
+        return cache[survey_name]
+
+    def _source_mode_shares(self, survey_name: str, purpose_df: pd.DataFrame,
+                            purpose: str) -> Optional[pd.Series]:
+        """Mode shares (survey mode label -> share) of one source and purpose.
+
+        Trip-weighted when ``mode_choice.weighted_shares`` is true (default)
+        and the source has positive weights. Car passengers (``Ride``):
+
+        * ride enabled, source without a driver field (for example
+          ``bham_local``): the ``Car`` share is split with
+          NHTS_2022_DRIVER_SHARE of the purpose;
+        * ride disabled: ``Ride`` counts as ``Car`` (the old behaviour, every
+          passenger drives).
+        """
+        weights = None
+        if self.weighted_shares and 'trip_weight' in purpose_df.columns:
+            w = pd.to_numeric(purpose_df['trip_weight'], errors='coerce').fillna(0.0).clip(lower=0)
+            if w.sum() > 0:
+                weights = w
+        modes = purpose_df['mode_type']
+        if weights is None:
+            shares = modes.value_counts(normalize=True)
+        else:
+            shares = weights.groupby(modes.values).sum()
+            shares = shares / shares.sum()
+        shares = shares.copy()
+
+        ride_on = ModeType.RIDE in self.mode_configs
+        if not ride_on:
+            if MODE_RIDE in shares.index:
+                shares[MODE_CAR] = shares.get(MODE_CAR, 0.0) + shares[MODE_RIDE]
+                shares = shares.drop(MODE_RIDE)
+        elif not self._source_has_driver_info(survey_name) and MODE_CAR in shares.index:
+            d = NHTS_2022_DRIVER_SHARE.get(purpose, NHTS_2022_DRIVER_SHARE['all'])
+            car = shares[MODE_CAR]
+            shares[MODE_CAR] = car * d
+            shares[MODE_RIDE] = shares.get(MODE_RIDE, 0.0) + car * (1.0 - d)
+        return shares
 
     def _format_rates(self, rates: Dict[ModeType, float]) -> str:
         """Format rates dict for logging."""

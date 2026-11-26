@@ -790,6 +790,110 @@ class ConfigManager:
         logger.info(f"Enabled transit module with transitModes={transit_modes_str} "
                     f"(from enabled modes: {transit_mode_names}){preserved_note}")
 
+    # MATSim 25 routing defaults (read from a run's output_config.xml). When
+    # the routing module is written, every default is written too, with
+    # clearDefaultTeleportedModeParams=true, so the result does not depend on
+    # how MATSim merges a file block with its defaults.
+    MATSIM_DEFAULT_TELEPORTED = {
+        'bike': {'beelineDistanceFactor': 1.3, 'teleportedModeSpeed': 4.166666666666667},
+        'walk': {'beelineDistanceFactor': 1.3, 'teleportedModeSpeed': 0.8333333333333333},
+        'non_network_walk': {'beelineDistanceFactor': 1.3, 'teleportedModeSpeed': 0.8333333333333333},
+        'ride': {'beelineDistanceFactor': 1.3, 'teleportedModeFreespeedFactor': 1.0},
+        'pt': {'beelineDistanceFactor': 1.3, 'teleportedModeFreespeedFactor': 2.0},
+    }
+    # Teleport values of the extra modes (models.mode_types.DEFAULT_EXTRA_MODES).
+    # ride: car free-flow time of the network route (MATSim default).
+    # school_bus: NHTS 2022 weekday school-bus trips, weighted median speed
+    # 16.6 km/h on the reported distance (car School trips: 28.7 km/h).
+    EXTRA_MODE_TELEPORT = {
+        'ride': {'beeline_factor': 1.3, 'freespeed_factor': 1.0},
+        'school_bus': {'beeline_factor': 1.3, 'speed_kmh': 16.6},
+    }
+
+    def configure_teleported_modes(self, tree: ET.ElementTree) -> None:
+        """Routing and scoring for the teleported extra modes (ride, school_bus).
+
+        A ride (car passenger) or school-bus leg moves the person but puts no
+        vehicle on the network, so neither mode is in ``networkModes`` and
+        neither is in ``subtourModeChoice.modes``: with the template's
+        ``fromSpecifiedModesToSpecifiedModes`` a leg of such a mode keeps its
+        mode in replanning. (With uncalibrated scoring, a teleported ride
+        that never waits in a jam would beat car, and car traffic would
+        collapse.) ``modes.<name>.teleport`` can set ``beeline_factor`` and
+        ``speed_kmh`` or ``freespeed_factor``.
+        """
+        from models.mode_types import effective_modes_config
+        modes = effective_modes_config(self.config)
+        extra = {}
+        for name, cfg in modes.items():
+            if not isinstance(cfg, dict) or not cfg.get('enabled', True):
+                continue
+            mm = cfg.get('matsim_mode')
+            if mm in self.EXTRA_MODE_TELEPORT:
+                tp = dict(self.EXTRA_MODE_TELEPORT[mm])
+                user_tp = cfg.get('teleport') or {}
+                if 'speed_kmh' in user_tp:
+                    tp.pop('freespeed_factor', None)
+                if 'freespeed_factor' in user_tp:
+                    tp.pop('speed_kmh', None)
+                tp.update(user_tp)
+                extra[mm] = tp
+        if not extra:
+            return
+
+        def as_matsim(tp: Dict) -> Dict:
+            out = {'beelineDistanceFactor': float(tp.get('beeline_factor', 1.3))}
+            if tp.get('speed_kmh') is not None:
+                out['teleportedModeSpeed'] = float(tp['speed_kmh']) / 3.6
+            else:
+                out['teleportedModeFreespeedFactor'] = float(tp.get('freespeed_factor', 1.0))
+            return out
+
+        root = tree.getroot()
+        routing = next((m for m in root.findall('module') if m.get('name') == 'routing'), None)
+        if routing is None:
+            routing = ET.SubElement(root, 'module', name='routing')
+            ET.SubElement(routing, 'param', name='clearDefaultTeleportedModeParams', value='true')
+            wanted = {m: dict(v) for m, v in self.MATSIM_DEFAULT_TELEPORTED.items()}
+        else:
+            wanted = {}
+        for mode, tp in extra.items():
+            wanted[mode] = as_matsim(tp)
+        existing = {
+            ps.find("param[@name='mode']").get('value'): ps
+            for ps in routing.findall("parameterset[@type='teleportedModeParameters']")
+            if ps.find("param[@name='mode']") is not None
+        }
+        for mode, params in wanted.items():
+            if mode in existing:
+                routing.remove(existing[mode])
+            ps = ET.SubElement(routing, 'parameterset', {'type': 'teleportedModeParameters'})
+            ET.SubElement(ps, 'param', name='mode', value=mode)
+            for k, v in params.items():
+                ET.SubElement(ps, 'param', name=k, value=repr(float(v)))
+        for mode in extra:
+            logger.info(f"Teleported mode '{mode}': {wanted[mode]} (no vehicle on the network)")
+
+        # Scoring: MATSim default values (calibrated values: todo item 3).
+        scoring_params = self._get_scoring_parameterset(tree)
+        if scoring_params is not None:
+            declared = {
+                p.find("param[@name='mode']").get('value')
+                for p in scoring_params.findall("parameterset[@type='modeParams']")
+                if p.find("param[@name='mode']") is not None
+            }
+            for mode in sorted(set(extra) - declared):
+                block = ET.SubElement(scoring_params, 'parameterset', {'type': 'modeParams'})
+                ET.SubElement(block, 'param', {'name': 'mode', 'value': mode})
+
+        # Replanning must not switch legs to or from these modes.
+        smc_modes = self._param_value(tree, 'subtourModeChoice', 'modes') or ''
+        bad = sorted(set(extra) & {m.strip() for m in smc_modes.split(',')})
+        if bad:
+            logger.warning(f"subtourModeChoice.modes contains {bad}: agents can switch car legs "
+                           f"to a teleported mode that never meets congestion. Remove them "
+                           f"unless the scoring is calibrated (todo item 3).")
+
     def configure_freight(self, tree: ET.ElementTree, last_iteration: int) -> None:
         """Make the config safe for a freight subpopulation.
 
@@ -1121,6 +1225,9 @@ class ConfigManager:
         # Enable transit module when transit_network is true
         if self.matsim_config.get('transit_network', False):
             self._enable_transit_module(tree)
+
+        # Car passengers (ride) and school buses: teleported, off the network.
+        self.configure_teleported_modes(tree)
 
         # Survey-derived activity durations, before freight: freight registers
         # its own activity types and must not have them overwritten by a

@@ -64,8 +64,8 @@ The configuration JSON is a declarative specification of the entire experiment. 
 - **Region specification**: A list of 5-digit FIPS GEOIDs (2-digit state + 3-digit county). County boundaries are looked up automatically via OSMnx. Any US county can be simulated by specifying its FIPS code.
 - **Survey sources**: Multiple surveys with configurable weights. When a regional survey is unavailable (weight=0), the system falls back to the national NHTS, ensuring function for any US metro. At least one active survey must have a person file (`person_file`, and `day_file` for TBI), because the demand budget needs survey person-days (Section 5.2). `data.survey_months` (default `"regular"`) and `data.day_type` (default `"weekday"`) select the survey days.
 - **Demand knobs**: `plan_generation.work_scaling_multiplier` and `nonwork_purposes.nonwork_trip_share` scale the survey values (neutral = 1.0). See Section 5.2.
-- **Mode definitions**: A flat structure where each mode (car, bus, rail, walk, bike) has its own availability constraint:
-  - *Universal*: car is always available.
+- **Mode definitions**: A flat structure where each mode (car, bus, rail, walk, bike) has its own availability constraint. `ride` (car passenger) and `school_bus` are added by default and are teleported in MATSim (Section 7):
+  - *Universal*: car, ride and school bus are always available.
   - *Distance-based*: walk and bike are available when origin-destination distance falls within configurable thresholds.
   - *GTFS-based*: bus and rail require transit stops within a configurable access buffer of both origin and destination.
 - **Scaling factor**: Controls the fraction of the population to simulate (e.g., `scaling_factor=0.1` for a 10% sample). MATSim flow and storage capacity factors are adjusted proportionally.
@@ -264,10 +264,12 @@ During plan generation, the spatial indices support mode availability buffer que
 
 Modes are assigned using a survey-based sampling approach that respects geographic availability constraints.
 
-**Base rates**: Mode shares are computed from survey data for each trip purpose pair (e.g., Home->Work: 85% car, 10% transit, 3% bike, 2% walk). When multiple survey sources are loaded, shares are blended proportionally to their configured weights.
+**Base rates**: Mode shares are computed from survey data for each destination purpose, weighted by the survey trip weights (`mode_choice.weighted_shares`, default true). When multiple survey sources are loaded, shares are blended proportionally to their configured weights.
+
+**Car drivers and passengers**: a survey car trip is either a driver trip (`Car`) or a passenger trip (`Ride`): NHTS `DRVR_FLG`, TBI `driver` (an empty value is a passenger trip for a person under 16). A passenger moves but adds no vehicle to the road. NHTS 2022 weekday driver share of car trips: all 0.77, Work 0.95, School 0.30. A survey without a driver field splits its car share with these NHTS shares per purpose. Two modes are on by default: `ride` (car passenger) and `school_bus`. Both are teleported in MATSim (ride: car free-flow time of the network route; school bus: 16.6 km/h, the NHTS median), so neither loads a count link, and neither is in `subtourModeChoice.modes`, so replanning keeps them. `modes.<name>.enabled: false` gives the old behaviour (for ride: every passenger drives).
 
 **Availability filtering**: Before sampling, modes are filtered by three availability checkers:
-- *Universal*: car is always available.
+- *Universal*: car, ride and school bus are always available.
 - *Distance-based*: walk and bike are available only when the haversine distance between origin and destination falls within configurable thresholds (default 2 km for walk, 8 km for bike).
 - *GTFS-based*: bus and rail require transit stops within a configurable access buffer of both origin and destination.
 

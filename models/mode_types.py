@@ -21,11 +21,74 @@ MODE_BIKE = 'Bike'
 MODE_SCHOOL_BUS = 'School Bus'
 MODE_RIDESHARE = 'Rideshare'
 MODE_OTHER = 'Other'
+# A car passenger (NHTS DRVR_FLG 2, TBI driver "Passenger"). ``Car`` is the
+# driver. A passenger trip puts no extra vehicle on the road.
+MODE_RIDE = 'Ride'
 
 CANONICAL_MODES = {
     MODE_CAR, MODE_BUS, MODE_RAIL, MODE_WALK,
-    MODE_BIKE, MODE_SCHOOL_BUS, MODE_RIDESHARE, MODE_OTHER,
+    MODE_BIKE, MODE_SCHOOL_BUS, MODE_RIDESHARE, MODE_OTHER, MODE_RIDE,
 }
+
+# Driver share of car trips (driver + passenger) per destination purpose.
+# NHTS 2022, weekday travel days in the regular months (Mar-May, Sep-Nov),
+# trip-weighted (WTTRDFIN), after the pipeline's NHTS cleaning. Used only
+# for a survey source that has no driver field (for example ``bham_local``):
+# its ``Car`` share is split into Car (driver) and Ride (passenger) with
+# these values. TBI 2023 gives nearly the same values (all 0.78, Work 0.95,
+# School 0.31).
+NHTS_2022_DRIVER_SHARE = {
+    'Home': 0.773,
+    'Work': 0.952,
+    'School': 0.302,
+    'Shopping': 0.799,
+    'Social': 0.695,
+    'Dining': 0.727,
+    'Other': 0.747,
+    'all': 0.771,
+}
+
+# Modes that every run has unless the config switches them off
+# (``modes.<name>.enabled: false``). Both are teleported in MATSim, so they
+# put no vehicle on the network: ``ride`` is the car passenger, ``school_bus``
+# the school bus (no GTFS feed has school buses).
+DEFAULT_EXTRA_MODES = {
+    'ride': {
+        'enabled': True,
+        'matsim_mode': 'ride',
+        'availability': 'universal',
+        'survey_rate': 'auto',
+    },
+    'school_bus': {
+        'enabled': True,
+        'matsim_mode': 'school_bus',
+        'availability': 'universal',
+        'survey_rate': 'auto',
+    },
+}
+
+
+def effective_modes_config(config: Dict[str, Any]) -> Dict[str, Any]:
+    """The config ``modes`` section plus the default extra modes.
+
+    A config entry for ``ride`` or ``school_bus`` is merged over the default,
+    so ``{"ride": {"enabled": false}}`` switches the mode off. Returns a new
+    dict; the config is not changed.
+    """
+    modes = dict(config.get('modes') or {})
+    for name, default in DEFAULT_EXTRA_MODES.items():
+        user = modes.get(name)
+        merged = dict(default)
+        if isinstance(user, dict):
+            merged.update(user)
+        modes[name] = merged
+    return modes
+
+
+def is_mode_enabled(config: Dict[str, Any], name: str) -> bool:
+    """True if mode ``name`` is enabled after the defaults are applied."""
+    cfg = effective_modes_config(config).get(name)
+    return isinstance(cfg, dict) and bool(cfg.get('enabled', True))
 
 
 class ModeType(Enum):
@@ -38,6 +101,7 @@ class ModeType(Enum):
     SCHOOL_BUS = "school_bus"
     RIDESHARE = "rideshare"
     OTHER = "other"
+    RIDE = "ride"
 
     @classmethod
     def from_survey_mode(cls, survey_mode: str) -> 'ModeType':
@@ -59,6 +123,7 @@ class ModeType(Enum):
             MODE_SCHOOL_BUS: cls.SCHOOL_BUS,
             MODE_RIDESHARE: cls.RIDESHARE,
             MODE_OTHER: cls.OTHER,
+            MODE_RIDE: cls.RIDE,
         }
         return mapping.get(survey_mode, cls.OTHER)
 
@@ -80,9 +145,12 @@ class ModeType(Enum):
                 ModeType.RAIL: 'pt',
                 ModeType.WALK: 'walk',
                 ModeType.BIKE: 'bike',
-                ModeType.SCHOOL_BUS: 'pt',
+                # Teleported: school buses are not in the GTFS feeds.
+                ModeType.SCHOOL_BUS: 'school_bus',
                 ModeType.RIDESHARE: 'car',
                 ModeType.OTHER: 'car',
+                # Car passenger, teleported (no vehicle on the network).
+                ModeType.RIDE: 'ride',
             }
             return matsim_mapping.get(self, 'car')
         # Default: return enum value
@@ -90,7 +158,7 @@ class ModeType(Enum):
 
     def is_transit(self) -> bool:
         """Check if this is a public transit mode."""
-        return self in {ModeType.BUS, ModeType.RAIL, ModeType.SCHOOL_BUS}
+        return self in {ModeType.BUS, ModeType.RAIL}
 
 
 @dataclass

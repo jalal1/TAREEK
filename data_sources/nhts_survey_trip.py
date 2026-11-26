@@ -7,7 +7,7 @@ from utils.logger import setup_logger
 from data_sources.base_survey_trip import BaseSurveyTrip
 from models.mode_types import (
     MODE_CAR, MODE_BUS, MODE_RAIL, MODE_WALK, MODE_BIKE,
-    MODE_SCHOOL_BUS, MODE_RIDESHARE, MODE_OTHER
+    MODE_SCHOOL_BUS, MODE_RIDESHARE, MODE_OTHER, MODE_RIDE
 )
 
 logger = setup_logger(__name__)
@@ -44,7 +44,11 @@ class NHTSSurveyTrip(BaseSurveyTrip):
         'WTTRDFIN',
         'TDAYDATE',
         'TRAVDAY',
+        'DRVR_FLG',
     ]
+
+    # 2: car trips are split into Car (driver) and Ride (passenger) by DRVR_FLG.
+    LOADER_VERSION = 2
 
     # ── NHTS WHYTO → WHYTRP1S deterministic mapping ─────────────────────
     # Verified from 2022 NHTS data: every WHYTO code maps to exactly one
@@ -291,6 +295,16 @@ class NHTSSurveyTrip(BaseSurveyTrip):
 
             # ── Map transport mode ────────────────────────────────────────
             df[self.MODE_TYPE] = df['TRPTRANS'].map(self.MODE_MAP).fillna(self.MODE_OTHER)
+
+            # ── Car passenger: DRVR_FLG 1 = driver, 2 = passenger ─────────
+            # A passenger trip moves a person but adds no vehicle to the
+            # road. Without this split every passenger became a driver
+            # (weighted driver share of car trips: all 0.77, School 0.30).
+            # Other DRVR_FLG values (not ascertained) stay Car.
+            passenger = (df[self.MODE_TYPE].eq(self.MODE_CAR)
+                         & pd.to_numeric(df['DRVR_FLG'], errors='coerce').eq(2))
+            df.loc[passenger, self.MODE_TYPE] = self.MODE_RIDE
+            logger.info(f"NHTS: {int(passenger.sum()):,} car trips are passenger trips (Ride)")
 
             # ── Construct datetime from HHMM integers ─────────────────────
             # The synthetic date carries the real day of week.

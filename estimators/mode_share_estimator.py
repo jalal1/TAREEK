@@ -811,7 +811,7 @@ def main() -> None:
 
     print()
     print(f"  Total workers (ACS)  : {acs['total_workers']:,}")
-    print(f"  ACS car share        : {acs['car_share']:.2%}")
+    print(f"  ACS car share        : {acs['car_share']:.2%}  (drivers + carpool)")
     print(f"  ACS transit share    : {acs['transit_share']:.2%}")
     print(f"    Bus                : {acs['bus_share']:.2%}")
     print(f"    Rail               : {acs['rail_share']:.2%}")
@@ -828,7 +828,14 @@ def main() -> None:
     if sim_shares is not None:
         # FEEDBACK mode
         print(f"  Realised shares at iter {int(sim_shares.get('_iteration', 0))}:")
-        print(f"    car                : {sim_shares.get('car', 0):.2%}")
+        print(f"    car (driver)       : {sim_shares.get('car', 0):.2%}")
+        print(f"    ride (passenger)   : {sim_shares.get('ride', 0):.2%}")
+        # ACS car_truck_van counts drivers AND carpool passengers, so compare
+        # it with car + ride, not with car alone.
+        print(f"    car + ride         : {sim_shares.get('car', 0) + sim_shares.get('ride', 0):.2%}"
+              f"  (ACS car/truck/van incl. carpool: {acs['car_share']:.2%})")
+        if sim_shares.get('school_bus'):
+            print(f"    school_bus         : {sim_shares.get('school_bus', 0):.2%}")
         print(f"    pt                 : {sim_shares.get('pt', 0):.2%}")
         print(f"    walk               : {sim_shares.get('walk', 0):.2%}")
         print()

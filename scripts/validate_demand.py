@@ -22,7 +22,7 @@ shares need no weighting.
 Two comparability rules, both easy to get wrong:
 
   * **Modes must be collapsed the same way.** MATSim reports Bus, Rail and
-    School Bus all as ``pt``, so the survey's canonical modes are collapsed to
+    (but not School Bus, which is its own teleported mode) as ``pt``, so the survey's canonical modes are collapsed to
     the same vocabulary before comparing. Comparing raw labels would show a
     fake deficit in every transit sub-mode.
   * **Distances must share a unit and a definition.** The survey stores miles;
@@ -62,11 +62,12 @@ MILES_TO_KM = 1.609344
 # collapses every transit sub-mode to "pt", so the survey must be collapsed
 # identically or transit looks under-served when it is merely aggregated.
 SURVEY_TO_MATSIM_MODE = {
-    'Car': 'car',
+    'Car': 'car',            # car driver
+    'Ride': 'ride',          # car passenger: teleported, no vehicle on the network
     'Rideshare': 'car',      # a car trip on the network
     'Bus': 'pt',
     'Rail': 'pt',
-    'School Bus': 'pt',
+    'School Bus': 'school_bus',  # teleported mode, not GTFS transit
     'Walk': 'walk',
     'Bike': 'bike',
     'Other': 'other',

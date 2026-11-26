@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import json
+from pathlib import Path
 from typing import Dict, List, Optional
 import pandas as pd
 from utils.logger import setup_logger
@@ -90,6 +92,25 @@ def select_for_role(per_source: Dict, weights: Dict[str, float]) -> Dict:
     return {k: v for k, v in per_source.items() if weights.get(k, 0) > 0}
 
 
+def _survey_version_marker(db_manager) -> Optional[Path]:
+    """Beside the DB file: the loader version of each survey's rows."""
+    db_path = getattr(db_manager, 'db_path', None)
+    if not db_path:
+        return None
+    return Path(db_path).with_name(Path(db_path).stem + '.survey_versions.json')
+
+
+def _read_versions(marker: Optional[Path]) -> Dict[str, int]:
+    if marker is None or not marker.exists():
+        return {}
+    try:
+        return {k: int(v) for k, v in json.loads(marker.read_text()).items()}
+    except (ValueError, OSError) as e:
+        logger.warning(f"Survey version marker {marker} is not readable ({e}); "
+                       f"treating every source as version 1")
+        return {}
+
+
 def ensure_surveys(config: Dict) -> None:
     """Ensure survey data exists in the database for all active survey sources.
 
@@ -97,14 +118,29 @@ def ensure_surveys(config: Dict) -> None:
     job (see ROLES), checks whether the survey_trips table already has rows
     for that (source_type, source_year).  If not, runs the full ETL pipeline:
     extract_data → clean_data → save_data.
+
+    Rows that exist but were written by an older loader (the class
+    ``LOADER_VERSION`` is higher than the version in the marker beside the
+    DB file, ``<db>.survey_versions.json``; no entry = version 1) are deleted
+    and loaded again, so a loader change takes effect on the next run.
     """
     survey_configs = config['data'].get('surveys', [])
     active_entries = [e for e in survey_configs if is_active_entry(e)]
     if not active_entries:
         return
 
+    SurveyManager._ensure_registry()
     data_dir = config['data']['data_dir']
     db_manager = initialize_tables(data_dir)
+    marker = _survey_version_marker(db_manager)
+    versions = _read_versions(marker)
+
+    def key_of(e):
+        return f"{e['type']}/{e.get('year', '')}"
+
+    def wanted_version(e):
+        cls = SurveyManager.SURVEY_REGISTRY.get(e['type'])
+        return int(getattr(cls, 'LOADER_VERSION', 1)) if cls else 1
 
     try:
         # Check which (source_type, source_year) pairs already exist
@@ -115,10 +151,19 @@ def ensure_surveys(config: Dict) -> None:
             ).distinct().all()
             existing_pairs = {(row[0], row[1]) for row in existing_rows}
 
-        missing_entries = [
-            e for e in active_entries
-            if (e['type'], e.get('year', '')) not in existing_pairs
-        ]
+        missing_entries = []
+        for e in active_entries:
+            pair = (e['type'], e.get('year', ''))
+            if pair not in existing_pairs:
+                missing_entries.append(e)
+                continue
+            have, want = versions.get(key_of(e), 1), wanted_version(e)
+            if have < want:
+                logger.info(f"Survey {key_of(e)}: rows from loader version {have}, "
+                            f"loader is version {want} — deleting the rows to load them again")
+                db_manager.delete_records(SurveyTrip, {'source_type': pair[0],
+                                                       'source_year': pair[1]})
+                missing_entries.append(e)
 
         if not missing_entries:
             logger.info(
@@ -129,14 +174,13 @@ def ensure_surveys(config: Dict) -> None:
 
         logger.info(
             f"Survey data missing for {len(missing_entries)} source(s): "
-            f"{[e['type'] + '/' + e.get('year', '?') for e in missing_entries]}. "
+            f"{[key_of(e) for e in missing_entries]}. "
             f"Running ETL..."
         )
     finally:
         db_manager.close()
 
     # Run ETL for each missing source
-    SurveyManager._ensure_registry()
     for entry in missing_entries:
         survey_type = entry['type']
         year = entry.get('year', '')
@@ -154,6 +198,9 @@ def ensure_surveys(config: Dict) -> None:
         source.extract_data(year=year, file_path=file_path if file_path else None)
         source.clean_data()
         source.save_data()
+        versions[key_of(entry)] = wanted_version(entry)
+        if marker is not None:
+            marker.write_text(json.dumps(versions, indent=1, sort_keys=True))
         logger.info(f"ETL complete for {survey_type}/{year}")
 
 

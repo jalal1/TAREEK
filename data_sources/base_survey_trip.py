@@ -7,7 +7,7 @@ from utils.logger import setup_logger
 from models.models import SurveyTrip, initialize_tables
 from models.mode_types import (
     MODE_CAR, MODE_BUS, MODE_RAIL, MODE_WALK, MODE_BIKE,
-    MODE_SCHOOL_BUS, MODE_RIDESHARE, MODE_OTHER, CANONICAL_MODES
+    MODE_SCHOOL_BUS, MODE_RIDESHARE, MODE_OTHER, MODE_RIDE, CANONICAL_MODES
 )
 
 logger = setup_logger(__name__)
@@ -92,8 +92,16 @@ class BaseSurveyTrip(ABC):
     MODE_SCHOOL_BUS = MODE_SCHOOL_BUS
     MODE_RIDESHARE = MODE_RIDESHARE
     MODE_OTHER = MODE_OTHER
+    MODE_RIDE = MODE_RIDE
 
     CANONICAL_MODES = CANONICAL_MODES
+
+    # Version of what extract_data() + clean_data() write to survey_trips.
+    # Raise it in a subclass when its loader output changes: ensure_surveys()
+    # compares it with the marker beside the DB file and re-ingests the rows
+    # of that source when they differ. (Before the marker, a loader change
+    # had no effect until someone deleted the old rows by hand.)
+    LOADER_VERSION = 1
 
     # ── Person-day table (canonical schema) ─────────────────────────────
     # One row per surveyed person-day, including days with no trips. This

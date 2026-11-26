@@ -368,6 +368,10 @@ class ExperimentRunner:
         payload['surveys'] = strip_help(data_cfg.get('surveys', []))
         payload['day_type'] = data_cfg.get('day_type', 'weekday')
         payload['survey_months'] = data_cfg.get('survey_months', 'regular')
+        # Code changes that change the plans for the same config. 2: car
+        # passengers (ride), school bus and trip-weighted mode shares
+        # (2026-11-26); older cache entries must not be served.
+        payload['demand_code_version'] = 2
 
         blob = _json.dumps(payload, sort_keys=True, default=str)
         return hashlib.sha256(blob.encode()).hexdigest()[:16]
