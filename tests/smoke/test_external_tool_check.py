@@ -22,7 +22,7 @@ def _write_config(tmp_path, **overrides):
         'data': {'data_dir': str(tmp_path / 'data')},
         'plan_generation': {},
         'network': {'rebuild_network': True},
-        'matsim': {'run_simulation': True},
+        'matsim': {'run_simulation': True, 'version': 'matsim_25'},
     }
     for section, values in overrides.items():
         cfg.setdefault(section, {}).update(values)
@@ -77,3 +77,18 @@ def test_java_not_required_when_simulation_is_off(tmp_path, monkeypatch):
     )
     cfg = _write_config(tmp_path, matsim={'run_simulation': False})
     ConfigValidator(cfg)._validate_external_tools()
+
+
+@pytest.mark.smoke
+def test_default_matsim_2026_without_install_names_the_script(tmp_path, monkeypatch):
+    """The default version (no "version" key) is matsim_2026; a missing jar fails at start."""
+    from matsim import versions
+    monkeypatch.setattr('utils.config_validator.shutil.which',
+                        lambda tool: f'/usr/bin/{tool}')
+    monkeypatch.setattr(versions, 'MATSIM_DIR', tmp_path)
+    cfg = _write_config(tmp_path)
+    data = json.loads(cfg.read_text())
+    del data['matsim']['version']
+    cfg.write_text(json.dumps(data))
+    with pytest.raises(ConfigValidationError, match='install_matsim.py matsim_2026'):
+        ConfigValidator(cfg)._validate_external_tools()

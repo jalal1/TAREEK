@@ -213,15 +213,35 @@ use Option A.
 <details>
 <summary>Java</summary>
 
-1. Download the **Temurin 21 (LTS)** installer from
-   [adoptium.net](https://adoptium.net/temurin/releases/?version=21) (`.msi` for Windows,
+TAREEK uses MATSim 2026.0 by default, which needs **Java 25**.
+
+1. Download the **Temurin 25 (LTS) JDK** installer from
+   [adoptium.net](https://adoptium.net/temurin/releases/?version=25) (`.msi` for Windows,
    `.pkg` for macOS).
 2. Run the installer. **Windows:** on the **Custom Setup** screen, make sure that **Add to
    PATH** is on (it is on by default). You do not have to edit the PATH by hand. **macOS:**
    the installer sets up `java` for you.
 3. Open a new terminal and type `java -version` to check the installation.
+4. Download MATSim 2026.0 (about 113 MB) into `matsim/matsim_2026/`:
+   `python scripts/install_matsim.py matsim_2026`
 
-**Linux (Ubuntu/Debian):** `sudo apt-get install openjdk-21-jre-headless`
+**Linux (Ubuntu 24.04):** `sudo apt-get install openjdk-25-jre-headless`, then step 4.
+
+You can keep another Java (for example Java 21) as the default `java`. TAREEK finds Java 25
+in this order: the config key `matsim.java_executable`, the environment variable
+`TAREEK_JAVA_25`, `java` on PATH, `JAVA_HOME`, and the usual Java folders (for example
+`/usr/lib/jvm`). If it cannot find Java 25 or MATSim 2026.0, the run stops at the start
+with an error message that tells you what to do.
+
+Java must have the `jdk.compiler` module (all JDKs and Ubuntu `openjdk-25-jre-headless`
+have it). At start, Java compiles `matsim/launcher/TareekController.java`. This launcher
+replaces a MATSim 2026.0 check that stops all TAREEK configs (countsScaleFactor; fixed
+after the release by MATSim PR #5016).
+
+**MATSim 2025.0 (fallback).** Set `"version": "matsim_25"` in the `matsim` section of your
+config. Change nothing else. MATSim 2025.0 is part of the repository and needs Java 21 or
+newer (`sudo apt-get install openjdk-21-jre-headless`). Its `legHistogram.txt` values are
+(iteration + 2) times too large (a MATSim 2025.0 bug); the experiment summary corrects them.
 
 </details>
 

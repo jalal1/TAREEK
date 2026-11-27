@@ -197,6 +197,7 @@ def extract_matsim_output_stats(experiment_dir: Path) -> Dict:
                 leghist_path = final_iter / f'{final_iter_num}.legHistogram.txt'
                 if leghist_path.exists():
                     _extract_leg_histogram(leghist_path, stats)
+                    _correct_leg_histogram(experiment_dir, final_iter_num, stats)
 
                 # 5c. Stuck agents - authoritative source is the events file.
                 # legHistogram's stuck_all column double-counts, so we stream
@@ -275,6 +276,43 @@ def _extract_leg_histogram(leghist_path: Path, stats: Dict) -> None:
         stats['peak_departures_per_5min'] = max_departures
         stats['peak_hour'] = peak_hour
         stats['max_en_route'] = max_en_route
+
+
+def _leg_histogram_factor(experiment_dir: Path, iteration: int) -> int:
+    """How many times too large legHistogram.txt is for this run.
+
+    MATSim 2025.0 (matsim.version "matsim_25") adds the LegHistogram event
+    handler once more in each iteration and never removes it (fixed in
+    2026.0 by PR #3936). At iteration n (firstIteration 0) the handler is
+    registered n+2 times, so every value in n.legHistogram.txt is n+2 times
+    too large. A run with no config_used.json is from before 2026.0 support,
+    so it is a matsim_25 run.
+    """
+    version = 'matsim_25'
+    cfg_path = experiment_dir / 'config_used.json'
+    if cfg_path.exists():
+        try:
+            with open(cfg_path, encoding='utf-8') as f:
+                version = (json.load(f).get('matsim') or {}).get('version', 'matsim_25')
+        except (OSError, ValueError):
+            pass
+    return iteration + 2 if version == 'matsim_25' else 1
+
+
+def _correct_leg_histogram(experiment_dir: Path, iteration: int, stats: Dict) -> None:
+    """Divide the legHistogram values by the MATSim 2025.0 inflation factor."""
+    factor = _leg_histogram_factor(experiment_dir, iteration)
+    if factor <= 1:
+        return
+    for key in ('peak_departures_per_5min', 'max_en_route'):
+        if stats.get(key) is not None:
+            stats[f'{key}_raw'] = stats[key]
+            stats[key] = int(round(stats[key] / factor))
+    stats['leg_histogram_correction'] = (
+        f"MATSim 2025.0 (matsim_25): values divided by {factor} (iteration {iteration} + 2). "
+        f"The LegHistogram handler is registered {factor} times in this iteration "
+        f"(MATSim bug, fixed in 2026.0 by PR #3936). The *_raw keys keep the file values."
+    )
 
 
 def _count_stuck_events(events_path: Path) -> int:
@@ -600,6 +638,10 @@ def build_matsim_output_section(experiment_dir: Path) -> Optional[Dict]:
         'peak_hour_comment': 'Time of day with highest departure rate (HH:MM:SS format).',
         'max_en_route': s.get('max_en_route'),
         'max_en_route_comment': 'Maximum number of agents traveling simultaneously. Indicates network load.',
+        'leg_histogram_correction': s.get('leg_histogram_correction'),
+        'leg_histogram_correction_comment': 'Set only for MATSim 2025.0 runs: peak_departures_per_5min and '
+                                            'max_en_route are divided by (iteration + 2) because MATSim 2025.0 '
+                                            'counts each leg (iteration + 2) times in legHistogram.txt.',
 
         'total_stuck_agents': s.get('total_stuck_agents'),
         'total_stuck_agents_comment': 'Count of stuckAndAbort events from the final-iteration events file '

@@ -60,3 +60,6 @@ data/_*
 
 REVIEW_ACTION_ITEMS.txt
 private_docs/
+
+# MATSim 2026.0 (download with: python scripts/install_matsim.py matsim_2026)
+matsim/matsim_2026/

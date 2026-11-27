@@ -21,12 +21,12 @@
         <param name="numberOfThreads" value="3" />
     </module>
     <module name="eventsManager">
-        <!-- Hermes logs "should be run with one thread per handler" (P4).
-             Kept false (MATSim's default): true was ~28% faster on a short
-             test but crashed MATSim 25 on Madison (LegHistogram thread race).
+        <!-- oneThreadPerHandler is not set here. config_manager writes true
+             for matsim_2026 + hermes (about 27% faster per iteration, the same
+             results). MATSim 2025.0 keeps its default false: true crashed
+             it on Madison (LegHistogram thread race, fixed in 2026.0).
              A config can set eventsManager.oneThreadPerHandler; the module
              must exist here for the parameter to be overridable. -->
-        <param name="oneThreadPerHandler" value="false" />
     </module>
     <module name="linkStats">
         <!-- Specifies over how many iterations the link volumes should be averaged that are used for the link statistics. Use 1 or 0 to only use the link volumes of a single iteration. This values cannot be larger than the value specified for writeLinkStatsInterval -->

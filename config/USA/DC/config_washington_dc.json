@@ -276,7 +276,7 @@
     "_rebuild_network_help": "If true, force regeneration of the network even if a cached version exists. Useful when the cached network has issues. After a successful rebuild, set back to false to re-enable caching"
   },
   "matsim": {
-    "version": "matsim_25",
+    "version": "matsim_2026",
     "mode": "basic",
     "run_simulation": true,
     "heap_size_gb": 100,

@@ -292,7 +292,7 @@
     "_roundabout_capacity_per_lane_help": "veh/h per lane for links tagged junction=roundabout in OSM. pt2matsim gives a roundabout the default of its highway type (tertiary: 600 veh/h), about half of a real single-lane roundabout (HCM ~1,100-1,400). null keeps the pt2matsim value. Applied to the experiment's copy of the network: no rebuild, link IDs unchanged, capacity only raised."
   },
   "matsim": {
-    "version": "matsim_25",
+    "version": "matsim_2026",
     "mode": "basic",
     "run_simulation": true,
     "heap_size_gb": 4,

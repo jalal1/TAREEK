@@ -16,6 +16,7 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import logging
+from matsim import versions
 from matsim.osm_downloader import OSMDownloader
 
 from data_sources.gtfs_manager import resolve_gtfs_file
@@ -191,24 +192,20 @@ class NetworkGenerator:
         }
 
     def get_matsim_jar_path(self) -> Path:
+        """Return the MATSim jar for network preparation.
+
+        Always the NETWORK_TOOLS_VERSION jar (matsim_25), not matsim.version:
+        the OSM converter RunSimpleNetworkReaderJalal is a custom class that
+        only matsim_25.jar has, and network.xml has the same format in
+        MATSim 2025.0 and 2026.0. See matsim/versions.py.
         """
-        Get path to MATSim JAR file
-
-        Returns:
-            Path to MATSim JAR file
-        """
-        matsim_version = self.matsim_config.get('version', 'matsim_25')
-        base_path = Path(__file__).parent / matsim_version
-
-        # Find MATSim JAR
-        jar_files = list(base_path.glob('*.jar'))
-        if not jar_files:
-            raise FileNotFoundError(f"No MATSim JAR found in {base_path}")
-
-        jar_path = jar_files[0]
+        jar_path = versions.get_jar_path(versions.NETWORK_TOOLS_VERSION)
         logger.info(f"Using MATSim JAR: {jar_path}")
-
         return jar_path
+
+    def get_matsim_java(self) -> str:
+        """Java binary for the network-preparation jar (Java 21 or newer)."""
+        return versions.resolve_java(self.matsim_config, versions.NETWORK_TOOLS_VERSION)
 
     def get_pt2matsim_jar_path(self) -> Path:
         """Get path to pt2matsim JAR in matsim/pt2matsim/."""
@@ -252,7 +249,7 @@ class NetworkGenerator:
 
         # Run NetworkCleaner
         cmd = [
-            'java', f'-Xmx{self.network_heap_size_gb}g',
+            self.get_matsim_java(), f'-Xmx{self.network_heap_size_gb}g',
             '-cp', str(jar_path),
             'org.matsim.run.NetworkCleaner',
             str(input_network.resolve()),
@@ -659,7 +656,7 @@ class NetworkGenerator:
 
         # Run the conversion using RunSimpleNetworkReaderJalal (with coordinate fix)
         cmd = [
-            'java', f'-Xmx{self.network_heap_size_gb}g',
+            self.get_matsim_java(), f'-Xmx{self.network_heap_size_gb}g',
             '-cp', str(jar_path),
             'org.matsim.contrib.osm.examples.RunSimpleNetworkReaderJalal',
             str(osm_file.resolve()),

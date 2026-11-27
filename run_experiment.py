@@ -573,6 +573,12 @@ class ExperimentRunner:
             self.validator = ConfigValidator(self.config_path)
             self.config = self.validator.validate()
             self.config["_config_dir"] = str(self.config_path.parent)
+            # Write the selected MATSim version into config_used.json also when
+            # the config does not set it: experiment_summary uses it (a run
+            # without the key is read as an old MATSim 2025.0 run).
+            from matsim import versions
+            self.config.setdefault('matsim', {}).setdefault(
+                'version', versions.get_version(self.config.get('matsim')))
 
             logger.info(f"Configuration file: {self.config_path}")
             logger.info(f"Experiment ID: {self.experiment_id}")

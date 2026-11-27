@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import logging
 
+from matsim import versions
+
 logger = logging.getLogger(__name__)
 
 # The vehiclesSource that reads one vehicle type per network mode. Defined here
@@ -494,6 +496,50 @@ class ConfigManager:
                 "No survey activity scoring windows available; openingTime, "
                 "closingTime and minimalDuration stay undefined"
             )
+
+    def apply_version_settings(self, tree: ET.ElementTree) -> None:
+        """Write config.xml settings that depend on matsim.version.
+
+        1. PINNED_DEFAULTS: write the MATSim 2025.0 value of each default
+           that changed in 2026.0, if the config does not set it. The module
+           is created if it is missing (an empty module keeps all other
+           MATSim defaults).
+        2. VERSION_ONLY_PARAMS: remove a module or parameter that the selected
+           version does not have, with a warning.
+        """
+        version = versions.get_version(self.matsim_config)
+        root = tree.getroot()
+
+        defaults = list(versions.PINNED_DEFAULTS)
+        if self._param_value(tree, 'controller', 'mobsim') == 'hermes':
+            defaults += list(versions.HERMES_VERSION_DEFAULTS.get(version, ()))
+        for module_name, param_name, value in defaults:
+            if self._param_value(tree, module_name, param_name) is not None:
+                continue
+            module = next((m for m in root.findall('module')
+                           if m.get('name') == module_name), None)
+            if module is None:
+                module = ET.SubElement(root, 'module', name=module_name)
+            # Params before parametersets, as MATSim writes them.
+            new = ET.Element('param', name=param_name, value=value)
+            first_set = next((i for i, c in enumerate(list(module))
+                              if c.tag == 'parameterset'), None)
+            if first_set is None:
+                module.append(new)
+            else:
+                module.insert(first_set, new)
+
+        for module in list(root.findall('module')):
+            name = module.get('name')
+            if not versions.param_allowed(version, name):
+                logger.warning(f"Module '{name}' does not exist in {version}; removed from config.xml")
+                root.remove(module)
+                continue
+            for p in list(module.findall('param')):
+                if not versions.param_allowed(version, name, p.get('name')):
+                    logger.warning(f"Parameter {name}.{p.get('name')} does not exist in "
+                                   f"{version}; removed from config.xml")
+                    module.remove(p)
 
     @staticmethod
     def _param_value(tree: ET.ElementTree, module_name: str, param_name: str) -> Optional[str]:
@@ -1208,15 +1254,20 @@ class ConfigManager:
                         self._set_or_add_parameter(tree, 'hermes', param, _xml_value(value))
                         logger.info(f"Mirrored qsim.{param} -> hermes.{param} = {value}")
 
-        # eventsManager.oneThreadPerHandler is NOT set automatically (P4). It
-        # made Hermes iterations ~28% faster on a 4-iteration Anoka test, but
-        # on Madison it crashed MATSim 25 in iteration 9: LegHistogram's
-        # TreeMap was changed from two event threads at once
-        # (NullPointerException in TreeMap.fixAfterInsertion). A config can
-        # still set it in configurable_params, at its own risk.
-        if self._param_value(tree, 'eventsManager', 'oneThreadPerHandler') == 'true':
-            logger.warning("eventsManager.oneThreadPerHandler = true: faster with hermes, but "
-                           "MATSim 25 can crash in LegHistogram (thread race, seen 2026-11-25)")
+        # eventsManager.oneThreadPerHandler: apply_version_settings sets it to
+        # true for matsim_2026 + hermes (versions.HERMES_VERSION_DEFAULTS).
+        # It is NOT set for matsim_25: on Madison it crashed MATSim 2025.0 in
+        # iteration 9. Cause: a MATSim 2025.0 bug (fixed in 2026.0 by PR
+        # #3936) adds the LegHistogram handler once more in each iteration;
+        # with one thread per handler, these copies change one TreeMap from
+        # many threads. A config can still set it, at its own risk.
+        if (self._param_value(tree, 'eventsManager', 'oneThreadPerHandler') == 'true'
+                and versions.get_version(self.matsim_config) == 'matsim_25'):
+            logger.warning(
+                "eventsManager.oneThreadPerHandler = true with matsim_25 (MATSim 2025.0): "
+                "MATSim can crash in LegHistogram (thread race, seen 2026-11-25). "
+                "Workaround: also set controller.legHistogramInterval = 0, or use "
+                "matsim.version = 'matsim_2026'.")
 
         # Ensure file paths are relative (network.xml, plans.xml are in same dir as config)
         self.update_parameter(tree, 'network', 'inputNetworkFile', 'network.xml')
@@ -1243,6 +1294,11 @@ class ConfigManager:
         # check the config can actually score the plans it will be run with.
         self.verify_activity_params_cover_plans(
             tree, experiment_path / 'plans.xml')
+
+        # MATSim version differences (matsim/versions.py): pin the defaults
+        # that changed in 2026.0, and remove parameters that the selected
+        # version does not know (MATSim stops on an unknown parameter).
+        self.apply_version_settings(tree)
 
         # Save to file
         output_path.parent.mkdir(parents=True, exist_ok=True)

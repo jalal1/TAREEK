@@ -20,6 +20,26 @@ repository, and each one has its own license.
 | Source code | https://github.com/matsim-org/matsim-libs/tree/2025.0 |
 | Project | https://www.matsim.org/ |
 
+### MATSim 2026.0 (not in this repository)
+
+You can select MATSim 2026.0 with `matsim.version = "matsim_2026"`. The
+repository does not contain its files. The command
+`python scripts/install_matsim.py matsim_2026` downloads the official release
+zip, checks its SHA-256 and puts these files in `matsim/matsim_2026/`:
+
+| Item | Value |
+|---|---|
+| Files | `matsim/matsim_2026/matsim-2026.0.jar`, `matsim/matsim_2026/matsim_2026_lib/*.jar` (164 library jars), `LICENSE`, `COPYING` |
+| Version | MATSim 2026.0 (`org.matsim:matsim:2026.0`) |
+| License | GNU General Public License, version 2 or (at your option) any later version (`GPL-2.0-or-later`) |
+| Source code | https://github.com/matsim-org/matsim-libs/tree/2026.0 |
+| Release | https://github.com/matsim-org/matsim-libs/releases/tag/2026.0 (`matsim-2026.0-release.zip`) |
+| Java | Java 25 or newer |
+
+The library jars come from other projects, for example GeoTools, Guice,
+Jackson and Log4j. Each library has its own license. The license files are
+in the `META-INF/` folder of each library jar.
+
 ### pt2matsim
 
 | Item | Value |
@@ -29,7 +49,7 @@ repository, and each one has its own license.
 | License | GNU General Public License, version 2 or (at your option) any later version (`GPL-2.0-or-later`) |
 | Source code | https://github.com/matsim-org/pt2matsim/tree/v25.2 |
 
-Both jar files also contain libraries from other projects, for example
+The MATSim 2025.0 jar and the pt2matsim jar also contain libraries from other projects, for example
 GeoTools, Hibernate, Jackson, and GlassFish. These libraries have their own
 licenses. The license files are in the `META-INF/` folder of each jar file.
 

@@ -83,12 +83,33 @@ def real_config_path(repo_root) -> Path:
 
 
 @pytest.fixture(scope="session")
-def smoke_config_path(repo_root) -> Path:
-    """The minimal committed config used by the e2e tier."""
+def matsim_version() -> str:
+    """MATSim version for the e2e tier: env TAREEK_TEST_MATSIM_VERSION.
+
+    Default "matsim_25". Example: TAREEK_TEST_MATSIM_VERSION=matsim_2026
+    pytest -m e2e_matsim (needs scripts/install_matsim.py and Java 25).
+    """
+    return os.environ.get("TAREEK_TEST_MATSIM_VERSION", "matsim_25")
+
+
+@pytest.fixture(scope="session")
+def smoke_config_path(repo_root, matsim_version, tmp_path_factory) -> Path:
+    """The minimal committed config used by the e2e tier.
+
+    When matsim_version is not the version in the fixture, a copy with
+    matsim.version changed is written to a temporary folder.
+    """
+    import json
     path = repo_root / "tests" / "fixtures" / "config_smoke.json"
     if not path.exists():
         pytest.fail(f"Smoke config fixture not found: {path}")
-    return path
+    cfg = json.loads(path.read_text(encoding="utf-8"))
+    if cfg.get("matsim", {}).get("version", "matsim_25") == matsim_version:
+        return path
+    cfg.setdefault("matsim", {})["version"] = matsim_version
+    copy = tmp_path_factory.mktemp("smoke_cfg") / "config_smoke.json"
+    copy.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    return copy
 
 
 @pytest.fixture
@@ -120,14 +141,24 @@ def require_db(repo_root):
 
 
 @pytest.fixture(scope="session")
-def require_java(repo_root):
-    """Return the MATSim jar path, FAILING if Java or the jar is missing."""
-    jar = repo_root / "matsim" / "matsim_25" / "matsim_25.jar"
-    if not jar.exists():
-        pytest.fail(f"e2e_matsim requires the MATSim jar at {jar}, not found.")
-    if shutil.which("java") is None:
+def require_java(repo_root, matsim_version):
+    """Return the MATSim jar path, FAILING if the jar or its Java is missing.
+
+    The jar and the Java binary come from matsim/versions.py for
+    matsim_version (matsim_25: Java 21; matsim_2026: Java 25).
+    """
+    from matsim import versions
+    try:
+        jar = versions.get_jar_path(matsim_version)
+    except FileNotFoundError as e:
+        pytest.fail(f"e2e_matsim requires the MATSim jar: {e}")
+    if shutil.which("java") is None and matsim_version == "matsim_25":
         pytest.fail(
             "e2e_matsim requires a Java runtime on PATH ('java' not found). "
             "Install a JDK (21 recommended) before running -m e2e_matsim."
         )
+    try:
+        versions.resolve_java({"version": matsim_version}, matsim_version)
+    except RuntimeError as e:
+        pytest.fail(f"e2e_matsim: {e}")
     return jar

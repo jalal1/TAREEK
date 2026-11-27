@@ -27,10 +27,10 @@ _INSTALL_HINTS = {
         'docs': 'docs/osm-tools-installation.md',
     },
     'java': {
-        'linux': 'sudo apt-get install openjdk-21-jre-headless',
-        'darwin': 'brew install --cask temurin@21',
-        'win32': 'Install Temurin 21 from https://adoptium.net/ (keep "Add to PATH" on)',
-        'any': 'conda install -c conda-forge openjdk=21',
+        'linux': 'sudo apt-get install openjdk-25-jre-headless',
+        'darwin': 'brew install --cask temurin@25',
+        'win32': 'Install the Temurin 25 JDK from https://adoptium.net/ (keep "Add to PATH" on)',
+        'any': 'conda install -c conda-forge openjdk=25',
         'docs': 'README.md (Prerequisites)',
     },
 }
@@ -166,6 +166,34 @@ class ConfigValidator:
 
         if required:
             logger.info(f"External tools found: {', '.join(required)}")
+
+        if matsim_cfg.get('run_simulation', True):
+            self._validate_matsim_version(matsim_cfg)
+
+    def _validate_matsim_version(self, matsim_cfg: dict):
+        """Fail fast when matsim.version needs a jar or Java that is missing.
+
+        Not for matsim_25: its jar is part of the repository and it runs on
+        the Java 21 that the 'java' check above finds. matsim_2026 (the
+        default) needs scripts/install_matsim.py and Java 25; without this
+        check the error comes only after plan generation.
+        """
+        from matsim import versions
+        version = versions.get_version(matsim_cfg)
+        if version == 'matsim_25':
+            return
+        if version not in versions.MATSIM_VERSIONS:
+            raise ConfigValidationError(
+                f"matsim.version '{version}' is not known. Known versions: "
+                f"{', '.join(versions.MATSIM_VERSIONS)}."
+            )
+        try:
+            versions.get_jar_path(version)
+            java = versions.resolve_java(matsim_cfg, version)
+            versions.check_java_for_version(java, version)
+        except (FileNotFoundError, RuntimeError) as e:
+            raise ConfigValidationError(str(e)) from e
+        logger.info(f"MATSim {version}: Java {versions.java_release(java)} at {java}")
 
     def _has_cached_network(self) -> bool:
         """True when the network cache holds at least one entry.

@@ -12,6 +12,8 @@ from typing import Dict, Optional
 import logging
 import time
 
+from matsim import versions
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,69 +68,26 @@ class MATSimRunner:
         return requested_gb
 
     def get_jar_path(self) -> Path:
-        """
-        Get path to MATSim JAR file
-
-        Returns:
-            Path to JAR file
-        """
-        matsim_version = self.matsim_config.get('version', 'matsim_25')
-        base_path = Path(__file__).parent / matsim_version
-
-        # Find the JAR file
-        jar_files = list(base_path.glob('*.jar'))
-
-        if not jar_files:
-            raise FileNotFoundError(f"No JAR file found in {base_path}")
-
-        # Use the first JAR file
-        jar_path = jar_files[0]
+        """Return the MATSim jar of matsim.version (see matsim/versions.py)."""
+        jar_path = versions.get_jar_path(versions.get_version(self.matsim_config))
         logger.info(f"Using JAR file: {jar_path}")
-
         return jar_path
 
     def get_lib_path(self) -> Optional[Path]:
-        """
-        Get path to MATSim library directory (if exists)
-
-        Returns:
-            Path to lib directory or None if not found
-        """
-        matsim_version = self.matsim_config.get('version', 'matsim_25')
-        base_path = Path(__file__).parent / matsim_version
-
-        # Find lib directory (assumes pattern: *_lib)
-        lib_dirs = list(base_path.glob('*_lib'))
-
-        if not lib_dirs:
-            logger.info(f"No lib directory found in {base_path} (may not be needed)")
-            return None
-
-        lib_path = lib_dirs[0]
-        logger.info(f"Using lib directory: {lib_path}")
-
+        """Return the *_lib folder of matsim.version, or None (shaded jar)."""
+        lib_path = versions.get_lib_path(versions.get_version(self.matsim_config))
+        if lib_path is not None:
+            logger.info(f"Using lib directory: {lib_path}")
         return lib_path
 
     def build_classpath(self) -> str:
-        """
-        Build Java classpath for MATSim
+        """Jar plus <lib>/* when the version has a lib folder."""
+        return versions.build_classpath(versions.get_version(self.matsim_config),
+                                        self.os_type)
 
-        Returns:
-            Classpath string
-        """
-        jar_path = self.get_jar_path()
-        lib_path = self.get_lib_path()
-
-        # Platform-specific path separator
-        sep = ';' if self.os_type == 'Windows' else ':'
-
-        # Build classpath: jar + all jars in lib (if lib exists)
-        if lib_path and lib_path.exists():
-            classpath = f"{jar_path}{sep}{lib_path}/*"
-        else:
-            classpath = str(jar_path)
-
-        return classpath
+    def get_java_executable(self) -> str:
+        """Java binary for matsim.version; raises if the release is too old."""
+        return versions.resolve_java(self.matsim_config)
 
     def build_command(self, config_path: Path) -> list:
         """
@@ -148,8 +107,14 @@ class MATSimRunner:
 
         # Build command with JVM performance optimizations
         # Note: These are JVM flags, not MATSim arguments
+        java = self.get_java_executable()
+        version = versions.get_version(self.matsim_config)
+        versions.check_java_for_version(java, version)
+        logger.info(f"MATSim version: {version} "
+                    f"({versions.MATSIM_VERSIONS.get(version, {}).get('release', '?')}), "
+                    f"Java {versions.java_release(java)} at {java}")
         cmd = [
-            'java',
+            java,
             f'-Xmx{heap_size}g',  # Maximum heap size
             f'-Xms{heap_size}g',  # Initial heap size (same as max to avoid resizing)
             '-XX:+UseG1GC',  # G1 garbage collector (recommended for heaps > 4GB)
@@ -158,7 +123,7 @@ class MATSimRunner:
             '-XX:+HeapDumpOnOutOfMemoryError',  # Create heap dump on OOM
             '-XX:HeapDumpPath=./heap_dumps',  # Where to save heap dumps
             '-cp', classpath,
-            'org.matsim.core.controler.Controler',
+            *versions.main_args(version),
             str(config_path.resolve())
         ]
 
@@ -243,37 +208,26 @@ class MATSimRunner:
             raise
 
     def check_java_version(self) -> Dict:
-        """
-        Check if Java is installed and get version
+        """Find the Java binary for matsim.version and check its release.
 
         Returns:
-            Dictionary with Java version info
+            Dictionary with 'installed', 'java', 'version' (release number),
+            'status' and, on error, 'error' (the reason).
         """
         try:
-            result = subprocess.run(
-                ['java', '-version'],
-                capture_output=True,
-                text=True
-            )
-
-            # Java version is in stderr
-            version_output = result.stderr
-
-            logger.info(f"Java version: {version_output.split()[0]}")
-
-            return {
-                'installed': True,
-                'version': version_output,
-                'status': 'ok'
-            }
-
-        except FileNotFoundError:
-            logger.error("Java not found. Please install Java to run MATSim.")
-            return {
-                'installed': False,
-                'version': None,
-                'status': 'error'
-            }
+            java = self.get_java_executable()
+        except RuntimeError as e:
+            logger.error(str(e))
+            return {'installed': False, 'java': None, 'version': None,
+                    'status': 'error', 'error': str(e)}
+        release = versions.java_release(java)
+        if release is None:
+            msg = f"Java not found or not working: {java}. Install Java to run MATSim."
+            logger.error(msg)
+            return {'installed': False, 'java': java, 'version': None,
+                    'status': 'error', 'error': msg}
+        logger.info(f"Java version: {release} ({java})")
+        return {'installed': True, 'java': java, 'version': release, 'status': 'ok'}
 
     def validate_setup(self) -> bool:
         """
@@ -299,7 +253,7 @@ class MATSimRunner:
             logger.error(f"Failed to locate JAR file: {e}")
             return False
 
-        # Check lib directory (optional for matsim_25)
+        # Check lib directory (matsim_25 is one shaded jar and has none)
         try:
             lib_path = self.get_lib_path()
             if lib_path and not lib_path.exists():
