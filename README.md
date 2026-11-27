@@ -42,103 +42,10 @@ again. Some research directions and practical problems that TAREEK can help with
   durations, and destination choice affect the simulated traffic.
 - **Calibration and validation methods.** Test methods that tune the model automatically
   (for example optimization or AI agents) against the built-in count validation.
-- **Model extensions.** Add freight, ride-hailing, or shared mobility, which the current
-  pipeline does not generate.
+- **Model extensions.** Add ride-hailing, shared mobility, or freight inside the region,
+  which the current pipeline does not generate. (Freight that crosses the region boundary
+  is built in, as an option.)
 - **Teaching.** Show students a complete agent-based simulation of their own city.
-
----
-
-## Results
-
-### What a TAREEK run gives you
-
-Each run makes a full evaluation report. The figures below come from the
-[Birmingham, AL example](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-20260928) (2 counties, 25% population
-sample, 10 MATSim iterations).
-
-**Simulated vs. observed traffic at 8 AM.** Each point is one direction at one count
-station. The x-axis is the observed volume and the y-axis is the simulated volume
-(vehicles per hour, log scale). The solid line shows perfect agreement. The dashed lines
-show 0.5× and 2× the observed volume. Most stations are between the dashed lines.
-
-<p align="center">
-  <img src="docs/images/bham_counts_loglog_8am.jpg" width="520" alt="Simulated vs. observed volumes at 8 AM, Birmingham" />
-</p>
-
-**Error at each hour of the day.** Each box shows the signed relative error of all count
-stations for one hour. Above zero, the model has too much traffic. Below zero, it has too
-little. The red line is the median and the black dot is the mean. You can see in which
-hours the model is good and in which hours it needs more work.
-
-![Signed relative error by hour, Birmingham](docs/images/hourly_relative_error_box.png)
-
-**Departures and arrivals per hour, by activity.** Bars above zero show the trips that
-leave each activity. Bars below zero show the trips that arrive at each activity. You can
-see the morning trips from home to work and school, and the afternoon trips back home.
-
-![Departures and arrivals per hour, Birmingham](docs/images/dep_arr_by_activity_sim.png)
-
-**Count station error at 8 AM.** Each bar is one direction at one count station. Green
-is an error of 15% or less, yellow is 15-30%, and red is more than 30%. Use this map to
-find where the model is good and where it needs more work.
-
-![Count station error at 8 AM, Birmingham](docs/images/bham_count_error_8am.jpg)
-
-**Report for each count station.** For each station, TAREEK shows the location of the
-matched road link, the observed and simulated volume for all 24 hours, and the hourly
-GEH value with summary statistics (MAE, RMSE, correlation).
-
-![Example count station report](docs/images/station_report.png)
-
-### How the travel demand is made
-
-![Demand generation pipeline](docs/images/demand_pipeline.png)
-
-*Demand generation has five stages. Each stage uses a different open data source: Census
-for the population, travel surveys for activity chains and times, OpenStreetMap and
-Wikidata for locations, and GTFS for transit.*
-
-### See the simulation with TAREEK-Vis
-
-[TAREEK-Vis](https://github.com/jalal1/Tareek-vis) is an open-source desktop application
-that replays the output of a TAREEK run on the road and transit network. You can watch
-the vehicles move, click a vehicle to see the full day of its driver, and find the
-congested links at each time of day. Download the Windows installer from the
-[releases page](https://github.com/jalal1/Tareek-vis/releases).
-
-![TAREEK-Vis replaying a Twin Cities simulation](docs/images/tareek_vis.png)
-
-*TAREEK-Vis replays a Twin Cities run at the morning peak. Green links have free-flow
-traffic, red links are congested, and blue shows transit stops and lines.*
-
----
-
-## Examples
-
-The [TAREEK-examples](https://github.com/jalal1/TAREEK-examples) repository has complete runs for real regions: the config
-that was used, the results, and a full `report.html` for each run. Now it has
-[Twin Cities, MN-WI](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-20260928),
-[Birmingham, AL](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-20260928),
-[Madison, WI](https://github.com/jalal1/TAREEK-examples/tree/main/madison-20260928),
-[Chicago, IL](https://github.com/jalal1/TAREEK-examples/tree/main/chicago-20261003),
-[New York, NY-NJ](https://github.com/jalal1/TAREEK-examples/tree/main/newyork-20261006) and
-[Los Angeles, CA](https://github.com/jalal1/TAREEK-examples/tree/main/losangeles-20261006). We will add more cities.
-The [examples folder](examples/) of this repository keeps only the config files of each
-run, for the presets of the web app.
-
-The [Twin Cities TBI example](https://github.com/jalal1/TAREEK-examples/tree/main/twincities-tbi-20260930) uses a custom local
-household travel survey (TBI 2023) in place of NHTS, and compares the two surveys on the
-same region. The [Birmingham local survey example](https://github.com/jalal1/TAREEK-examples/tree/main/birmingham-localsurvey-20261001)
-is a first run with a small local survey (451 people). It uses survey roles: the local survey
-gives the chains, times and modes, and NHTS gives only the person-days. More tuning is needed.
-Custom surveys live in [`data/surveys/`](data/surveys/).
-
-You can also add your own region. See [CONTRIBUTING.md in TAREEK-examples](https://github.com/jalal1/TAREEK-examples/blob/main/CONTRIBUTING.md).
-
-> GitHub does not show HTML pages. To see a `report.html`, clone
-> [TAREEK-examples](https://github.com/jalal1/TAREEK-examples) (or download it as a ZIP file) and open the file in a web
-> browser. The report loads its images from the `evaluation/` folder next to it, so keep
-> the folder complete.
 
 ---
 
@@ -151,7 +58,7 @@ TAREEK needs three programs on your computer:
 | Program | Version | Used for |
 |---|---|---|
 | Python | 3.12 or later | Runs TAREEK |
-| Java | 21 or later | Runs the MATSim simulation |
+| Java | 25 | Runs the MATSim simulation (MATSim 2026.0) |
 | `osmium-tool` | Any recent version | Makes the road network from OpenStreetMap |
 
 Use **one** of the two options below. Option A works the same on Windows, macOS and Linux,
@@ -175,7 +82,7 @@ and we recommend it.
 3. Type this command and press Enter. When it asks `Proceed ([y]/n)?`, type `y`.
 
    ```bash
-   conda create -n tareek -c conda-forge python=3.12 openjdk=21 osmium-tool git
+   conda create -n tareek -c conda-forge python=3.12 openjdk=25 osmium-tool git
    ```
 
    This also installs Git, which you use in [Setup](#2-setup).
@@ -221,11 +128,10 @@ TAREEK uses MATSim 2026.0 by default, which needs **Java 25**.
 2. Run the installer. **Windows:** on the **Custom Setup** screen, make sure that **Add to
    PATH** is on (it is on by default). You do not have to edit the PATH by hand. **macOS:**
    the installer sets up `java` for you.
-3. Open a new terminal and type `java -version` to check the installation.
-4. Download MATSim 2026.0 (about 113 MB) into `matsim/matsim_2026/`:
-   `python scripts/install_matsim.py matsim_2026`
+3. Open a new terminal and type `java -version` to check the installation. The first line
+   must show version 25.
 
-**Linux (Ubuntu 24.04):** `sudo apt-get install openjdk-25-jre-headless`, then step 4.
+**Linux (Ubuntu 24.04):** `sudo apt-get install openjdk-25-jre-headless`.
 
 You can keep another Java (for example Java 21) as the default `java`. TAREEK finds Java 25
 in this order: the config key `matsim.java_executable`, the environment variable
@@ -312,6 +218,16 @@ pip install -r requirements.txt
 > this system", run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, or use
 > Command Prompt (`cmd`) instead.
 
+**Both options:** download MATSim 2026.0 (about 113 MB, one time only). Python and Java
+must be active, as above:
+
+```bash
+python scripts/install_matsim.py
+```
+
+The script puts MATSim into `matsim/matsim_2026/`. Then it checks Java and shows
+`Java check: OK`, or it tells you what is missing.
+
 **Next time** you use TAREEK, open the same prompt, `cd` into the TAREEK folder, and
 activate again (`conda activate tareek` for Option A, or the `activate` line above for
 Option B).
@@ -350,15 +266,113 @@ Options:
 | `--experiment-id` | Custom experiment name (optional, auto-generated) |
 | `--skip-simulation` | Generate plans only, do not run MATSim |
 
-The output goes to `experiments/<experiment-id>/`.
+The output goes to `experiments/<experiment-id>/`. At the end of the run, TAREEK writes
+`report.html` in that folder, with all the figures and validation results. Open it in a
+browser.
 
-### 5. Make the report
+<details>
+<summary>Optional: compare two runs, or make a PDF</summary>
 
 ```bash
-python scripts/experiment_report.py experiments/<experiment-id> --no-pdf
+# Compare a run with an earlier run
+python scripts/experiment_report.py experiments/<experiment-id> --baseline experiments/<other-id> --no-pdf
+
+# Make a PDF from the report (needs Chrome or Edge)
+python scripts/experiment_report.py --html-to-pdf experiments/<experiment-id>/report.html
 ```
 
-This makes one `report.html` file with all the figures and validation results.
+</details>
+
+---
+
+## Examples
+
+The **[TAREEK examples website](https://jalal1.github.io/TAREEK-Examples/)** has complete runs for real regions. It shows a
+map of the regions. Click a pin to see the runs of a region and open their full reports in
+the browser. You do not have to download anything.
+
+| Region | Report |
+|---|---|
+| Twin Cities, MN-WI (15 counties) | [NHTS survey](https://jalal1.github.io/TAREEK-Examples/twincities-20260928/report.html), [TBI 2023 local survey](https://jalal1.github.io/TAREEK-Examples/twincities-tbi-20260930/report.html) |
+| Birmingham, AL (2 counties) | [NHTS survey](https://jalal1.github.io/TAREEK-Examples/birmingham-20260928/report.html), [local survey (451 people)](https://jalal1.github.io/TAREEK-Examples/birmingham-localsurvey-20261001/report.html) |
+| Madison, WI (1 county) | [NHTS survey](https://jalal1.github.io/TAREEK-Examples/madison-20260928/report.html) |
+| Chicago, IL (3 counties) | [NHTS survey](https://jalal1.github.io/TAREEK-Examples/chicago-20261003/report.html) |
+| New York, NY-NJ (10 counties) | [NHTS survey](https://jalal1.github.io/TAREEK-Examples/newyork-20261006/report.html) |
+| Los Angeles, CA (2 counties) | [NHTS survey](https://jalal1.github.io/TAREEK-Examples/losangeles-20261006/report.html) |
+
+The two local-survey runs use a regional household travel survey in place of the national
+NHTS survey. Custom surveys are in [`data/surveys/`](data/surveys/).
+
+The files of each run (config, logs, evaluation data) are in the
+[TAREEK-Examples repository](https://github.com/jalal1/TAREEK-Examples). The
+[examples folder](examples/) of this repository keeps only the config files of each run,
+for the presets of the web app. To add your own region, see
+[CONTRIBUTING.md in TAREEK-Examples](https://github.com/jalal1/TAREEK-Examples/blob/main/CONTRIBUTING.md).
+
+---
+
+## Results
+
+### What a TAREEK run gives you
+
+Each run makes a full evaluation report. The figures below come from the
+[Birmingham, AL example](https://jalal1.github.io/TAREEK-Examples/birmingham-20260928/report.html) (2 counties, 25% population
+sample, 10 MATSim iterations).
+
+**Simulated vs. observed traffic at 8 AM.** Each point is one direction at one count
+station. The x-axis is the observed volume and the y-axis is the simulated volume
+(vehicles per hour, log scale). The solid line shows perfect agreement. The dashed lines
+show 0.5× and 2× the observed volume. Most stations are between the dashed lines.
+
+<p align="center">
+  <img src="docs/images/bham_counts_loglog_8am.jpg" width="520" alt="Simulated vs. observed volumes at 8 AM, Birmingham" />
+</p>
+
+**Error at each hour of the day.** Each box shows the signed relative error of all count
+stations for one hour. Above zero, the model has too much traffic. Below zero, it has too
+little. The red line is the median and the black dot is the mean. You can see in which
+hours the model is good and in which hours it needs more work.
+
+![Signed relative error by hour, Birmingham](docs/images/hourly_relative_error_box.png)
+
+**Departures and arrivals per hour, by activity.** Bars above zero show the trips that
+leave each activity. Bars below zero show the trips that arrive at each activity. You can
+see the morning trips from home to work and school, and the afternoon trips back home.
+
+![Departures and arrivals per hour, Birmingham](docs/images/dep_arr_by_activity_sim.png)
+
+**Count station error at 8 AM.** Each bar is one direction at one count station. Green
+is an error of 15% or less, yellow is 15-30%, and red is more than 30%. Use this map to
+find where the model is good and where it needs more work.
+
+![Count station error at 8 AM, Birmingham](docs/images/bham_count_error_8am.jpg)
+
+**Report for each count station.** For each station, TAREEK shows the location of the
+matched road link, the observed and simulated volume for all 24 hours, and the hourly
+GEH value with summary statistics (MAE, RMSE, correlation).
+
+![Example count station report](docs/images/station_report.png)
+
+### How the travel demand is made
+
+![Demand generation pipeline](docs/images/demand_pipeline.png)
+
+*Demand generation has five stages. Each stage uses a different open data source: Census
+for the population, travel surveys for activity chains and times, OpenStreetMap and
+Wikidata for locations, and GTFS for transit.*
+
+### See the simulation with TAREEK-Vis
+
+[TAREEK-Vis](https://github.com/jalal1/Tareek-vis) is an open-source desktop application
+that replays the output of a TAREEK run on the road and transit network. You can watch
+the vehicles move, click a vehicle to see the full day of its driver, and find the
+congested links at each time of day. Download the Windows installer from the
+[releases page](https://github.com/jalal1/Tareek-vis/releases).
+
+![TAREEK-Vis replaying a Twin Cities simulation](docs/images/tareek_vis.png)
+
+*TAREEK-Vis replays a Twin Cities run at the morning peak. Green links have free-flow
+traffic, red links are congested, and blue shows transit stops and lines.*
 
 ---
 
@@ -386,11 +400,11 @@ information.
 
 </details>
 
-When the wizard makes your `config.json`, put it in the `config/` folder and run the
+When the wizard makes your config file, put it in the `config/` folder and run the
 experiment from the command line:
 
 ```bash
-python run_experiment.py --config config/config_local.json
+python run_experiment.py --config config/<your-config>.json
 ```
 
 > **Coming soon:** run simulations directly from the web app.
@@ -436,12 +450,13 @@ For the architecture, how to extend the system, and guidance for contributors, s
 ## Optional API keys
 
 TAREEK runs without these keys. Without them, you can see warnings in the logs and some
-data is missing (no ACS calibration, and some transit feeds are skipped). Both keys are
+data is missing (a national age split in place of the county ACS data, and some transit
+feeds are skipped). The estimators in `estimators/` need the Census key. Both keys are
 **free**:
 
 | Key | Where to register | What it is for | Where to put it in `config.json` |
 |---|---|---|---|
-| Census API key | https://api.census.gov/data/key_signup.html | Gets ACS commute data (B08301, B08303) to calibrate mode shares | `data.census_api_key` |
+| Census API key | https://api.census.gov/data/key_signup.html | Gets ACS data: the age groups of the population (B01001) for the demand budget, and the commute modes (B08301) for the estimators. Without a key, TAREEK uses a national age split | `data.census_api_key` |
 | WMATA API key | https://developer.wmata.com/ | Authenticates GTFS downloads for feeds that need it (for example DC Metro) | `gtfs.api_keys["wmata.com"]` |
 
 Replace the placeholder values (`YOUR_CENSUS_API_KEY_HERE`, `YOUR_WMATA_API_KEY`) in your
@@ -458,7 +473,7 @@ We welcome bug reports, code, and experiment contributions.
 - All contributors must sign the [Contributor License Agreement](CLA.md).
   You sign with one comment on your first pull request.
 - To share a run for a new region, see
-  [CONTRIBUTING.md in TAREEK-examples](https://github.com/jalal1/TAREEK-examples/blob/main/CONTRIBUTING.md).
+  [CONTRIBUTING.md in TAREEK-examples](https://github.com/jalal1/TAREEK-Examples/blob/main/CONTRIBUTING.md).
 - To report a security problem, see [SECURITY.md](SECURITY.md). Do not open a
   public issue.
 
@@ -467,8 +482,7 @@ We welcome bug reports, code, and experiment contributions.
 ## Disclaimer
 
 A large part of the TAREEK code is written with Claude, an AI model by
-Anthropic. About two thirds of the commits by people list Claude as a
-co-author. A human directs and reviews all of the work, and we test the
+Anthropic. About 60% of the commits list Claude as a co-author. A human directs and reviews all of the work, and we test the
 results.
 
 TAREEK is a research tool. Its results are estimates from a model, and they

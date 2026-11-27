@@ -71,6 +71,7 @@ The configuration JSON is a declarative specification of the entire experiment. 
 - **Scaling factor**: Controls the fraction of the population to simulate (e.g., `scaling_factor=0.1` for a 10% sample). MATSim flow and storage capacity factors are adjusted proportionally.
 - **Counts configuration**: FHA/TMAS counts and/or custom CSV counts with blending weights.
 - **Evaluation settings**: Ground-truth data directory and evaluation toggle.
+- **MATSim version**: `matsim.version` selects the MATSim release and the Java that runs it (Section 8).
 
 Example configs for various US cities are in `config/USA/`.
 
@@ -192,7 +193,7 @@ Each agent requires a daily activity chain — an ordered sequence of activities
 
 **Home-Work-Home dominance handling**: The Markov transition model is trained on filtered work chains to learn realistic activity transitions conditional on Work being present, while the chain-length distribution is estimated from the full unfiltered survey corpus. This ensures realistic chain lengths even though transition structure is constrained to work-relevant sequences.
 
-**Sampling with early stopping**: The model samples a start activity, draws a target chain length, and iteratively applies second-order transition probabilities. A probabilistic early-stopping mechanism ramps the stopping probability as the chain approaches the target length. An alternative direct pattern replay strategy that uniformly samples complete observed chains from the survey corpus is also available.
+**Sampling**: The default (`plan_generation.chain_sampling_method: "direct"`) replays complete observed chains from the survey, weighted. The alternative `"generated"` samples a start activity, draws a target chain length, and applies the second-order transition probabilities, with a stopping probability that ramps up near the target length. The generated chains were too long against the survey, so `direct` is the default.
 
 **Multi-source blending**: At sampling time, a source is selected proportionally to its weight, and a chain is drawn from that source's model.
 
@@ -293,6 +294,13 @@ The output includes event files, link volume data, and agent plan evolution acro
 - The `hermes` module rejects unknown parameters as a fatal error. QSim-only parameters such as `vehiclesSource` are therefore written to `qsim` only; Hermes still applies PCE through the scenario vehicle types.
 - `hermes.stuckTime` is an integer (default 10 s).
 - With `matsim_2026` and Hermes, Tareek sets `eventsManager.oneThreadPerHandler = true` (about 27% less time per iteration, the same results). With `matsim_25` it stays false, because MATSim 2025.0 can crash in LegHistogram with it. A config can set the parameter itself.
+
+**MATSim version**: `matsim.version` selects the MATSim jar AND the Java binary (`matsim/versions.py`). `matsim_2026` (MATSim 2026.0, Java 25) is the default; `python scripts/install_matsim.py` downloads it into `matsim/matsim_2026/` (not in git). `matsim_25` (MATSim 2025.0, Java 21 or newer) is in the repository; to go back, change only this key. Java is found in this order: `matsim.java_executable`, the environment variable `TAREEK_JAVA_<release>`, `java` on PATH, `JAVA_HOME`, then the usual Java folders. Notes:
+- MATSim 2026.0 stops in `GlobalConfigGroup.checkConsistency` when `countsScaleFactor` is not equal to `flowCapacityFactor`, and when the storage and flow factors differ. The first check is a MATSim bug (`countsScaleFactor` must be the inverse; fixed after the release by MATSim PR #5016), and 2026.0 cannot set the tolerance in config.xml. So `matsim_2026` starts through `matsim/launcher/TareekController.java`, which does the corrected check and then runs the normal Controler. Java runs this file from source, so it needs the module `jdk.compiler`.
+- Three defaults changed in 2026.0 (`controller.compressionType` gzip to zst, `routing.accessEgressType` none to accessEgressModeToLink, `scoring.writeExperiencedPlans` false to true). The configuration manager writes the 2025.0 values for both versions, so the model and the `.gz` outputs stay the same. Parameters that exist in one version only are removed for the other.
+- Network preparation (OSM conversion, `NetworkCleaner`) always uses the 2025.0 jar, because the custom OSM reader is only in that jar.
+- MATSim 2025.0 adds the LegHistogram handler once more in each iteration (fixed in 2026.0), so its `legHistogram` values are (iteration + 2) times too large. The experiment summary divides them for `matsim_25` runs and keeps the raw values as `*_raw`.
+- A/B test (Madison and Birmingham, 10 iterations, same plans): 2025.0 and 2026.0 give the same counts and mode shares (within 0.1 percentage point) and the same speed. The speed gain comes from `oneThreadPerHandler` (above).
 
 **What-If Scenarios**: `run_scenario.py` runs a finished experiment again with roads closed (`scenarios/`). It copies the baseline `config.xml` without changes and hard-links its inputs, so the scenario has the same plans, settings, seed and iterations. In a copy of `network.xml` it removes `car` from each closed link (other modes stay; a link with no mode left gets the placeholder mode `closed`), so link IDs stay the same in both runs. It also closes the car links that the closure cuts off from the largest strongly connected part of the car network. After MATSim, `scenarios/compare.py` compares the last linkstats of the two runs link by link and writes `link_changes.csv` and `compare_report.html`. See the [What-If Scenarios guide](scenarios/README.md).
 
@@ -398,7 +406,7 @@ Three parameters have a measured path. `truck_share` and `vehicle_mix` are resol
 
 **NHTS (National Household Travel Survey)**: The pipeline reads the NHTS 2022 trip file (`data/nhts/csv/tripv2pub.csv`) and person file (`data/nhts/csv/perv2pub.csv`). It is a national survey that works as a default for any US region. The optional survey key `msa_sizes` (for example `[4, 5]`) keeps only persons from metros of that size.
 
-**TBI (Twin Cities Travel Behavior Inventory 2023)**: The loader reads the trip file for chains and times, and the Day and Person files for person-days. TBI is set to weight 0 in the current configs. Before it can replace NHTS in the demand budget, the trip cleaning needs work: it drops work trips whose origin purpose is missing or "Change mode", so commute days become other-travel days (worker P(commute) 0.37 against 0.42 in the raw data); the broad "Work" purpose includes business trips; and trips between 0:00 and 3:00 get the next calendar date and do not match their Day row.
+**TBI (Twin Cities Travel Behavior Inventory 2023)**: The loader reads the linked trip file (`linked_trip_file`) for chains and times, and the Day and Person files for person-days. A missing origin purpose on the first trip of a day comes from the Day file (`begin_day`). With these fixes the diary P(commute) is 0.511 (NHTS 2022: 0.525). The repo Twin Cities config keeps TBI at weight 0 (NHTS only); the Twin Cities TBI example uses TBI alone and gave the best Twin Cities count fit. Known limit: the diary's "Work" purpose also holds work-related business trips.
 
 **Birmingham local survey (`bham_local`)**: A small published survey of 451 Birmingham residents (`data/surveys/birmingham_al_local/`, MIT License), one row per person with up to 13 trips. It has no weights, no dates, no no-travel days and no persons under 18, so it cannot do the `person_days` job; NHTS does that job for it (see Survey Roles below).
 
@@ -454,7 +462,7 @@ class MySurveyTrip(BaseSurveyTrip):
         #   depart_time, arrive_time
         #
         # Map activities to: Home, Work, School, Shopping, Social, Dining, Escort, Other
-        # Map modes to: Car, Bus, Rail, Walk, Bike, SchoolBus, Rideshare, Other
+        # Map modes to: Car, Ride (car passenger), Bus, Rail, Walk, Bike, SchoolBus, Rideshare, Other
         #
         # Add metadata columns:
         #   self.data['source_type'] = 'my_survey'
@@ -525,7 +533,7 @@ Enable custom counts in the configuration:
 | Change the network generation | `matsim/` — pt2matsim wrapper |
 | Add new evaluation metrics | `matsim/` — evaluation module |
 | Add a scenario type (for example lane reduction) | `scenarios/definition.py` (file format), `scenarios/network.py` (network edit), `scenarios/compare.py` (report) |
-| Extend the web UI | `webapp/` — Flask application |
+| Extend the web UI | `webapp/` — FastAPI back end + web front end |
 | Add new data sources to the DB | `utils/` — DB manager |
 
 ### 13.5 Forking and Contributing

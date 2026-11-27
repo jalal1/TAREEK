@@ -2,6 +2,7 @@
 """Download a MATSim release into matsim/<version>/.
 
 Usage:
+    python scripts/install_matsim.py              # the default version
     python scripts/install_matsim.py matsim_2026
     python scripts/install_matsim.py matsim_2026 --zip path/to/matsim-2026.0-release.zip
 
@@ -97,14 +98,32 @@ def install(version: str, zip_path: Path = None, force: bool = False) -> Path:
     return dest
 
 
+def check_java(version: str) -> bool:
+    """Print the Java that TAREEK will use for ``version``, or what is missing."""
+    try:
+        java = versions.resolve_java({'version': version}, version)
+        versions.check_java_for_version(java, version)
+    except RuntimeError as exc:
+        print()
+        print("Java check: NOT OK.")
+        print(exc)
+        return False
+    print()
+    print(f"Java check: OK ({java}, Java {versions.java_release(java)}).")
+    return True
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('version', help="for example matsim_2026")
+    parser.add_argument('version', nargs='?', default=versions.DEFAULT_VERSION,
+                        help=f"default: {versions.DEFAULT_VERSION}")
     parser.add_argument('--zip', type=Path, help="use this release zip, do not download")
     parser.add_argument('--force', action='store_true', help="install again")
     args = parser.parse_args()
     install(args.version, args.zip, args.force)
+    if not check_java(args.version):
+        sys.exit(1)
 
 
 if __name__ == '__main__':
